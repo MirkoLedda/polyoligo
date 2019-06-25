@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block head %}
+    {{ super() }}
+{% endblock %}
+
+{% block content %}
+    <h2>Welcome to <b>SNPify</b> - a suite for designing genotyping assays</h2>
+    <hr>
+    <h3>Please select below the assay type you would like to design:</h3>
+    <p>
+        <form action="{{ url_for('pcr')}}">
+            <input type="submit" value="PCR primers">
+        </form><br>
+        <form action="{{ url_for('kasp')}}">
+            <input type="submit" value="KASP assays">
+        </form><br>
+        <form action="{{ url_for('casp')}}">
+            <input type="submit" value="CASP assays">
+        </form><br>
+        <form action="{{ url_for('snpseq')}}">
+            <input type="submit" value="SNP-seq">
+        </form><br>
+
+    </p>
+{% endblock %}

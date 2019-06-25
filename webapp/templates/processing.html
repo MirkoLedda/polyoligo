@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+{% extends "layout.html" %}
+
+{% block title %}
+    KASP
+{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+        .progress {
+            width: 100%;
+            height: 30px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        #elapsed {
+            height: 50px;
+        }
+        #progress {
+            height: 100px;
+        }
+        .console {
+            background-color: lightgray;
+            border: 1px solid black;
+            height: 300px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Console -->
+    <div id="header"></div>
+    <hr>
+    <div id=status></div>
+    <div id="elapsed"></div>
+    <div id="progress"></div>
+    <!-- <div id="download"></div> -->
+    <hr>
+    <div><h3>Server messages:</h3></div><br>
+    <div id="console" class="console"></div>
+
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/nanobar.js') }}"></script>
+    <script>
+        var start_time = new Date().getTime();
+        var doRefresh = true;
+        var timerRefresh = 0;
+
+        // Progress bar
+        var div = $('<div><h3>Progress:</h3></div><div class="progress"><div></div><div>0%</div><div id="download"></div><br></div>');
+        $('#progress').html(div);
+        var nanobar = new Nanobar({
+            target: div[1].childNodes[0]
+        });
+
+        function fetchdata() {
+            $.ajax({
+                url: "/status/{{task_id}}",
+                type: 'POST',
+                success: function(data){
+                    update_progress(data);
+                },
+                complete:function(data){
+                    update_timer()
+                    if (doRefresh) {
+                        timerRefresh = setTimeout(fetchdata, 1000);
+                    } else {
+                        clearTimeout(timerRefresh)
+                    }
+                }
+                });
+        }
+
+        function update_timer() {
+            var now = new Date().getTime();
+            var delta = now - start_time;
+            var minutes = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((delta % (1000 * 60)) / 1000);
+            $('#elapsed').html('<h3>Time elapsed: ' + minutes + "m " + seconds + "s" + '</h3>');
+        }
+
+        function update_progress(log) {
+            console.log("Fetching log")
+            $('#status').html('<h3>Job status: ' + log.status + '</h3>');
+            if (log.n_total == null) {
+                nanobar_percent = 0
+            } else {
+                var nanobar_percent = parseInt(log.n / log.n_total * 100);
+            }
+
+            var msg_string = '';
+            for (var i = 0; i < log.messages.length; i++){
+                msg_string = msg_string + '<p>&nbsp&nbsp' + log.messages[i].toString() + '</p>';
+            }
+            $('#console').html(msg_string);
+
+
+            if (log.status == "COMPLETED")
+            {
+                window.doRefresh = false;
+                nanobar_percent = 100;
+                $('#header').html("<h2>Job processed</h2>")
+                $('#progress').html('<div id="download"></div><br>');
+                $('#download').html('<a href="{{ url_for('download', task_id=task_id) }}" download><button><i class="fa fa-download"></i> Download results</button></a>');
+            }
+
+            if (log.status == "FAILED") {
+                window.doRefresh = false;
+            }
+
+            // Update progress bar
+            nanobar.go(nanobar_percent);
+            $(div[1].childNodes[1]).text(nanobar_percent + '%');
+
+        }
+
+        $(document).ready(function(){
+            $('#header').html("<h2>We are processing your job, please wait ....</h2>")
+            update_timer()
+            fetchdata();
+        });
+    </script>
+
+{% endblock %}

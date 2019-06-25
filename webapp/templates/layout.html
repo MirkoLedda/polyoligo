@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+    <head>
+        {% block head %}
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+            <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+            <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+            <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
+            <title>SNPify - {% block title %}{% endblock %}</title>
+        {% endblock %}
+    </head>
+
+    <body>
+        <div class="navbar">
+            <a href="{{ url_for('home') }}"><b>Home</b></a>
+            <a href="{{ url_for('pcr') }}">PCR</a>
+            <a href="{{ url_for('kasp') }}">KASP</a>
+            <a href="{{ url_for('casp') }}">CASP</a>
+            <a href="{{ url_for('snpseq') }}">SNP-seq</a>
+        </div>
+
+        <div class="content container">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+        <hr>
+
+        <div id="footer">
+            {% block footer %}
+                Last updated: 2019-06-03<br>
+                Built with <a href="Flask">Flask </a> and powered by <a href="https://github.com/MirkoLedda/SNPify">SNPify v0.1.0</a><br>
+                <b>Provided by the <a href="https://knapp.plantsciences.ucdavis.edu/">Knapp Lab and the UC Davis strawberry breeding program</a>.</br>
+                &copy; Copyright 2019 to Mirko Ledda.</b>
+                <br><br>
+            {% endblock %}
+        </div>
+    </body>
+</html>

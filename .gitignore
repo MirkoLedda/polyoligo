@@ -16,3 +16,4 @@ src/kasper.egg-info/
 src/kasper/__pycache__/
 tests/__pycache__/
 profile*
+webapp/uploads/

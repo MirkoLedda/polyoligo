@@ -1,0 +1,4 @@
+[console_scripts]
+cg-crispr = polyoligo.cli_cgcrispr:main
+cg-kasp = polyoligo.cli_cgkasp:main
+
