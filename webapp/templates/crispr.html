@@ -2,13 +2,52 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    CASP
+    CRISPR
 {% endblock %}
 
 {% block head %}
     {{ super() }}
+    <style>
+        .column {
+            float: left;
+            width: 33.33%;
+        }
+
+        .row {
+            margin-left: 10px;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        form label {
+            font-size: 20px;
+        }
+
+    </style>
 {% endblock %}
 
 {% block content %}
-    <h1>Under construction.</h1>
+    <!-- KWARGS form -->
+    <form id="crispr" method="POST" action="{{ url_for('crispr') }}" enctype="multipart/form-data">
+        <div>
+            <h2>Mandatory arguments</h2>
+            <label>Target region</label> <i>- CHR:START-END </i> <br>
+            <input name="roi" type="string" value="Fvb2-4:10000-11000" size="50"><br><br>
+            <label>Reference genome</label><br>
+            <select name="reference">
+                {% for blastdb_option in blastdb_options %}
+                    <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
+                {% endfor %}
+            </select>
+            <hr/>
+        </div>
+        <br>
+
+        <input type="submit" value="Submit"> &nbsp&nbsp&nbsp&nbsp or &nbsp&nbsp&nbsp&nbsp  </pre> <button type="reset" style="background-color:grey;">Reset</button><br><br>
+    </form>
 {% endblock %}

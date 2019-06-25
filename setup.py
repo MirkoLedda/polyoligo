@@ -18,7 +18,6 @@ from src.polyoligo._version import __version__
 with open(join("README.md")) as f:
     long_description = f.read()
 
-
 # class OverrideInstall(install):
 #
 #     def run(self):
@@ -39,7 +38,7 @@ with open(join("README.md")) as f:
 setup(
     name="polyoligo",
     version=__version__,
-    description="Set of tools for complex genomes.",
+    description="Set of tools to design oligos with complex genomes.",
     long_description=long_description,
     url="",  # todo
     author="Mirko Ledda",
@@ -78,8 +77,9 @@ setup(
     # Create the executable
     entry_points={
         'console_scripts': [
-            'cg-kasp = polyoligo.cli_cgkasp:main',
-            'cg-crispr = polyoligo.cli_cgcrispr:main',
+            'polyoligo-kasp = polyoligo.cli_kasp:main',
+            'polyoligo-crispr = polyoligo.cli_crispr:main',
+            'polyoligo-pcr = polyoligo.cli_pcr:main',
         ]
     },
 

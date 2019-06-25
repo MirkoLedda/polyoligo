@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath("."))
 from src.polyoligo import cli_crispr
 
 KWARGS = {
-    "roi": "Fvb2-4 10000 11000",
+    "roi": "Fvb2-4:10000-11000",
     "out": "out",
     "reference": "sample_data/blastdb",
     "nt": 4,
@@ -22,6 +22,7 @@ cli_crispr.main(strcmd=" ".join([
     KWARGS["reference"],
     # "--pam {}".format(KWARGS["pam"]),
     "-nt {}".format(KWARGS["nt"]),
+    "--webapp",
     "--debug",
 ]))
 

@@ -48,10 +48,10 @@ class gRNA:
 
 # noinspection PyPep8Naming
 class Crispr:
-    def __init__(self, chrom, start, end, pam, blast_db):
-        self.chrom = chrom
-        self.start = start
-        self.end = end
+    def __init__(self, roi, pam, blast_db):
+        self.chrom = roi.strip().split(":")[0]
+        self.start = int(roi.strip().split(":")[1].split("-")[0])
+        self.end = int(roi.strip().split(":")[1].split("-")[1])
         self.pam = pam
         self.pam_len = len(pam)
         self.pam_regex = pam
@@ -117,7 +117,7 @@ class Crispr:
                 grnas_parsed.append(grna)
         self.gRNAs = grnas_parsed
 
-    def check_offtargeting(self, batch_size=100, logger=None):
+    def check_offtargeting(self, batch_size=100, logger=None, webapp=False):
 
         n_total = len(self.gRNAs)
         batch_id = 0
@@ -136,7 +136,13 @@ class Crispr:
             gRNAs_batch = self.check_offtargeting_minibatch(gRNAs_batch=gRNAs_batch)
             self.gRNAs += gRNAs_batch
             if logger is not None:
-                logger.info("{}/{}".format(min((k + 1) * batch_size, n_total), n_total))
+                if webapp:
+                    logger.info("nanobar - {}/{}".format(
+                        int(1/3 * n_total + 1/3 * min((k + 1) * batch_size, n_total)),
+                        n_total
+                    ))
+                else:
+                    logger.info("{}/{}".format(min((k + 1) * batch_size, n_total), n_total))
 
     def check_offtargeting_minibatch(self, gRNAs_batch):
         # Build query dictionaries
@@ -216,7 +222,7 @@ class Crispr:
 
         return gRNAs_batch
 
-    def check_seeds(self, batch_size=100, logger=None):
+    def check_seeds(self, batch_size=100, logger=None, webapp=False):
 
         n_total = len(self.gRNAs)
         batch_id = 0
@@ -235,7 +241,13 @@ class Crispr:
             gRNAs_batch = self.check_seeds_minibatch(gRNAs_batch=gRNAs_batch)
             self.gRNAs += gRNAs_batch
             if logger is not None:
-                logger.info("{}/{}".format(min((k + 1) * batch_size, n_total), n_total))
+                if webapp:
+                    logger.info("nanobar - {}/{}".format(
+                        int(2 / 3 * n_total + 1 / 3 * min((k + 1) * batch_size, n_total)),
+                        n_total
+                    ))
+                else:
+                    logger.info("{}/{}".format(min((k + 1) * batch_size, n_total), n_total))
 
     def check_seeds_minibatch(self, gRNAs_batch):
 

@@ -1,4 +1,5 @@
 [console_scripts]
-cg-crispr = polyoligo.cli_cgcrispr:main
-cg-kasp = polyoligo.cli_cgkasp:main
+polyoligo-crispr = polyoligo.cli_crispr:main
+polyoligo-kasp = polyoligo.cli_kasp:main
+polyoligo-pcr = polyoligo.cli_pcr:main
 

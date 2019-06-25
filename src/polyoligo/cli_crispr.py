@@ -36,22 +36,10 @@ def parse_args(inputargs):
         version="%(prog)s {}".format(__version__),
     )
     parser.add_argument(
-        "chrom",
-        metavar="CHROM",
+        "roi",
+        metavar="ROI",
         type=str,
-        help="Target chromosome/contig.",
-    )
-    parser.add_argument(
-        "start",
-        metavar="START",
-        type=int,
-        help="Target region start",
-    )
-    parser.add_argument(
-        "end",
-        metavar="END",
-        type=int,
-        help="Target region end",
+        help="Target region as CHR:START-END.",
     )
     parser.add_argument(
         "output",
@@ -180,9 +168,7 @@ def main(strcmd=None):
 
     # Init Crispr object and parse ROI
     crispr = _lib_crispr.Crispr(
-        chrom=args.chrom,
-        start=args.start,
-        end=args.end,
+        roi=args.roi,
         pam=args.pam,
         blast_db=blast_db)
     crispr.fetch_roi()
@@ -192,13 +178,17 @@ def main(strcmd=None):
     crispr.find_gRNAs()
     logger.info("Found {} possible guide RNAs".format(len(crispr.gRNAs)))
 
+    if args.webapp:
+        logger.info("nanobar - {:d}/{:d}".format(0, len(crispr.gRNAs)))
+        logger.info("nanobar - {:d}/{:d}".format(int(len(crispr.gRNAs)/3), len(crispr.gRNAs)))
+
     # Check for offtargeting
     logger.info("Determining offtargets - this may take a while ...")
-    crispr.check_offtargeting(logger=logger)
+    crispr.check_offtargeting(logger=logger, webapp=args.webapp)
 
     # Check seed regions for homologs
     logger.info("Finding seed homologs - this may also take a while ...")
-    crispr.check_seeds(logger=logger)
+    crispr.check_seeds(logger=logger,  webapp=args.webapp)
 
     # Compute some gRNA statistics
     logger.info("Computing gRNA statistics ...")

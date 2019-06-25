@@ -15,16 +15,13 @@
     <h3>Please select below the assay type you would like to design:</h3>
     <p>
         <form action="{{ url_for('pcr')}}">
-            <input type="submit" value="PCR primers">
+            <input type="submit" value="PCR">
         </form><br>
         <form action="{{ url_for('kasp')}}">
-            <input type="submit" value="KASP assays">
+            <input type="submit" value="KASP">
         </form><br>
-        <form action="{{ url_for('casp')}}">
-            <input type="submit" value="CASP assays">
-        </form><br>
-        <form action="{{ url_for('snpseq')}}">
-            <input type="submit" value="SNP-seq">
+        <form action="{{ url_for('crispr')}}">
+            <input type="submit" value="CRISPR/Cas9">
         </form><br>
 
     </p>

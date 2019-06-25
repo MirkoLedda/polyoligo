@@ -120,7 +120,7 @@ def upload_file_to_server(req_obj, k, dest):
 
 # CELERY -----------------------------------------------------------------------
 @celery.task()
-def kasp_task(strcmd, log_dest):
+def task_kasp(strcmd, log_dest):
     log = Log(log_dest)
     log.fetch()
     log.update_status("RUNNING")
@@ -149,6 +149,36 @@ def kasp_task(strcmd, log_dest):
 
     return None
 
+
+@celery.task()
+def task_crispr(strcmd, log_dest):
+    log = Log(log_dest)
+    log.fetch()
+    log.update_status("RUNNING")
+
+    # log.message(strcmd)
+
+    try:
+        process = subprocess.Popen(strcmd, shell=True, stderr=STDOUT, stdout=subprocess.PIPE)
+        while True:
+            output = process.stdout.readline()
+            if process.poll() is not None:
+                break
+            if output:
+                msg = output.decode("utf-8")
+                if msg.startswith("INFO - nanobar - "):
+                    log.update_nanobar(msg)
+                else:
+                    log.message(msg)
+    except subprocess.CalledProcessError:
+        log.update_status("FAILED")
+
+    if not os.path.exists(join(log_dest, "output.txt")):
+        log.update_status("FAILED")
+    else:
+        log.update_status("COMPLETED")
+
+    return None
 
 # ROUTES -----------------------------------------------------------------------
 @app.route('/')
@@ -228,7 +258,7 @@ def kasp():
         kwargs["reference"] = "/home/mirko/dev/kasper/sample_data/blastdb"
 
         strcmd = [
-            "kasper",
+            "polyoligo-kasp",
             kwargs["markers"],
             join(dest_folder, "output"),
             kwargs["reference"],
@@ -252,28 +282,61 @@ def kasp():
         log.message("Job started ...")
         log.write()
 
-        kasp_task.delay(strcmd, dest_folder)
+        task_kasp.delay(strcmd, dest_folder)
 
         return redirect(url_for('processing', task_id=task_id))
     else:
         return render_template('kasp.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
 
-@app.route('/casp')
-def casp():
-    return render_template('casp.html')
+@app.route('/crispr', methods=['GET', 'POST'])
+def crispr():
 
+    if request.method == 'POST':
 
-@app.route('/snpseq')
-def snpseq():
-    return render_template('snpseq.html')
+        kwargs_names = ["roi", "reference"]
+        kwargs = {}
+        for kwargs_name in kwargs_names:
+            kwargs[kwargs_name] = None
+
+        task_id, dest_folder = create_task_dest()
+        os.makedirs(dest_folder)
+
+        # Marker file
+        kwargs["roi"] = request.form.get("roi")
+
+        # BlastDB
+        kwargs["reference"] = request.form.get("reference")
+
+        # todo rename depth
+        kwargs["reference"] = "/home/mirko/dev/kasper/sample_data/blastdb"
+
+        strcmd = [
+            "polyoligo-crispr",
+            kwargs["roi"],
+            join(dest_folder, "output"),
+            kwargs["reference"],
+            "-nt 1",
+            "--webapp",
+        ]
+
+        strcmd = " ".join(strcmd)
+        log = Log(dest_folder)
+        log.message("File(s) successfully uploaded ...")
+        log.message("Job started ...")
+        log.write()
+
+        task_crispr.delay(strcmd, dest_folder)
+
+        return redirect(url_for('processing', task_id=task_id))
+    else:
+        return render_template('crispr.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
 
 # PROCESSING ROUTES ------------------------------------------------------------
 @app.route('/tasks/<task_id>')
 def processing(task_id):
     return render_template("processing.html", task_id=task_id)
-
 
 @app.route('/status/<task_id>', methods=['GET', 'POST'])
 def get_status(task_id):
