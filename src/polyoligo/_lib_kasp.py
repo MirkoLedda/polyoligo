@@ -694,7 +694,7 @@ def main(kwarg_dict):
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]
-    p3_search_multiplier = kwarg_dict["p3_search_multiplier"]
+    p3_search_depth = kwarg_dict["p3_search_depth"]
     primer_seed = kwarg_dict["primer_seed"]
     tm_delta = kwarg_dict["tm_delta"]
     offtarget_size = kwarg_dict["offtarget_size"]
@@ -707,7 +707,7 @@ def main(kwarg_dict):
         lib_primer3.set_globals(**primer3_configs)
 
     lib_primer3.set_globals(
-        PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_multiplier)),
+        PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_depth)),
     )
     lib_primer3.set_tm_delta(tm_delta)
     lib_primer3.set_primer_seed(primer_seed)

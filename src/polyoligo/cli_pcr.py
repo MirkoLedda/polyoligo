@@ -107,12 +107,12 @@ def parse_args(inputargs):
         help="Report alternative subjects for each mutations in the VCF file? (a VCF file is needed for that option).",
     )
     parser.add_argument(
-        "--multiplier",
+        "--depth",
         metavar="<FLOAT>",
         type=float,
         default=10.0,
         help="This parameter controls the exhaustiveness of the primer pair search, which is given by "
-             "'n' * 'multiplier'. By increasing this value, more primer pairs will be considered but the process will "
+             "'n' * 'depth'. By increasing this value, more primer pairs will be considered but the process will "
              "be computationally heavier.",
     )
     parser.add_argument(
@@ -312,7 +312,7 @@ def main(strcmd=None):
         "blast_db": blast_db,
         "muscle": muscle,
         "n_primers": args.n_primers,
-        "p3_search_multiplier": args.multiplier,
+        "p3_search_depth": args.depth,
         "debug": args.debug,
         "fp_out": fp_out,
         "tm_delta": args.tm_delta,

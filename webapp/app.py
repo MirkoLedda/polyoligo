@@ -311,7 +311,7 @@ def pcr():
             primer3_yaml = primer3_file
 
         # todo rename depth
-        kwargs["multiplier"] = kwargs["depth"]
+        kwargs["depth"] = kwargs["depth"]
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
@@ -320,7 +320,7 @@ def pcr():
             join(dest_folder, "output"),
             kwargs["reference"],
             "-n {}".format(kwargs["n"]),
-            "--multiplier {}".format(kwargs["multiplier"]),
+            "--depth {}".format(kwargs["depth"]),
             "--tm_delta {}".format(kwargs["tm_delta"]),
             "--primer3 {}".format(primer3_yaml),
             "--seed {}".format(kwargs["seed"]),
@@ -416,7 +416,7 @@ def kasp():
         kwargs["offtarget_max_size"] = offtarget_size[1]
 
         # todo rename depth
-        kwargs["multiplier"] = kwargs["depth"]
+        kwargs["depth"] = kwargs["depth"]
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
@@ -425,7 +425,7 @@ def kasp():
             join(dest_folder, "output"),
             kwargs["reference"],
             "-n {}".format(kwargs["n"]),
-            "--multiplier {}".format(kwargs["multiplier"]),
+            "--depth {}".format(kwargs["depth"]),
             "--dye1 {}".format(kwargs["dye1"]),
             "--dye2 {}".format(kwargs["dye2"]),
             "--tm_delta {}".format(kwargs["tm_delta"]),

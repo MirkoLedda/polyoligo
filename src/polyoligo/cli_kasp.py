@@ -78,7 +78,7 @@ def parse_args(inputargs):
         metavar="<TXT>",
         type=str,
         default="GAAGGTGACCAAGTTCATGCT",
-        help="DNA sequence of the reporter dye for the alternative allele in a 5'-3' orientation. Default: VIC",
+        help="DNA sequence of the reporter dye for the alternative allele in a 5'-3' orientation. Default: FAM",
     )
     parser.add_argument(
         "--fast",
@@ -126,12 +126,12 @@ def parse_args(inputargs):
         help="Report alternative subjects for each mutations in the VCF file? (a VCF file is needed for that option).",
     )
     parser.add_argument(
-        "--multiplier",
+        "--depth",
         metavar="<FLOAT>",
         type=float,
         default=10.0,
         help="This parameter controls the exhaustiveness of the primer pair search, which is given by "
-             "'n' * 'multiplier'. By increasing this value, more primer pairs will be considered but the process will "
+             "'n' * 'depth'. By increasing this value, more primer pairs will be considered but the process will "
              "be computationally heavier.",
     )
     parser.add_argument(
@@ -361,7 +361,7 @@ def main(strcmd=None):
             "muscle": muscle,
             "reporters": reporters,
             "n_primers": args.n_primers,
-            "p3_search_multiplier": args.multiplier,
+            "p3_search_depth": args.depth,
             "tm_delta": args.tm_delta,
             "offtarget_size": [args.offtarget_min_size, args.offtarget_max_size],
             "primer_seed": args.seed,

@@ -1,41 +1,31 @@
 import sys
 import os
-import shutil
-from os.path import join
+import yaml
 
 sys.path.insert(0, os.path.abspath("."))
 
 from src.polyoligo import cli_pcr
 
-KWARGS = {
-    "roi": "Fvb2-4:100000-101000",
-    "out": "out",
-    "reference": "sample_data/blastdb",
-    "vcf": "sample_data/vcf.txt.gz",
-    "vcf_include": "sample_data/vcf_include.txt",
-    "vcf_exclude": "sample_data/vcf_include.txt",
-    "nt": 4,
-    "tm": 50,
-    "seed": 10,
-}
-TEMP_DIR = join(os.getcwd(), "temporary")
+with open("tests/KWARGS.yaml", "r") as f:
+    KWARGS = yaml.safe_load(f)
 
 cli_pcr.main(strcmd=" ".join([
-    "cg-pcr",
+    "polyoligo-pcr",
     KWARGS["roi"],
     KWARGS["out"],
     KWARGS["reference"],
-    # "--pam {}".format(KWARGS["pam"]),
-    "-nt {}".format(KWARGS["nt"]),
-    "--debug",
-    "--primer3 sample_data/primer3_example.yaml",
+    "--fast",
+    "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),
-    "--seed {}".format(KWARGS["seed"])
-]))
+    "--report_alts",
+    "--depth {}".format(KWARGS["depth"]),
+    "--tm_delta {}".format(KWARGS["tm_delta"]),
+    "--seed {}".format(KWARGS["seed"]),
+    "--offtarget_min_size {}".format(KWARGS["offtarget_min_size"]),
+    "--offtarget_max_size {}".format(KWARGS["offtarget_max_size"]),
+    "--primer3 {}".format(KWARGS["primer3"]),
+    "-nt {}".format(KWARGS["nt"]),
+    "--debug",
 
-# Cleanup
-# os.remove(KWARGS["out"] + ".txt")
-# os.remove(KWARGS["out"] + ".log")
-# os.remove(KWARGS["out"] + "_altlist.txt")
-# shutil.rmtree(TEMP_DIR)
+]))

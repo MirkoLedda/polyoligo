@@ -1,33 +1,19 @@
 import sys
 import os
-import shutil
-from os.path import join
+import yaml
 
 sys.path.insert(0, os.path.abspath("."))
 
 from src.polyoligo import cli_crispr
 
-KWARGS = {
-    "roi": "Fvb2-4:10000-11000",
-    "out": "out",
-    "reference": "sample_data/blastdb",
-    "nt": 4,
-}
-TEMP_DIR = join(os.getcwd(), "temporary")
+with open("tests/KWARGS.yaml", "r") as f:
+    KWARGS = yaml.safe_load(f)
 
 cli_crispr.main(strcmd=" ".join([
-    "cg-crispr",
+    "polyoligo-crispr",
     KWARGS["roi"],
     KWARGS["out"],
     KWARGS["reference"],
-    # "--pam {}".format(KWARGS["pam"]),
     "-nt {}".format(KWARGS["nt"]),
-    "--webapp",
     "--debug",
 ]))
-
-# Cleanup
-# os.remove(KWARGS["out"] + ".txt")
-# os.remove(KWARGS["out"] + ".log")
-# os.remove(KWARGS["out"] + "_altlist.txt")
-# shutil.rmtree(TEMP_DIR)
