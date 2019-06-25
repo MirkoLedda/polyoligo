@@ -11,7 +11,7 @@ import shutil
 import numpy as np
 
 # noinspection PyProtectedMember
-from src.polyoligo import cli_kasp, blast_lib, _getkasp, _markers_lib, utils, vcf_lib, _logger_config
+from src.polyoligo import cli_kasp, lib_blast, _lib_kasp, _lib_markers, lib_utils, lib_vcf, _logger_config
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -22,7 +22,7 @@ BINARIES = {
 HOMOLOG_FLANKING_N = cli_kasp.HOMOLOG_FLANKING_N
 
 
-class Marker(_markers_lib.Marker):
+class Marker(_lib_markers.Marker):
     def __init__(self, chrom, pos, ref_allele, alt_allele, name=None):
         super().__init__(chrom, pos, ref_allele, alt_allele, name)
         self.pp = None
@@ -35,7 +35,7 @@ class Marker(_markers_lib.Marker):
             self.start = starts["COM"]
             self.stop = stops["REF"]
 
-        self.pp = _getkasp.PrimerPair()
+        self.pp = _lib_kasp.PrimerPair()
 
         for d in ["F", "R", "A"]:
             if d == "A":
@@ -54,7 +54,7 @@ class Marker(_markers_lib.Marker):
         self.pp.product_size = self.stop - self.start + 1
 
     def score_primers(self, fp_reporters):
-        pcr = _getkasp.PCR(self.name, self.chrom, self.pos, self.ref, self.alt)
+        pcr = _lib_kasp.PCR(self.name, self.chrom, self.pos, self.ref, self.alt)
         pcr.pps = [self.pp]
 
         pcr.add_mutations(self.mutations)
@@ -66,7 +66,7 @@ class Marker(_markers_lib.Marker):
         return pcr
 
 
-class Markers(_markers_lib.Markers):
+class Markers(_lib_markers.Markers):
     def __init__(self, blast_db, **kwargs):
         super().__init__(blast_db, **kwargs)
         self.markers = []
@@ -253,11 +253,11 @@ def parse_args(inputargs):
 def score_marker(kwargs_dict):
     marker = kwargs_dict["marker"]
     pcr = marker.score_primers(kwargs_dict["fp_reporters"])
-    _getkasp.print_report(pcr, kwargs_dict["fp_out"])
+    _lib_kasp.print_report(pcr, kwargs_dict["fp_out"])
 
 
 def main():
-    main_time = utils.timer_start()  # Set main timer
+    main_time = lib_utils.timer_start()  # Set main timer
     args = parse_args(sys.argv[1:])
 
     # Set the number of CPUs
@@ -285,14 +285,14 @@ def main():
     logger = logging.getLogger(__name__)
 
     # Detect the os and point to respective binaries
-    curr_os = utils.get_os()
+    curr_os = lib_utils.get_os()
     if curr_os is None:
         logger.error("OS not supported or not detected properly.")
         sys.exit()
     bin_path = BINARIES[curr_os]
 
     # Init the BlastDB
-    blast_db = blast_lib.BlastDB(
+    blast_db = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
@@ -332,7 +332,7 @@ def main():
         vcf_obj = None
     else:
         logger.info("Loading VCF information ...")
-        vcf_obj = vcf_lib.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
+        vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
 
     markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
 
@@ -366,7 +366,7 @@ def main():
     if not args.debug:
         shutil.rmtree(temp_path)
 
-    logger.info("Total time elapsed: {}".format(utils.timer_stop(main_time)))
+    logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
     logger.info("Report written to -> {}".format(fp_out))
 
 

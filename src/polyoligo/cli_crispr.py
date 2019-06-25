@@ -8,7 +8,7 @@ import shutil
 import multiprocessing as mp
 import cProfile
 
-from . import blast_lib, _getcrispr, _logger_config, utils, _version
+from . import lib_blast, _lib_crispr, _logger_config, lib_utils, _version
 
 __version__ = _version.__version__
 
@@ -107,11 +107,11 @@ def parse_args(inputargs):
 
 
 def main(strcmd=None):
-    main_time = utils.timer_start()  # Set main timer
+    main_time = lib_utils.timer_start()  # Set main timer
 
     # Input arguments handling
     if strcmd:  # Means we are running the script using a string of arguments (e.g. for testing)
-        testcmd = utils.absolute_paths(strcmd)  # Make paths absolute
+        testcmd = lib_utils.absolute_paths(strcmd)  # Make paths absolute
         args = parse_args(testcmd.split()[1:])
     else:
         args = parse_args(sys.argv[1:])
@@ -141,14 +141,14 @@ def main(strcmd=None):
     logger = logging.getLogger(__name__)
 
     # Detect the os and point to respective binaries
-    curr_os = utils.get_os()
+    curr_os = lib_utils.get_os()
     if curr_os is None:
         logger.error("OS not supported or not detected properly.")
         sys.exit(1)
     bin_path = BINARIES[curr_os]
 
     # Init the BlastDB
-    blast_db = blast_lib.BlastDB(
+    blast_db = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
@@ -174,12 +174,12 @@ def main(strcmd=None):
     blast_db.purge()
 
     # Check that the PAM site is valid
-    if not utils.is_dna(args.pam):
+    if not lib_utils.is_dna(args.pam):
         logger.error("PAM site invalid: {}".format(args.pam))
         sys.exit(1)
 
     # Init Crispr object and parse ROI
-    crispr = _getcrispr.Crispr(
+    crispr = _lib_crispr.Crispr(
         chrom=args.chrom,
         start=args.start,
         end=args.end,
@@ -216,7 +216,7 @@ def main(strcmd=None):
         shutil.rmtree(temp_path)
 
     if not args.webapp:
-        logger.info("Total time elapsed: {}".format(utils.timer_stop(main_time)))
+        logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
         logger.info("Report written to -> {}".format(fp_report))
     else:
         logger.info("Report ready !")

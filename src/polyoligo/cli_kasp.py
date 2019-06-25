@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import blast_lib, _getkasp, _markers_lib, _logger_config, utils, vcf_lib, _version
+from . import lib_blast, _lib_kasp, _lib_markers, _logger_config, lib_utils, lib_vcf, _version
 
 __version__ = _version.__version__
 
@@ -183,11 +183,11 @@ def parse_args(inputargs):
 
 
 def main(strcmd=None):
-    main_time = utils.timer_start()  # Set main timer
+    main_time = lib_utils.timer_start()  # Set main timer
 
     # Input arguments handling
     if strcmd:  # Means we are running the script using a string of arguments (e.g. for testing)
-        testcmd = utils.absolute_paths(strcmd)  # Make paths absolute
+        testcmd = lib_utils.absolute_paths(strcmd)  # Make paths absolute
         args = parse_args(testcmd.split()[1:])
     else:
         args = parse_args(sys.argv[1:])
@@ -217,14 +217,14 @@ def main(strcmd=None):
     logger = logging.getLogger(__name__)
 
     # Detect the os and point to respective binaries
-    curr_os = utils.get_os()
+    curr_os = lib_utils.get_os()
     if curr_os is None:
         logger.error("OS not supported or not detected properly.")
         sys.exit(1)
     bin_path = BINARIES[curr_os]
 
     # Init the BlastDB
-    blast_db = blast_lib.BlastDB(
+    blast_db = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
@@ -251,7 +251,7 @@ def main(strcmd=None):
         blast_db.purge()
 
     # Init the MUSCLE aligner
-    muscle = blast_lib.Muscle(path_temporary=blast_db.temporary, exe=bin_path)
+    muscle = lib_blast.Muscle(path_temporary=blast_db.temporary, exe=bin_path)
 
     # Read primer3 configs
     primer3_configs = {}
@@ -263,12 +263,12 @@ def main(strcmd=None):
     reporters = [args.dye1, args.dye2]
 
     for reporter in reporters:
-        if not utils.is_dna(reporter):
+        if not lib_utils.is_dna(reporter):
             logger.error("Reporter dyes DNA sequence incorrect: {}".format(reporter))
             sys.exit(1)
 
     # Init Markers object
-    markers = _markers_lib.Markers(
+    markers = _lib_markers.Markers(
         blast_db=blast_db,
         MARKER_FLANKING_N=MARKER_FLANKING_N,
         MIN_ALIGN_LEN=MIN_ALIGN_LEN,
@@ -296,7 +296,7 @@ def main(strcmd=None):
         vcf_obj = None
     else:
         logger.info("Loading VCF information ...")
-        vcf_obj = vcf_lib.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
+        vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
 
     # Get flanking sequences around the markers
     logger.info("Retrieving flanking sequence around markers ...")
@@ -366,14 +366,14 @@ def main(strcmd=None):
                 ))
             else:
                 _ = list(tqdm.tqdm(
-                    p.imap_unordered(_getkasp.main, kwargs_worker),
+                    p.imap_unordered(_lib_kasp.main, kwargs_worker),
                     total=n_jobs,
                     disable=args.silent,
                 ))
     else:  # Webapp mode - single jobs
         logger.info("nanobar - {:d}/{:d}".format(0, len(kwargs_worker)))
         for i, kwargs_job in enumerate(kwargs_worker):
-            _getkasp.main(kwargs_job)
+            _lib_kasp.main(kwargs_job)
             logger.info("nanobar - {:d}/{:d}".format(i, len(kwargs_worker)))
 
     # Concatenate all primers for all markers into a single report
@@ -385,7 +385,7 @@ def main(strcmd=None):
         shutil.rmtree(temp_path)
 
     if not args.webapp:
-        logger.info("Total time elapsed: {}".format(utils.timer_stop(main_time)))
+        logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
         logger.info("Report written to -> {}".format(fp_out))
     else:
         logger.info("Report ready !")

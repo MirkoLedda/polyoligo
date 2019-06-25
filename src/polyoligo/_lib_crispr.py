@@ -4,7 +4,7 @@ from Bio.Seq import Seq
 from os.path import join
 from primer3.thermoanalysis import ThermoAnalysis
 
-from . import blast_lib
+from . import lib_blast
 
 
 # noinspection PyPep8Naming
@@ -148,7 +148,7 @@ class Crispr:
         # Forward guide lookup
         fp_query = join(self.blast_db.temporary, "{}_blast.fa".format(self.blast_db.job_id))
         fp_out = join(self.blast_db.temporary, "{}_blast.json".format(self.blast_db.job_id))
-        blast_lib.write_fasta(queries, fp_query)
+        lib_blast.write_fasta(queries, fp_query)
 
         self.blast_db.blastn(
             fp_query=fp_query,
@@ -258,7 +258,7 @@ class Crispr:
             # Forward strand lookup
             fp_query = join(self.blast_db.temporary, "{}_blast.fa".format(self.blast_db.job_id))
             fp_out = join(self.blast_db.temporary, "{}_blast.json".format(self.blast_db.job_id))
-            blast_lib.write_fasta(queries, fp_query)
+            lib_blast.write_fasta(queries, fp_query)
 
             self.blast_db.blastn(
                 fp_query=fp_query,
@@ -299,7 +299,7 @@ class Crispr:
             # Forward strand lookup
             fp_query = join(self.blast_db.temporary, "{}_blast.fa".format(self.blast_db.job_id))
             fp_out = join(self.blast_db.temporary, "{}_blast.json".format(self.blast_db.job_id))
-            blast_lib.write_fasta(queries, fp_query)
+            lib_blast.write_fasta(queries, fp_query)
 
             self.blast_db.blastn(
                 fp_query=fp_query,

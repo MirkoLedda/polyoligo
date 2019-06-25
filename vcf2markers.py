@@ -7,7 +7,7 @@ from os.path import join, exists
 import pandas as pd
 
 # noinspection PyProtectedMember
-from src.polyoligo import _logger_config, utils, vcf_lib
+from src.polyoligo import _logger_config, lib_utils, lib_vcf
 
 
 def parse_args(inputargs):
@@ -48,7 +48,7 @@ def read_roi(fp):
 def main(strcmd=None):
     # Input arguments handling
     if strcmd:  # Means we are running the script using a string of arguments (e.g. for testing)
-        testcmd = utils.absolute_paths(strcmd)  # Make paths absolute
+        testcmd = lib_utils.absolute_paths(strcmd)  # Make paths absolute
         args = parse_args(testcmd.split()[1:])
     else:
         args = parse_args(sys.argv[1:])
@@ -70,7 +70,7 @@ def main(strcmd=None):
     logger = logging.getLogger(__name__)
 
     # Init the VCF object
-    vcf_obj = vcf_lib.VCF(fp=args.vcf)
+    vcf_obj = lib_vcf.VCF(fp=args.vcf)
 
     # Read ROIs
     rois = read_roi(args.roi)

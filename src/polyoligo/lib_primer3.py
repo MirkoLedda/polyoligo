@@ -9,7 +9,7 @@ import sys
 from os.path import join
 import os
 
-from . import blast_lib
+from . import lib_blast
 
 # Default Primer3 globals
 PRIMER3_GLOBALS = {
@@ -271,7 +271,7 @@ class PCR:
             # Lookup forward primers
             fp_query_F = join(blast_db.temporary, "{}_blast_F.fa".format(blast_db.job_id))
             fp_out_F = join(blast_db.temporary, "{}_blast_F.json".format(blast_db.job_id))
-            blast_lib.write_fasta(pseqs["F"], fp_query_F)
+            lib_blast.write_fasta(pseqs["F"], fp_query_F)
             blast_db.blastn(
                 fp_query=fp_query_F,
                 fp_out=fp_out_F,
@@ -291,7 +291,7 @@ class PCR:
             # Lookup reverse primers
             fp_query_R = join(blast_db.temporary, "{}_blast_R.fa".format(blast_db.job_id))
             fp_out_R = join(blast_db.temporary, "{}_blast_R.json".format(blast_db.job_id))
-            blast_lib.write_fasta(pseqs["R"], fp_query_R)
+            lib_blast.write_fasta(pseqs["R"], fp_query_R)
             blast_db.blastn(
                 fp_query=fp_query_R,
                 fp_out=fp_out_R,

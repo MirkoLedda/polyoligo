@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import os
 
-from . import blast_lib, utils, _getkasp
+from . import lib_blast, lib_utils, _lib_kasp
 
 logger = logging.getLogger(__name__)  # Initialize the logger
 
@@ -103,7 +103,7 @@ class Markers:
         self.HOMOLOG_FLANKING_N = None
 
         # Set attributes from kwargs
-        utils.kwargs2attr_deep(self, kwargs)
+        lib_utils.kwargs2attr_deep(self, kwargs)
 
     def __len__(self):
         return len(self.markers)
@@ -246,11 +246,11 @@ class Markers:
             # Pad sequences with N's if needed
             if len(seqsr[marker.blast_name]) < exp_seq_len:
                 if q["start"] == 1:
-                    seqsr[marker.blast_name] = utils.padding_left(x=seqsr[marker.blast_name],
-                                                                  n=exp_seq_len)  # left padding
+                    seqsr[marker.blast_name] = lib_utils.padding_left(x=seqsr[marker.blast_name],
+                                                                      n=exp_seq_len)  # left padding
                 else:
-                    seqsr[marker.blast_name] = utils.padding_right(x=seqsr[marker.blast_name],
-                                                                   n=exp_seq_len)  # right padding
+                    seqsr[marker.blast_name] = lib_utils.padding_right(x=seqsr[marker.blast_name],
+                                                                       n=exp_seq_len)  # right padding
 
             # Assert that the REF alleles in the genomic reference matches the ones provided as input
             if seqsr[marker.blast_name][self.MARKER_FLANKING_N] != marker.ref:
@@ -266,7 +266,7 @@ class Markers:
 
         # Write a file with queries for BLAST
         fp_query = join(self.blast_db.temporary, "homologs_blast_in.txt")
-        blast_lib.write_fasta(seqs=seqs, fp_out=fp_query)
+        lib_blast.write_fasta(seqs=seqs, fp_out=fp_query)
 
         # Run BLAST
         fp_blast_out = join(self.blast_db.temporary, "homologs_blast_out.txt")
@@ -299,7 +299,7 @@ class Markers:
         self.upload_fasta_ids(fasta_ids)  # Store FASTA ID of the markers in each FASTA file
 
     def write_report(self, fp_out):
-        _getkasp.print_report_header(fp_out)
+        _lib_kasp.print_report_header(fp_out)
         with open(fp_out, "a") as f:
             for marker in self.markers:
                 with open(join(self.blast_db.temporary, marker.name + ".txt"), "r") as f_marker:

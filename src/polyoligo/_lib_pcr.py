@@ -11,7 +11,7 @@ import os
 import sys
 import pandas as pd
 
-from . import blast_lib, utils, primer3_lib
+from . import lib_blast, lib_utils, lib_primer3
 
 # Initialize the logger
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class ROI:
         # Write a file with queries for BLAST
         fp_query = join(self.blast_db.temporary, "homologs_blast_in.txt")
         k = "{}_{}_{}".format(self.chrom, self.start, self.end)
-        blast_lib.write_fasta(
+        lib_blast.write_fasta(
             seqs={k: self.seq},
             fp_out=fp_query,
         )
@@ -145,7 +145,7 @@ class ROI:
             )
 
 
-class PCR(primer3_lib.PCR):
+class PCR(lib_primer3.PCR):
     def __init__(self, chrom):
         super().__init__([])
         self.pps_classified = {}
@@ -182,7 +182,7 @@ class PCR(primer3_lib.PCR):
 
 
 def map_homologs(fp_aligned, target_name, target_len):
-    seqs = blast_lib.read_fasta(fp_aligned)
+    seqs = lib_blast.read_fasta(fp_aligned)
     target_seq = seqs[target_name]
     del seqs[target_name]
 
@@ -235,7 +235,7 @@ def get_valid_primer_regions(mmap, n, hard_exclude=None):
             inc_ixs_pruned.append(i)
     inc_ixs = np.array(inc_ixs_pruned)
 
-    valid_ivs = utils.list_2_intervals(inc_ixs)
+    valid_ivs = lib_utils.list_2_intervals(inc_ixs)
 
     # Parse for PRIMER3
     valid_reg = []
@@ -331,10 +331,10 @@ def print_report(pcr, fp, delimiter="\t"):
                         pp.qcode,
                         pp.primers[d].length,
                         pp.product_size,
-                        utils.round_tidy(pp.primers[d].tm, 3),
-                        utils.round_tidy(pp.primers[d].gc_content, 3),
+                        lib_utils.round_tidy(pp.primers[d].tm, 3),
+                        lib_utils.round_tidy(pp.primers[d].gc_content, 3),
                         len(pp.offtargets),
-                        utils.round_tidy(pp.primers[d].max_aaf, 2),
+                        lib_utils.round_tidy(pp.primers[d].max_aaf, 2),
                         pp.max_indel_size,
                         offtargets,
                         mutations,
@@ -364,7 +364,7 @@ def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_prim
         'SEQUENCE_PRIMER_PAIR_OK_REGION_LIST': ivs,
     }
 
-    p3_repo = primer3_lib.get_primers(primer3_seq_args, target_start=target_start)
+    p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=target_start)
 
     # Find valid primer pairs by checking top hits for each marker primers iteratively
     flag_continue = True
@@ -406,17 +406,17 @@ def main(kwarg_dict):
 
     # Set primer3 globals
     if len(primer3_configs) > 0:
-        primer3_lib.set_globals(**primer3_configs)
+        lib_primer3.set_globals(**primer3_configs)
 
-    primer3_lib.set_globals(
+    lib_primer3.set_globals(
         PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_multiplier)),
     )
-    primer3_lib.set_tm_delta(tm_delta)
-    primer3_lib.set_primer_seed(primer_seed)
+    lib_primer3.set_tm_delta(tm_delta)
+    lib_primer3.set_primer_seed(primer_seed)
 
     # Retrieve primer3 globals as a global here
     global PRIMER3_GLOBALS
-    PRIMER3_GLOBALS = primer3_lib.PRIMER3_GLOBALS
+    PRIMER3_GLOBALS = lib_primer3.PRIMER3_GLOBALS
 
     # Set a logger message that will be printed at the end (to be threadsafe)
     header = "Primer search results"
@@ -424,7 +424,7 @@ def main(kwarg_dict):
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
     # Read sequences
-    seqs = blast_lib.read_fasta(fp_fasta)
+    seqs = lib_blast.read_fasta(fp_fasta)
     roi.upload_sequence(seqs[roi.fasta_name])
     del seqs[roi.fasta_name]
 
@@ -436,7 +436,7 @@ def main(kwarg_dict):
             roi.fasta_name: roi.seq,
             "mock": roi.seq,
         }
-        blast_lib.write_fasta(mock_seqs, fp_out=fp_fasta)
+        lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
     fp_aligned = join(blast_db.temporary, "malign.afa")
     muscle.align_fasta(fp=fp_fasta, fp_out=fp_aligned)

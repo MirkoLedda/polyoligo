@@ -11,7 +11,7 @@ from Bio.Seq import Seq
 import shutil
 import pandas as pd
 
-from src.polyoligo import blast_lib, _getkasp, _markers_lib, _logger_config, utils, vcf_lib
+from src.polyoligo import lib_blast, _lib_kasp, _lib_markers, _logger_config, lib_utils, lib_vcf
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -21,7 +21,7 @@ BINARIES = {
 NUC = ["A", "T", "G", "C"]
 
 
-class Markers(_markers_lib.Markers):
+class Markers(_lib_markers.Markers):
     def __init__(self, blast_db=None, **kwargs):
         super().__init__(blast_db, **kwargs)
 
@@ -48,7 +48,7 @@ class Markers(_markers_lib.Markers):
                 ))
                 continue
 
-            self.markers.append(_markers_lib.Marker(
+            self.markers.append(_lib_markers.Marker(
                 chrom=row["chr"],
                 pos=row["pos"] - 1,  # to 0-based indexing
                 ref_allele=row["ref"],
@@ -105,7 +105,7 @@ def parse_args(inputargs):
 def main(strcmd=None):
     # Input arguments handling
     if strcmd:  # Means we are running the script using a string of arguments (e.g. for testing)
-        testcmd = utils.absolute_paths(strcmd)  # Make paths absolute
+        testcmd = lib_utils.absolute_paths(strcmd)  # Make paths absolute
         args = parse_args(testcmd.split()[1:])
     else:
         args = parse_args(sys.argv[1:])
@@ -131,14 +131,14 @@ def main(strcmd=None):
     logger = logging.getLogger(__name__)
 
     # Detect the os and point to respective binaries
-    curr_os = utils.get_os()
+    curr_os = lib_utils.get_os()
     if curr_os is None:
         logger.error("OS not supported or not detected properly.")
         sys.exit()
     bin_path = BINARIES[curr_os]
 
     # Init BlastDB
-    blast_db = blast_lib.BlastDB(
+    blast_db = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,

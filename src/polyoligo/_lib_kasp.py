@@ -10,27 +10,27 @@ from os.path import join
 import os
 import sys
 
-from . import blast_lib, utils, primer3_lib
+from . import lib_blast, lib_utils, lib_primer3
 
 # Initialize the logger
 logger = logging.getLogger(__name__)
 
 
-class Primer(primer3_lib.Primer):
+class Primer(lib_primer3.Primer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.reporter = ""  # Sequence of the reporter dye
 
 
-class PrimerPair(primer3_lib.PrimerPair):
+class PrimerPair(lib_primer3.PrimerPair):
     def __init__(self):
         super().__init__()
         self.snp_id = None
         self.chr = None
         self.primers = {
-            "F": primer3_lib.Primer(),  # Forward primer
-            "R": primer3_lib.Primer(),  # Reverse primer
-            "A": primer3_lib.Primer(),  # Alternative primer
+            "F": lib_primer3.Primer(),  # Forward primer
+            "R": lib_primer3.Primer(),  # Reverse primer
+            "A": lib_primer3.Primer(),  # Alternative primer
         }
         self.dir = None  # The direction of the primer where the marker is located (F or R)
         self.ref_dimer = None  # Dimerization for the primer with the ref allele and the reverse primer
@@ -131,7 +131,7 @@ class PrimerPair(primer3_lib.PrimerPair):
 
 # Inherited
 # noinspection PyPep8Naming
-class PCR(primer3_lib.PCR):
+class PCR(lib_primer3.PCR):
     def __init__(self, snp_id, chrom, pos, ref, alt):
         super().__init__([])
         self.pps_classified = {}
@@ -175,11 +175,11 @@ class PCR(primer3_lib.PCR):
             # Lookup forward primers
             fp_query_F = join(blast_db.temporary, "{}_blast_F.fa".format(blast_db.job_id))
             fp_out_F = join(blast_db.temporary, "{}_blast_F.json".format(blast_db.job_id))
-            blast_lib.write_fasta(pseqs["F"], fp_query_F)
+            lib_blast.write_fasta(pseqs["F"], fp_query_F)
             blast_db.blastn(
                 fp_query=fp_query_F,
                 fp_out=fp_out_F,
-                word_size=np.min([primer3_lib.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], primer3_lib.PRIMER_SEED]),
+                word_size=np.min([lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], lib_primer3.PRIMER_SEED]),
                 strand="plus",
                 evalue=10000,
                 perc_identity=100,
@@ -188,16 +188,16 @@ class PCR(primer3_lib.PCR):
                 outfmt='"15"',
                 ungapped="",
             )
-            hits["F"] = blast_db.parse_blastn_json(fp_out_F, min_identity=primer3_lib.PRIMER_SEED)
+            hits["F"] = blast_db.parse_blastn_json(fp_out_F, min_identity=lib_primer3.PRIMER_SEED)
 
             # Lookup reverse primers
             fp_query_R = join(blast_db.temporary, "{}_blast_R.fa".format(blast_db.job_id))
             fp_out_R = join(blast_db.temporary, "{}_blast_R.json".format(blast_db.job_id))
-            blast_lib.write_fasta(pseqs["R"], fp_query_R)
+            lib_blast.write_fasta(pseqs["R"], fp_query_R)
             blast_db.blastn(
                 fp_query=fp_query_R,
                 fp_out=fp_out_R,
-                word_size=np.min([primer3_lib.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], primer3_lib.PRIMER_SEED]),
+                word_size=np.min([lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], lib_primer3.PRIMER_SEED]),
                 strand="minus",
                 evalue=10000,
                 perc_identity=100,
@@ -206,7 +206,7 @@ class PCR(primer3_lib.PCR):
                 outfmt='"15"',
                 ungapped="",
             )
-            hits["R"] = blast_db.parse_blastn_json(fp_out_R, min_identity=primer3_lib.PRIMER_SEED)
+            hits["R"] = blast_db.parse_blastn_json(fp_out_R, min_identity=lib_primer3.PRIMER_SEED)
 
             # Check if primers could bind
             valid_hits = {}
@@ -223,7 +223,7 @@ class PCR(primer3_lib.PCR):
 
                         for sshit in shit.values():
                             hits_cnts[d] += 1
-                            if primer3_lib.will_it_bind(sshit["midline"]):
+                            if lib_primer3.will_it_bind(sshit["midline"]):
                                 valid_hits[d][pseq][chrom].append(sshit)
                                 valid_hits_cnts[d] += 1
 
@@ -327,13 +327,13 @@ def get_marker_primers(marker, allowed_end_pos=[0]):
     if act_seq_len < exp_seq_len:
         if int(marker.fasta_name.split(":")[1].split("-")[0]) == 1:
             # Left side is not full
-            mseq = utils.padding_left(
+            mseq = lib_utils.padding_left(
                 x=mseq,
                 n=exp_seq_len,
             )
         else:
             # Right side is not full
-            mseq = utils.padding_right(
+            mseq = lib_utils.padding_right(
                 x=mseq,
                 n=exp_seq_len,
             )
@@ -365,8 +365,8 @@ def get_marker_primers(marker, allowed_end_pos=[0]):
                     pseq_alt[pos_a] = alt_a_rc[0]
                     pseq_alt = "".join(pseq_alt)
 
-                ref_p = primer3_lib.Primer(sequence=pseq)
-                alt_p = primer3_lib.Primer(sequence=pseq_alt)
+                ref_p = lib_primer3.Primer(sequence=pseq)
+                alt_p = lib_primer3.Primer(sequence=pseq_alt)
 
                 # Compute primer properties and thermals
                 ref_p.calc_thermals()
@@ -390,7 +390,7 @@ def get_marker_primers(marker, allowed_end_pos=[0]):
 
 
 def map_homologs(fp_aligned, target_name, target_len):
-    seqs = blast_lib.read_fasta(fp_aligned)
+    seqs = lib_blast.read_fasta(fp_aligned)
     target_seq = seqs[target_name]
     del seqs[target_name]
 
@@ -443,7 +443,7 @@ def get_valid_primer_regions(mmap, n, hard_exclude=None):
             inc_ixs_pruned.append(i)
     inc_ixs = np.array(inc_ixs_pruned)
 
-    valid_ivs = utils.list_2_intervals(inc_ixs)
+    valid_ivs = lib_utils.list_2_intervals(inc_ixs)
 
     # Parse for PRIMER3
     fvalid = []
@@ -581,11 +581,11 @@ def print_report(pcr, fp, delimiter="\t"):
                         pp.qcode,
                         pp.primers[d].length,
                         pp.product_size,
-                        utils.round_tidy(pp.primers[d].tm, 3),
-                        utils.round_tidy(pp.primers[d].gc_content, 3),
+                        lib_utils.round_tidy(pp.primers[d].tm, 3),
+                        lib_utils.round_tidy(pp.primers[d].gc_content, 3),
                         will_dimerize,
                         len(pp.offtargets),
-                        utils.round_tidy(pp.primers[d].max_aaf, 2),
+                        lib_utils.round_tidy(pp.primers[d].max_aaf, 2),
                         pp.max_indel_size,
                         offtargets,
                         mutations,
@@ -640,7 +640,7 @@ def design_primers(pps_repo, mpps, target_seq, target_start, ivs, n_primers=10):
         else:
             primer3_seq_args['SEQUENCE_PRIMER_REVCOMP'] = mpp.primers[mpp.dir].sequence
 
-        p3_primers = primer3_lib.get_primers(primer3_seq_args, target_start=target_start)
+        p3_primers = lib_primer3.get_primers(primer3_seq_args, target_start=target_start)
         p3_repo[pid] = merge_primers(mpp=mpp, p3_primers=p3_primers)  # Merge the already designed marker primer
 
     # Find valid primer pairs by checking top hits for each marker primers iteratively
@@ -703,17 +703,17 @@ def main(kwarg_dict):
 
     # Set primer3 globals
     if len(primer3_configs) > 0:
-        primer3_lib.set_globals(**primer3_configs)
+        lib_primer3.set_globals(**primer3_configs)
 
-    primer3_lib.set_globals(
+    lib_primer3.set_globals(
         PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_multiplier)),
     )
-    primer3_lib.set_tm_delta(tm_delta)
-    primer3_lib.set_primer_seed(primer_seed)
+    lib_primer3.set_tm_delta(tm_delta)
+    lib_primer3.set_primer_seed(primer_seed)
 
     # Retrieve primer3 globals as a global here
     global PRIMER3_GLOBALS
-    PRIMER3_GLOBALS = primer3_lib.PRIMER3_GLOBALS
+    PRIMER3_GLOBALS = lib_primer3.PRIMER3_GLOBALS
 
     # Set a logger message that will be printed at the end (to be threadsafe)
     header = "Primer search results for {}".format(marker.name)
@@ -721,7 +721,7 @@ def main(kwarg_dict):
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
     # Read sequences
-    seqs = blast_lib.read_fasta(fp_fasta)
+    seqs = lib_blast.read_fasta(fp_fasta)
     marker.upload_sequence(seqs[marker.fasta_name])
     del seqs[marker.fasta_name]
 
@@ -737,7 +737,7 @@ def main(kwarg_dict):
             marker.fasta_name: marker.seq,
             "mock": marker.seq,
                      }
-        blast_lib.write_fasta(mock_seqs, fp_out=fp_fasta)
+        lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
     fp_aligned = join(blast_db.temporary, marker.name + ".afa")
     muscle.align_fasta(fp=fp_fasta, fp_out=fp_aligned)

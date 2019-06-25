@@ -5,7 +5,7 @@ from os.path import join
 
 sys.path.insert(0, os.path.abspath("."))
 
-from src.polyoligo import cli_kasp, utils, vcf_lib
+from src.polyoligo import cli_kasp, lib_utils, lib_vcf
 
 KWARGS = {
     "markers": "sample_data/markers.txt",
@@ -94,7 +94,7 @@ cli_kasp.main(strcmd=" ".join([
     "-n 1",
 ]))
 
-vcf_obj = vcf_lib.VCF(
+vcf_obj = lib_vcf.VCF(
     fp=KWARGS["vcf"],
 )
 vcf_obj.fetch_kasp_markers(
@@ -102,9 +102,9 @@ vcf_obj.fetch_kasp_markers(
     chrom="Fvb2-4",
 )
 
-utils.read_json(fp=join(TEMP_DIR, "AX-184205870_blast_F.json"))
+lib_utils.read_json(fp=join(TEMP_DIR, "AX-184205870_blast_F.json"))
 
-utils.write_fasta(
+lib_utils.write_fasta(
     seqs={
         "A": "A",
         "B": "A",
@@ -112,14 +112,14 @@ utils.write_fasta(
     fp_out=join(TEMP_DIR, "test.fa"),
 )
 
-utils.read_fasta(
+lib_utils.read_fasta(
     fp=join(TEMP_DIR, "test.fa"),
     filters=["A"],
 )
 
-_ = utils.padding('a')
-_ = utils.padding_left('a')
-_ = utils.padding_right('a')
+_ = lib_utils.padding('a')
+_ = lib_utils.padding_left('a')
+_ = lib_utils.padding_right('a')
 
 # Cleanup
 os.remove(KWARGS["out"] + ".txt")

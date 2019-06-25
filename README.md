@@ -68,7 +68,7 @@ echo 'export PATH="$PATH:~/.local/bin"' >> ~/.bashrc; source ~/.bashrc
 
 * [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/README_kasp.md)
 * [**`polyoligo-crispr`**](https://github.com/MirkoLedda/polyoligo/README_crispr.md)
-<!--* **`polyoligo-pcr`**: Design optimal primers for PCR.-->
+* [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/README_pcr.md)
 <!--* **`polyoligo-snpseq`**: Design optimal primers for SNP-Seq assays.-->
 
 
