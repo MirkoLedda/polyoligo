@@ -405,11 +405,10 @@ class PCR:
 def get_primers(primer3_seq_args, target_start=1):
     pps = {}
 
-    if "SEQUENCE_PRIMER" in PRIMER3_GLOBALS:
-        primer3_seq_args["SEQUENCE_PRIMER"] = PRIMER3_GLOBALS["SEQUENCE_PRIMER"]
-
-    if "SEQUENCE_PRIMER_REVCOMP" in PRIMER3_GLOBALS:
-        primer3_seq_args["SEQUENCE_PRIMER_REVCOMP"] = PRIMER3_GLOBALS["SEQUENCE_PRIMER_REVCOMP"]
+    # Append SEQUENCE globals from PRIMER3_GLOBALS
+    for k in PRIMER3_GLOBALS.keys():
+        if k.startswith("SEQUENCE"):
+            primer3_seq_args[k] = PRIMER3_GLOBALS[k]
 
     p3_primers = primer3.bindings.designPrimers(primer3_seq_args)
 

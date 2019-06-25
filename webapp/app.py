@@ -260,6 +260,7 @@ def pcr():
         p_tm = request.form.get("p_tm")
         p_size = request.form.get("p_size")
         p_gc = request.form.get("p_gc")
+        p_include = request.form.get("p_include")
         p_seq_F = request.form.get("p_seq_F")
         p_seq_R = request.form.get("p_seq_R")
 
@@ -297,10 +298,17 @@ def pcr():
             else:
                 primer3["PRIMER_MIN_GC"] = r
                 primer3["PRIMER_MAX_GC"] = r
+        if len(p_include) > 0:
+            r = parse_range(p_include)
+            start = int(kwargs["roi"].strip().split(":")[1].split("-")[0])
+            if isinstance(r, list):
+                primer3["SEQUENCE_TARGET"] = [r[0]-start, r[1]-r[0]]
+            else:
+                primer3["SEQUENCE_TARGET"] = [r-start, 1]
         if len(p_seq_F) > 0:
             primer3["SEQUENCE_PRIMER"] = p_seq_F
         if len(p_seq_R) > 0:
-            primer3["SEQUENCE_PRIMER_REVCOMP"] = p_seq_F
+            primer3["SEQUENCE_PRIMER_REVCOMP"] = p_seq_R
 
         with open(primer3_yaml, "w") as f:
             yaml.dump(primer3, f)
