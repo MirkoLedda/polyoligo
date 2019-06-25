@@ -1,4 +1,4 @@
-# `polyoligo`
+# `PolyOligo`
 
 Design oligos for complex genomes.
 
