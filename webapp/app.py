@@ -15,6 +15,8 @@ from celery import Celery
 app = Flask(__name__)
 app.secret_key = "secret key"
 app.config['UPLOAD_FOLDER'] = os.path.abspath('./uploads')
+app.config["BLASTDB_REPO"] = os.path.abspath("../sample_data")
+app.config["VCF_REPO"] = os.path.abspath("../sample_data")
 app.config["BLASTDB_OPTIONS"] = ['Fragaria ananassa']
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -180,6 +182,7 @@ def task_crispr(strcmd, log_dest):
 
     return None
 
+
 # ROUTES -----------------------------------------------------------------------
 @app.route('/')
 def home():
@@ -255,7 +258,7 @@ def kasp():
 
         # todo rename depth
         kwargs["multiplier"] = kwargs["depth"]
-        kwargs["reference"] = "/home/mirko/dev/kasper/sample_data/blastdb"
+        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
             "polyoligo-kasp",
@@ -273,7 +276,7 @@ def kasp():
 
         if include_vcf:
             # TODO: upload proper file
-            strcmd += ["--vcf {}".format("/home/mirko/dev/kasper/sample_data/vcf.txt.gz")]
+            strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], "vcf.txt.gz"))]
             strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
 
         strcmd = " ".join(strcmd)
@@ -291,7 +294,6 @@ def kasp():
 
 @app.route('/crispr', methods=['GET', 'POST'])
 def crispr():
-
     if request.method == 'POST':
 
         kwargs_names = ["roi", "reference"]
@@ -309,7 +311,7 @@ def crispr():
         kwargs["reference"] = request.form.get("reference")
 
         # todo rename depth
-        kwargs["reference"] = "/home/mirko/dev/kasper/sample_data/blastdb"
+        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
             "polyoligo-crispr",
@@ -337,6 +339,7 @@ def crispr():
 @app.route('/tasks/<task_id>')
 def processing(task_id):
     return render_template("processing.html", task_id=task_id)
+
 
 @app.route('/status/<task_id>', methods=['GET', 'POST'])
 def get_status(task_id):
