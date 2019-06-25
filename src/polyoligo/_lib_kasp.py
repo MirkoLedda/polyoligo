@@ -697,6 +697,7 @@ def main(kwarg_dict):
     p3_search_multiplier = kwarg_dict["p3_search_multiplier"]
     primer_seed = kwarg_dict["primer_seed"]
     tm_delta = kwarg_dict["tm_delta"]
+    offtarget_size = kwarg_dict["offtarget_size"]
     primer3_configs = kwarg_dict["primer3_configs"]
     reporters = kwarg_dict["reporters"]
     debug = kwarg_dict["debug"]
@@ -714,6 +715,9 @@ def main(kwarg_dict):
     # Retrieve primer3 globals as a global here
     global PRIMER3_GLOBALS
     PRIMER3_GLOBALS = lib_primer3.PRIMER3_GLOBALS
+
+    # Set lib_primer offtarget sizes
+    lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
 
     # Set a logger message that will be printed at the end (to be threadsafe)
     header = "Primer search results for {}".format(marker.name)

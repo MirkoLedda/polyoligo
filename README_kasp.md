@@ -73,17 +73,17 @@ Two output files are produced:
 |`seq_5_3_w_reporter`|Sequence of the primer in a 5'-3' direction with reporter dyes added (if the option `--reporters` is used)|
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
 |`goodness`|Heuristic goodness score based on multiple criteria. Maximum score is 10|
-|`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings <br>t = Bad TM<br>O = Offtargets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|
+|`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings <br>t = Bad TM<br>O = Off-targets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|
 |`dye`|Name of the reporter dye|
 |`length`|Primer length|
 |`prod_size`|Expected PCR product size|
 |`tm`|Predicted primer melting temperature (based on a NN thermodynamic model with SantaLucia et al, 1998 parameters)|
 |`gc_content`|Percent GC in the primer sequence|
 |`will_dimerize`|True/False, if the primers may form heterodimers|
-|`n_offtargets`|Number of possible genome-wide offtarget PCR products. If larger than 5, then the number does not represent an exhaustive list.|
+|`n_offtargets`|Number of possible genome-wide off-target PCR products. If larger than 5, then the number does not represent an exhaustive list.|
 |`max_aaf`|Maximum alternative allele frequency across all mutations located in the primer|
 |`indels`|Length of any indels located in the target PCR product|
-|`offtargets`|Comma-separated list of expected offtarget PCR products. If larger than 5, then this list is not exhaustive|
+|`offtargets`|Comma-separated list of expected off-target PCR products. If larger than 5, then this list is not exhaustive|
 |`mutations`|Comma-separated list of mutations located in the primers and reported as [REF/ALT:AAF]|
 
 ### Optional output files

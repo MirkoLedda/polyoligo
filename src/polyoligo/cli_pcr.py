@@ -139,6 +139,20 @@ def parse_args(inputargs):
              "structures that could form (homo/heterodimer and hairpins).",
     )
     parser.add_argument(
+        "--offtarget_min_size",
+        metavar="<INT>",
+        type=int,
+        default=0,
+        help="Minimum size of offtarget PCR products.",
+    )
+    parser.add_argument(
+        "--offtarget_max_size",
+        metavar="<INT>",
+        type=int,
+        default=1000,
+        help="Maximum size of offtarget PCR products.",
+    )
+    parser.add_argument(
         "-nt", "--n-tasks",
         metavar="<INT>",
         type=int,
@@ -302,6 +316,7 @@ def main(strcmd=None):
         "debug": args.debug,
         "fp_out": fp_out,
         "tm_delta": args.tm_delta,
+        "offtarget_size": [args.offtarget_min_size, args.offtarget_max_size],
         "primer_seed": args.seed,
         "primer3_configs": primer3_configs,
     }

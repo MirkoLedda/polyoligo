@@ -16,6 +16,7 @@ KWARGS = {
     "vcf_exclude": "sample_data/vcf_include.txt",
     "nt": 4,
     "tm": 50,
+    "seed": 10,
 }
 TEMP_DIR = join(os.getcwd(), "temporary")
 
@@ -30,6 +31,7 @@ cli_pcr.main(strcmd=" ".join([
     "--primer3 sample_data/primer3_example.yaml",
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),
+    "--seed {}".format(KWARGS["seed"])
 ]))
 
 # Cleanup

@@ -43,6 +43,8 @@ src/polyoligo.egg-info/requires.txt
 src/polyoligo.egg-info/top_level.txt
 src/polyoligo/__pycache__/__init__.cpython-37.pyc
 src/polyoligo/__pycache__/_lib_crispr.cpython-37.pyc
+src/polyoligo/__pycache__/_lib_kasp.cpython-37.pyc
+src/polyoligo/__pycache__/_lib_markers.cpython-37.pyc
 src/polyoligo/__pycache__/_lib_pcr.cpython-37.pyc
 src/polyoligo/__pycache__/_logger_config.cpython-37.pyc
 src/polyoligo/__pycache__/_version.cpython-37.pyc

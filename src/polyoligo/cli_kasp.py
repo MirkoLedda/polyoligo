@@ -30,7 +30,7 @@ WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using 
 
 def cprofile_worker(kwargs):
     """Wrapper to cProfile subprocesses."""
-    cProfile.runctx('_getkasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
+    cProfile.runctx('_lib_kasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
 
 
 def parse_args(inputargs):
@@ -156,6 +156,20 @@ def parse_args(inputargs):
         default=5.0,
         help="The minimum difference in melting temperature between the primer tm and the various "
              "structures that could form (homo/heterodimer and hairpins).",
+    )
+    parser.add_argument(
+        "--offtarget_min_size",
+        metavar="<INT>",
+        type=int,
+        default=0,
+        help="Minimum size of offtarget PCR products.",
+    )
+    parser.add_argument(
+        "--offtarget_max_size",
+        metavar="<INT>",
+        type=int,
+        default=1000,
+        help="Maximum size of offtarget PCR products.",
     )
     parser.add_argument(
         "-nt", "--n-tasks",
@@ -349,6 +363,7 @@ def main(strcmd=None):
             "n_primers": args.n_primers,
             "p3_search_multiplier": args.multiplier,
             "tm_delta": args.tm_delta,
+            "offtarget_size": [args.offtarget_min_size, args.offtarget_max_size],
             "primer_seed": args.seed,
             "primer3_configs": primer3_configs,
             "debug": args.debug,

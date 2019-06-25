@@ -52,8 +52,6 @@ Three output files are produced:
 
 **`<OUTPUT>.txt`** List of gRNAs with the following columns:
 
-HR START END STRAND SEQ PAM N_PERFECT_OFFTARGETS N_OFFTARGETS_12MER N_OFFTARGETS_8MER 12_MER 8_MER TM TTTT
-
 |Column|Description|
 |---|---|
 |`CHR`|Chromosome|
@@ -62,10 +60,10 @@ HR START END STRAND SEQ PAM N_PERFECT_OFFTARGETS N_OFFTARGETS_12MER N_OFFTARGETS
 |`STRAND`|Strand where the gRNA will bind|
 |`SEQ`|gRNA sequence|
 |`PAM`|PAM site|
-|`N_PERFECT_OFFTARGETS`|Number of offtargets with perfect match to the gRNA sequence|
-|`N_OFFTARGETS_12MER`|Number of offtargets with perfect match to 12-MER seed region of the gRNA and no more than 2 mutations elsewhere|
-|`N_OFFTARGETS_8MER`|Number of offtargets with perfect match to 8-MER seed region of the gRNA and no more than 2 mutations elsewhere|
-|`12_MER`|Number of offtargets with perfect match to 12-MER seed region of the gRNA|
-|`8_MER`|Number of offtargets with perfect match to 8-MER seed region of the gRNA|
+|`N_PERFECT_OFFTARGETS`|Number of off-targets with perfect match to the gRNA sequence|
+|`N_OFFTARGETS_12MER`|Number of off-targets with perfect match to 12-MER seed region of the gRNA and no more than 2 mutations elsewhere|
+|`N_OFFTARGETS_8MER`|Number of off-targets with perfect match to 8-MER seed region of the gRNA and no more than 2 mutations elsewhere|
+|`12_MER`|Number of off-targets with perfect match to 12-MER seed region of the gRNA|
+|`8_MER`|Number of off-targets with perfect match to 8-MER seed region of the gRNA|
 |`TM`|Melting temperature of the gRNA|
 |`TTTT`|Does the gRNA contain TTTT repeats. 0=No or 1=Yes.|

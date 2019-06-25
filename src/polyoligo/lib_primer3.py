@@ -39,6 +39,7 @@ PRIMER3_GLOBALS = {
 }
 
 PRIMER_SEED = 12
+MIN_OFFTARGET_SIZE = 0  # Minimum size of a PCR product in the offtargets
 MAX_OFFTARGET_SIZE = 1000  # Maximum size of a PCR product in the offtargets
 TM_DELTA = 5  # Minimum difference in melting temp for unwanted structures in the primer
 
@@ -393,7 +394,8 @@ class PCR:
                         if j <= i:
                             pass
                         else:
-                            if (j - i) < MAX_OFFTARGET_SIZE:
+                            delta = j-i
+                            if (delta > MIN_OFFTARGET_SIZE) and (delta < MAX_OFFTARGET_SIZE):
                                 offtargets.append("{}:{}-{}".format(chrom, i, j))
                             else:
                                 break
@@ -475,6 +477,13 @@ def set_globals(**kwargs):
         PRIMER3_GLOBALS[k] = v
 
     primer3.setP3Globals(PRIMER3_GLOBALS)
+
+
+def set_offtarget_size(min_size, max_size):
+    global MIN_OFFTARGET_SIZE
+    MIN_OFFTARGET_SIZE = min_size
+    global MAX_OFFTARGET_SIZE
+    MAX_OFFTARGET_SIZE = max_size
 
 
 def set_tm_delta(v):

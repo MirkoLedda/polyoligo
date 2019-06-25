@@ -65,6 +65,12 @@
             <label>&#916; Tm</label> <i>- Min T difference between primers and unwarranted substructures (e.g. hairpins, primer dimers, ...) </i><br>
             <input name="tm_delta" type="number" value="5.0"><br><br>
 
+            <label>Seed</label> <i> - Size of the 3'-end seed that will be used to detect off-targets (smaller values will increase the number of hits and hence runtime substantially)</i><br>
+            <input name="seed" type="number" value="12"><br><br>
+
+            <label>Off-targets product size</label> <i> - Min-Max product size range for off-targets</i><br>
+            <input name="offtarget_size" type="string" value="0-1000"><br><br>
+
             <label>Strawberry populations</label> <i>- For Fragaria only ! Choose as many genetic backgrounds that apply to your assay </i>
             <div class="row">
                 <div class="column">

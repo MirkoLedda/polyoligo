@@ -247,6 +247,11 @@ def pcr():
         kwargs["depth"] = depth_map[kwargs["depth"]]
 
         kwargs["tm_delta"] = float(request.form.get("tm_delta"))
+        kwargs["seed"] = int(request.form.get("seed"))
+
+        offtarget_size = parse_range(request.form.get("offtarget_size"))
+        kwargs["offtarget_min_size"] = offtarget_size[0]
+        kwargs["offtarget_max_size"] = offtarget_size[1]
 
         # Primer3 configs
         primer3_yaml = join(dest_folder, "primer3.yaml")
@@ -318,6 +323,9 @@ def pcr():
             "--multiplier {}".format(kwargs["multiplier"]),
             "--tm_delta {}".format(kwargs["tm_delta"]),
             "--primer3 {}".format(primer3_yaml),
+            "--seed {}".format(kwargs["seed"]),
+            "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
+            "--offtarget_max_size {}".format(kwargs["offtarget_max_size"]),
             "-nt 1",
             "--webapp",
         ]
@@ -401,6 +409,11 @@ def kasp():
         kwargs["depth"] = depth_map[kwargs["depth"]]
 
         kwargs["tm_delta"] = float(request.form.get("tm_delta"))
+        kwargs["seed"] = int(request.form.get("seed"))
+
+        offtarget_size = parse_range(request.form.get("offtarget_size"))
+        kwargs["offtarget_min_size"] = offtarget_size[0]
+        kwargs["offtarget_max_size"] = offtarget_size[1]
 
         # todo rename depth
         kwargs["multiplier"] = kwargs["depth"]
@@ -416,6 +429,9 @@ def kasp():
             "--dye1 {}".format(kwargs["dye1"]),
             "--dye2 {}".format(kwargs["dye2"]),
             "--tm_delta {}".format(kwargs["tm_delta"]),
+            "--seed {}".format(kwargs["seed"]),
+            "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
+            "--offtarget_max_size {}".format(kwargs["offtarget_max_size"]),
             "-nt 1",
             "--webapp",
         ]
