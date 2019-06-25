@@ -10,6 +10,7 @@ import time
 import subprocess
 from subprocess import STDOUT, CalledProcessError
 from celery import Celery
+import yaml
 
 # APP CONFIGS ------------------------------------------------------------------
 app = Flask(__name__)
@@ -120,6 +121,14 @@ def upload_file_to_server(req_obj, k, dest):
     return fp
 
 
+def parse_range(txt):
+    range = txt.strip().split("-")
+
+    if len(range) == 1:
+        return int(range[0])
+    else:
+        return [int(range[0]), int(range[1])]
+
 # CELERY -----------------------------------------------------------------------
 @celery.task()
 def task_kasp(strcmd, log_dest):
@@ -189,9 +198,146 @@ def home():
     return render_template('home.html')
 
 
-@app.route('/pcr')
+@app.route('/pcr', methods=['GET', 'POST'])
 def pcr():
-    return render_template('pcr.html')
+    if request.method == 'POST':
+        include_vcf = False
+        kwargs_names = ["roi", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth",
+                        "tm_delta", "primer3"]
+        kwargs = {}
+        for kwargs_name in kwargs_names:
+            kwargs[kwargs_name] = None
+
+        task_id, dest_folder = create_task_dest()
+        os.makedirs(dest_folder)
+
+        # ROI
+        kwargs["roi"] = request.form.get("roi")
+
+        # BlastDB
+        kwargs["reference"] = request.form.get("reference")
+
+        if kwargs["reference"] == 'Fragaria ananassa':
+            include_vcf = True
+
+        # Selected populations
+        if include_vcf:
+            selected_pops = []
+            for i in range(9):
+                current_pop = "population{}".format(i)
+                fetched_pop = request.form.get(current_pop)
+
+                if fetched_pop:
+                    with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
+                        for line in f:
+                            selected_pops.append(line.strip())
+
+            with open(join(dest_folder, "vcf_include.txt"), "w") as f:
+                for selected_pop in selected_pops:
+                    f.write("{}\n".format(selected_pop))
+
+        # Other kwargs
+        kwargs["n"] = int(request.form.get("n"))
+
+        kwargs["depth"] = request.form.get("depth")
+        depth_map = {"superficial": 2.5,
+                     "standard": 10,
+                     "deep": 25,
+                     }
+        kwargs["depth"] = depth_map[kwargs["depth"]]
+
+        kwargs["tm_delta"] = float(request.form.get("tm_delta"))
+
+        # Primer3 configs
+        primer3_yaml = join(dest_folder, "primer3.yaml")
+        primer3 = {}
+        p_prod_len = request.form.get("p_prod_len")
+        p_tm = request.form.get("p_tm")
+        p_size = request.form.get("p_size")
+        p_gc = request.form.get("p_gc")
+        p_seq_F = request.form.get("p_seq_F")
+        p_seq_R = request.form.get("p_seq_R")
+
+        if len(p_prod_len) > 0:
+            r = parse_range(p_prod_len)
+            if isinstance(r, list):
+                primer3["PRIMER_PRODUCT_SIZE_RANGE"] = r
+            else:
+                primer3["PRIMER_PRODUCT_SIZE"] = r
+        if len(p_tm) > 0:
+            r = parse_range(p_tm)
+            if isinstance(r, list):
+                primer3["PRIMER_OPT_TM"] = int(r[0] + (r[1]-r[0])/2)
+                primer3["PRIMER_MIN_TM"] = r[0]
+                primer3["PRIMER_MAX_TM"] = r[1]
+            else:
+                primer3["PRIMER_OPT_TM"] = r
+                primer3["PRIMER_MIN_TM"] = r
+                primer3["PRIMER_MAX_TM"] = r
+        if len(p_size) > 0:
+            r = parse_range(p_size)
+            if isinstance(r, list):
+                primer3["PRIMER_OPT_SIZE"] = int(r[0] + (r[1]-r[0])/2)
+                primer3["PRIMER_MIN_SIZE"] = r[0]
+                primer3["PRIMER_MAX_SIZE"] = r[1]
+            else:
+                primer3["PRIMER_OPT_SIZE"] = r
+                primer3["PRIMER_MIN_SIZE"] = r
+                primer3["PRIMER_MAX_SIZE"] = r
+        if len(p_gc) > 0:
+            r = parse_range(p_gc)
+            if isinstance(r, list):
+                primer3["PRIMER_MIN_GC"] = r[0]
+                primer3["PRIMER_MAX_GC"] = r[1]
+            else:
+                primer3["PRIMER_MIN_GC"] = r
+                primer3["PRIMER_MAX_GC"] = r
+        if len(p_seq_F) > 0:
+            primer3["SEQUENCE_PRIMER"] = p_seq_F
+        if len(p_seq_R) > 0:
+            primer3["SEQUENCE_PRIMER_REVCOMP"] = p_seq_F
+
+        with open(primer3_yaml, "w") as f:
+            yaml.dump(primer3, f)
+
+        # Marker file
+        primer3_file = upload_file_to_server(request, "primer3_file", dest_folder)
+        if primer3_file is not None:
+            primer3_yaml = primer3_file
+
+        # todo rename depth
+        kwargs["multiplier"] = kwargs["depth"]
+        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
+
+        strcmd = [
+            "polyoligo-pcr",
+            kwargs["roi"],
+            join(dest_folder, "output"),
+            kwargs["reference"],
+            "-n {}".format(kwargs["n"]),
+            "--multiplier {}".format(kwargs["multiplier"]),
+            "--tm_delta {}".format(kwargs["tm_delta"]),
+            "--primer3 {}".format(primer3_yaml),
+            "-nt 1",
+            "--webapp",
+        ]
+
+        if include_vcf:
+            # TODO: upload proper file
+            strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], "vcf.txt.gz"))]
+            strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
+
+        strcmd = " ".join(strcmd)
+        log = Log(dest_folder)
+        log.message("File(s) successfully uploaded ...")
+        log.message("Job started ...")
+        log.write()
+
+        task_kasp.delay(strcmd, dest_folder)
+
+        return redirect(url_for('processing', task_id=task_id))
+    else:
+        return render_template('pcr.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
 
 @app.route('/kasp', methods=['GET', 'POST'])
@@ -304,7 +450,7 @@ def crispr():
         task_id, dest_folder = create_task_dest()
         os.makedirs(dest_folder)
 
-        # Marker file
+        # ROI
         kwargs["roi"] = request.form.get("roi")
 
         # BlastDB

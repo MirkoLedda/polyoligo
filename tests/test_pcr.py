@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath("."))
 from src.polyoligo import cli_pcr
 
 KWARGS = {
-    "roi": "Fvb2-4 100000 101000",
+    "roi": "Fvb2-4:100000-101000",
     "out": "out",
     "reference": "sample_data/blastdb",
     "vcf": "sample_data/vcf.txt.gz",

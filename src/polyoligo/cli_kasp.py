@@ -35,7 +35,7 @@ def cprofile_worker(kwargs):
 
 def parse_args(inputargs):
     # Define the args parser
-    parser = argparse.ArgumentParser(prog="cg-kasp",
+    parser = argparse.ArgumentParser(prog="polyoligo-kasp",
                                      description="Design primers for Kompetitive allele specific PCR (KASP) assays",
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)

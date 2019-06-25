@@ -36,11 +36,7 @@ Recommendations (when applicable) are given in the option caption. Note that swi
 ### Inputs
 The software requires three mandatory inputs:
 
-**`CHROM/CONTIG`**: Target chromosome or contig.
-
-**`START`**: Target region start.
-
-**`END`**: Target region end.
+**`ROI`**: Target region of interest defined as CHR:START-END.
 
 **`<OUTPUT>`**: The base name of the output files.
 

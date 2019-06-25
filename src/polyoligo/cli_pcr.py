@@ -31,7 +31,7 @@ def cprofile_worker(kwargs):
 
 def parse_args(inputargs):
     # Define the args parser
-    parser = argparse.ArgumentParser(prog="cg-pcr",
+    parser = argparse.ArgumentParser(prog="polyoligo-pcr",
                                      description="Design primers for PCR assays",
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -41,22 +41,10 @@ def parse_args(inputargs):
         version="%(prog)s {}".format(__version__),
     )
     parser.add_argument(
-        "chrom",
-        metavar="CHROM",
+        "roi",
+        metavar="ROI",
         type=str,
-        help="Target chromosome/contig.",
-    )
-    parser.add_argument(
-        "start",
-        metavar="START",
-        type=int,
-        help="Target region start",
-    )
-    parser.add_argument(
-        "end",
-        metavar="END",
-        type=int,
-        help="Target region end",
+        help="Target region as CHR:START-END.",
     )
     parser.add_argument(
         "output",
@@ -259,14 +247,20 @@ def main(strcmd=None):
         logger.info("Loading VCF information ...")
         vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
 
+    if args.webapp:
+        logger.info("nanobar - {:d}/{:d}".format(0, 100))
+
     # Get flanking sequences around the markers
     logger.info("Retrieving target sequence ...")
-    roi = _lib_pcr.ROI(chrom=args.chrom, start=args.start, end=args.end, blast_db=blast_db, MIN_ALIGN_ID=MIN_ALIGN_ID)
+    roi = _lib_pcr.ROI(roi=args.roi, blast_db=blast_db, MIN_ALIGN_ID=MIN_ALIGN_ID)
     roi.fetch_roi()
 
     # Find homologs and write them to a fasta file
     logger.info("Finding homeologs/duplications by sequence homology ...")
     roi.find_homologs()
+
+    if args.webapp:
+        logger.info("nanobar - {:d}/{:d}".format(33, 100))
 
     # Upload VCF information
     if vcf_obj is not None:
@@ -290,6 +284,8 @@ def main(strcmd=None):
     logger.info("Designing primers - Region size: {} nts".format(len(roi.seq)))
     if not args.webapp:
         logger.info("Using {} parallel processes ...".format(args.n_tasks))
+    else:
+        logger.info("nanobar - {:d}/{:d}".format(50, 100))
 
     # Purge sequences from BlastDB
     blast_db.purge()
@@ -314,6 +310,9 @@ def main(strcmd=None):
 
     if not args.debug:
         shutil.rmtree(temp_path)
+
+    if args.webapp:
+        logger.info("nanobar - {:d}/{:d}".format(100, 100))
 
     if not args.webapp:
         logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))

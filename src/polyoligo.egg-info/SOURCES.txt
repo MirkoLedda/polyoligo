@@ -43,13 +43,16 @@ src/polyoligo.egg-info/requires.txt
 src/polyoligo.egg-info/top_level.txt
 src/polyoligo/__pycache__/__init__.cpython-37.pyc
 src/polyoligo/__pycache__/_lib_crispr.cpython-37.pyc
+src/polyoligo/__pycache__/_lib_pcr.cpython-37.pyc
 src/polyoligo/__pycache__/_logger_config.cpython-37.pyc
 src/polyoligo/__pycache__/_version.cpython-37.pyc
 src/polyoligo/__pycache__/cli_crispr.cpython-37.pyc
 src/polyoligo/__pycache__/cli_kasp.cpython-37.pyc
 src/polyoligo/__pycache__/cli_pcr.cpython-37.pyc
 src/polyoligo/__pycache__/lib_blast.cpython-37.pyc
+src/polyoligo/__pycache__/lib_primer3.cpython-37.pyc
 src/polyoligo/__pycache__/lib_utils.cpython-37.pyc
+src/polyoligo/__pycache__/lib_vcf.cpython-37.pyc
 src/polyoligo/bin/LICENSES.txt
 src/polyoligo/bin/VERSIONS.txt
 src/polyoligo/bin/linux_x64/blastdbcmd

@@ -26,7 +26,7 @@ def cprofile_worker(kwargs):
 
 def parse_args(inputargs):
     # Define the args parser
-    parser = argparse.ArgumentParser(prog="cg-crispr",
+    parser = argparse.ArgumentParser(prog="polyoligo-crispr",
                                      description="Design guide RNAs for CRISPR/Cas9 assays.",
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -173,13 +173,15 @@ def main(strcmd=None):
         blast_db=blast_db)
     crispr.fetch_roi()
 
+    if args.webapp:
+        logger.info("nanobar - {:d}/{:d}".format(0, len(crispr.gRNAs)))
+
     # Find putative guide RNAs
     logger.info("Searching guide RNAs - PAM: {} - Region size: {} nts ...".format(crispr.pam, len(crispr.seq)))
     crispr.find_gRNAs()
     logger.info("Found {} possible guide RNAs".format(len(crispr.gRNAs)))
 
     if args.webapp:
-        logger.info("nanobar - {:d}/{:d}".format(0, len(crispr.gRNAs)))
         logger.info("nanobar - {:d}/{:d}".format(int(len(crispr.gRNAs)/3), len(crispr.gRNAs)))
 
     # Check for offtargeting

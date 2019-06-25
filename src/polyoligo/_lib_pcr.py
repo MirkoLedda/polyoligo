@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class ROI:
-    def __init__(self, chrom, start, end, blast_db, MIN_ALIGN_ID):
-        self.chrom = chrom
-        self.start = start
-        self.end = end
+    def __init__(self, roi, blast_db, MIN_ALIGN_ID):
+        self.chrom = roi.strip().split(":")[0]
+        self.start = int(roi.strip().split(":")[1].split("-")[0])
+        self.end = int(roi.strip().split(":")[1].split("-")[1])
         self.blast_db = blast_db
         self.MIN_ALIGN_ID = MIN_ALIGN_ID
 
