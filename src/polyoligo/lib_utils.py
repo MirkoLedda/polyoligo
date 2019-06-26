@@ -10,6 +10,7 @@ import re
 IUPAC_DNA_REGEX = "^[atgcrynmkATGCRYNMK]+$"
 IUPAC_RNA_REGEX = "^[augcrynmkAUGCRYNMK]+$"
 
+
 def round_tidy(x, n):
     """Return 'x' rounded to 'n' significant digits."""
     y = np.abs(x)
@@ -153,11 +154,11 @@ def padding(x, left=0, right=0, char="N"):
 
 
 def padding_left(x, n=0, char="N"):
-    return (n-len(x)) * char + x
+    return (n - len(x)) * char + x
 
 
 def padding_right(x, n=0, char="N"):
-    return x + (n-len(x)) * char
+    return x + (n - len(x)) * char
 
 
 def is_dna(x):
