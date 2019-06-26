@@ -346,7 +346,7 @@ def get_marker_primers(marker, allowed_end_pos=[0]):
     alt_a_rc = alt_a.reverse_complement()
 
     pps = []
-    for padding in range(PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], PRIMER3_GLOBALS["PRIMER_MAX_SIZE"] + 1):
+    for padding in range(lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"] + 1):
         for i in allowed_end_pos:
             x2 = marker_pos + i
             x1 = x2 - padding
@@ -427,7 +427,7 @@ def get_valid_primer_regions(mmap, n, hard_exclude=None):
     if hard_exclude is None:
         hard_exclude = []
 
-    plen = PRIMER3_GLOBALS["PRIMER_MIN_SIZE"]
+    plen = lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"]
     v = ~mmap
     inc_ixs = []
     for i in range(len(v) - plen + 1):
@@ -712,10 +712,6 @@ def main(kwarg_dict):
     lib_primer3.set_tm_delta(tm_delta)
     lib_primer3.set_primer_seed(primer_seed)
 
-    # Retrieve primer3 globals as a global here
-    global PRIMER3_GLOBALS
-    PRIMER3_GLOBALS = lib_primer3.PRIMER3_GLOBALS
-
     # Set lib_primer offtarget sizes
     lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
 
@@ -789,7 +785,7 @@ def main(kwarg_dict):
         search_types = ["mism", "partial_mism", "all"]
 
     for search_type in search_types:
-        if len(pcr.pps) < PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
+        if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
             n_before = len(pcr.pps)
             pcr.pps = design_primers(
                 pps_repo=pcr.pps,  # Primer pair repository
@@ -797,7 +793,7 @@ def main(kwarg_dict):
                 target_seq=marker.seq,
                 target_start=marker.start,
                 ivs=ivs[search_type],
-                n_primers=PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
+                n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
             )
             n_new = len(pcr.pps) - n_before
             logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)

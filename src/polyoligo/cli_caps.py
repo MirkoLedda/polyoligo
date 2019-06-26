@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_kasp, _lib_markers, _logger_config, lib_utils, lib_vcf, _version
+from . import lib_blast, _lib_caps, _lib_markers, _logger_config, lib_utils, lib_vcf, _version
 
 __version__ = _version.__version__
 
@@ -24,13 +24,13 @@ BINARIES = {
 MARKER_FLANKING_N = 50  # Number of nucleotides on each sides when retrieving the sequence flanking the marker
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
-HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
+HOMOLOG_FLANKING_N = 1000  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
 
 def cprofile_worker(kwargs):
     """Wrapper to cProfile subprocesses."""
-    cProfile.runctx('_lib_kasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
+    cProfile.runctx('_lib_caps.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
 
 
 def parse_args(inputargs):
@@ -110,6 +110,13 @@ def parse_args(inputargs):
         "--report_alts",
         action="store_true",
         help="Report alternative subjects for each mutations in the VCF file? (a VCF file is needed for that option).",
+    )
+    parser.add_argument(
+        "--enzymes",
+        metavar="<TXT>",
+        type=str,
+        default="",
+        help="List of available enzymes, one enzyme per line.",
     )
     parser.add_argument(
         "--depth",
@@ -259,14 +266,6 @@ def main(strcmd=None):
         with open(args.primer3, "r") as f:
             primer3_configs = yaml.safe_load(f)
 
-    # Read reporter dyes
-    reporters = [args.dye1, args.dye2]
-
-    for reporter in reporters:
-        if not lib_utils.is_dna(reporter):
-            logger.error("Reporter dyes DNA sequence incorrect: {}".format(reporter))
-            sys.exit(1)
-
     # Init Markers object
     markers = _lib_markers.Markers(
         blast_db=blast_db,
@@ -325,9 +324,9 @@ def main(strcmd=None):
 
     # Start the search for candidate KASP primers
     if not args.webapp:
-        logger.info("Searching for KASP candidates using {} parallel processes ...".format(args.n_tasks))
+        logger.info("Searching for CAPS candidates using {} parallel processes ...".format(args.n_tasks))
     else:
-        logger.info("Searching for KASP candidates ...")
+        logger.info("Searching for CAPS candidates ...")
 
     # Purge sequences from BlastDB
     blast_db.purge()
@@ -345,7 +344,7 @@ def main(strcmd=None):
             "fp_out": join(temp_path, marker.name + ".txt"),
             "blast_db": blast_db,
             "muscle": muscle,
-            "reporters": reporters,
+            "included_enzymes": args.enzymes,
             "n_primers": args.n_primers,
             "p3_search_depth": args.depth,
             "tm_delta": args.tm_delta,
@@ -367,14 +366,14 @@ def main(strcmd=None):
                 ))
             else:
                 _ = list(tqdm.tqdm(
-                    p.imap_unordered(_lib_kasp.main, kwargs_worker),
+                    p.imap_unordered(_lib_caps.main, kwargs_worker),
                     total=n_jobs,
                     disable=args.silent,
                 ))
     else:  # Webapp mode - single jobs
         logger.info("nanobar - {:d}/{:d}".format(0, len(kwargs_worker)))
         for i, kwargs_job in enumerate(kwargs_worker):
-            _lib_kasp.main(kwargs_job)
+            _lib_caps.main(kwargs_job)
             logger.info("nanobar - {:d}/{:d}".format(i, len(kwargs_worker)))
 
     # Concatenate all primers for all markers into a single report

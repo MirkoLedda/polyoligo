@@ -264,7 +264,7 @@ def main(strcmd=None):
     if args.webapp:
         logger.info("nanobar - {:d}/{:d}".format(0, 100))
 
-    # Get flanking sequences around the markers
+    # Get target sequence
     logger.info("Retrieving target sequence ...")
     roi = _lib_pcr.ROI(roi=args.roi, blast_db=blast_db, MIN_ALIGN_ID=MIN_ALIGN_ID)
     roi.fetch_roi()

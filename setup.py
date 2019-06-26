@@ -80,6 +80,7 @@ setup(
             'polyoligo-kasp = polyoligo.cli_kasp:main',
             'polyoligo-crispr = polyoligo.cli_crispr:main',
             'polyoligo-pcr = polyoligo.cli_pcr:main',
+            'polyoligo-caps = polyoligo.cli_caps:main',
         ]
     },
 
@@ -93,6 +94,7 @@ setup(
         'bin/linux_x64': ['bin/linux_x64/*'],
         'bin/macosx_x64': ['bin/macosx_x64/*'],
         'bin/win_x64': ['bin/win_x64/*'],
+        'data': ['data/*'],
     },
     include_package_data=True,
     zip_safe=False,
