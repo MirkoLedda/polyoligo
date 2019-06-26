@@ -66,7 +66,6 @@ def rebase2json(fp):
     print(len(seq_list))
 
 
-
 def main():
     rebase2json(fp=REBASE)
 
