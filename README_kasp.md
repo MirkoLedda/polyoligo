@@ -50,6 +50,8 @@ Optional files include:
 
 **`--vcf_include/--vcf_exclude`**: List of samples in a text file to include/exclude from the VCF. See this [example file](sample_data/vcf_include.txt).
 
+**`--primer3`**: YAML configuration file for Primer3. All Primer3 arguments can be set here. See this [example file](sample_data/primer3_example.yaml.txt).
+
 ### Outputs
 Two output files are produced:
 
@@ -68,7 +70,7 @@ Two output files are produced:
 |`end`|Primer end position in the genome|
 |`direction`|Direction of the primer as F/R for forward/reverse, respectively|
 |`type`|Primer type as REF/ALT/COM for reference allele/alternative allele/common primer|
-|`id`|ID of the KASP primer pairs|
+|`assay_id`|ID of the KASP assay|
 |`seq5_3`|Sequence of the primer in a 5'-3' direction|
 |`seq_5_3_w_reporter`|Sequence of the primer in a 5'-3' direction with reporter dyes added (if the option `--reporters` is used)|
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|

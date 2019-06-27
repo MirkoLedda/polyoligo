@@ -125,7 +125,7 @@ def parse_args(inputargs):
     )
     parser.add_argument(
         "--primer3",
-        metavar="<TXT>",
+        metavar="<YAML>",
         type=str,
         default="",
         help="Configuration file for PRIMER3 in YAML format. Uses the same convention as PRIMER3. "

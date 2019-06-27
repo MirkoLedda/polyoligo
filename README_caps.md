@@ -1,17 +1,17 @@
-# `polyoligo-pcr`
+# `polyoligo-caps`
 
 ### Running a test
 
 To make sure the installation completed, run the command:
 
 ```
-polyoligo-pcr -v
+polyoligo-caps -v
 ```
 
 You can now run a full test by entering the command:
 
 ```
-polyoligo-pcr sample_data/markers.txt out sample_data/blastdb
+polyoligo-caps sample_data/markers.txt out sample_data/blastdb
 ```
 
 > This will create two output files called `out.txt` and `out.log` in the current folder.
@@ -22,13 +22,13 @@ polyoligo-pcr sample_data/markers.txt out sample_data/blastdb
 ### General usage and available options
 
 ```
-polyoligo-pcr <ROI> <OUTPUT> <BLASTDB> <OPTIONS>
+polyoligo-caps <INPUT> <OUTPUT> <BLASTDB> <OPTIONS>
 ```
 
 For a list of all available options and their descriptions, type:
 
 ```
-polyoligo-pcr -h
+polyoligo-caps -h
 ```
 
 Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
@@ -36,7 +36,7 @@ Recommendations (when applicable) are given in the option caption. Note that swi
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: The region of interest declared as CHR:START-END.
+**`<INPUT>`**: A text file containing the target markers for the CAPS assay as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
 
 **`<OUTPUT>`**: The base name of the output files.
 
@@ -52,26 +52,36 @@ Optional files include:
 
 **`--primer3`**: YAML configuration file for Primer3. All Primer3 arguments can be set here. See this [example file](sample_data/primer3_example.yaml.txt).
 
+**`--enzymes`**: List of restriction enzymes to consider. Can be useful to restrict the search to in stock enzymes only. See this [example file](sample_data/enzymes.txt).
+
 ### Outputs
 Two output files are produced:
 
 **`<OUTPUT>.log`**: A log file which contain details on the number of valid primers found during each search and for each marker.
 
-**`<OUTPUT>.txt`** Primer pairs reported as a space-separated list with the following columns:
+**`<OUTPUT>.txt`** CAPS primers reported as a space-separated list with the following columns:
 
 |Column|Description|
 |---|---|
+|`marker`|SNP ID/label|
 |`chr`|Chromosome|
+|`pos`|Position|
+|`ref`|Reference allele|
+|`alt`|Alternative allele|
+|`enzymes`|List of possible restriction enzymes|
+|`enzyme_suppliers`|Restriction enzyme suppliers using the REBASE encoding. See this [file](src/polyoligo/data/REBASE_suppliers.txt) for the letter code|
 |`start`|Primer start position in the genome|
 |`end`|Primer end position in the genome|
 |`direction`|Direction of the primer as F/R for forward/reverse, respectively|
-|`assay_id`|ID of the primer pairs|
+|`assay_id`|ID of the CAPS assay|
 |`seq5_3`|Sequence of the primer in a 5'-3' direction|
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
 |`goodness`|Heuristic goodness score based on multiple criteria. Maximum score is 10|
 |`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings <br>t = Bad TM<br>O = Off-targets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|
 |`length`|Primer length|
 |`prod_size`|Expected PCR product size|
+|`fragment_left`|5'-end approximate fragment length (assumes the enzyme cuts at the marker site which isn't always true)|
+|`fragment_right`|3'-end approximate fragment length (assumes the enzyme cuts at the marker site which isn't always true)|
 |`tm`|Predicted primer melting temperature (based on a NN thermodynamic model with SantaLucia et al, 1998 parameters)|
 |`gc_content`|Percent GC in the primer sequence|
 |`n_offtargets`|Number of possible genome-wide off-target PCR products. If larger than 5, then the number does not represent an exhaustive list.|
@@ -84,8 +94,10 @@ Two output files are produced:
 Optionally, a list of all subjects containing alternative alleles can be requested using the flag `--report_alts`, if a VCF file if provided. The list will be reported in `<OUTPUT>_altlist.txt`. Each mutation is listed in a pseudo-FASTA format as `>REFPOSALT`, similar to what is reported in the standard output but without allele frequencies. The first and second lines list all hets and homozygotes, respectively. This file can be used to investigate markers where no primers exempt of mutations exists.
 
 ### Example usage and tips
-In the following example, primer pairs will be designed by considering both homologs and mutations within a selected subset population:
+In the following example, CAPS primers will be designed with reporter dyes included and by considering both homologs and mutations within a selected subset population:
 
 ```
-polyoligo-pcr Fvb2-4:100000-101000 out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt --reporters sample_data/VIC_FAM_reporters.txt
+polyoligo-caps sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt --reporters sample_data/VIC_FAM_reporters.txt
 ```
+
+For the design of a large number of probes (>1000), for example to design CAPS assays across an entire genome, the use of the option `--fast` is recommended. This mode is faster than the standard mode for designing numerous probes because the entire reference genome in momentarily loaded in memory, which reduces I/O actions but increases RAM consumption substantially.
