@@ -17,3 +17,5 @@ src/polyoligo/__pycache__/
 tests/__pycache__/
 profile*
 webapp/uploads/
+webapp/__pycache__/
+
