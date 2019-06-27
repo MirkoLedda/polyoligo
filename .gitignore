@@ -12,8 +12,8 @@ additional_cmds.md
 out*
 release.sh
 Untitled*
-src/kasper.egg-info/
-src/kasper/__pycache__/
+src/polyoligo.egg-info/
+src/polyoligo/__pycache__/
 tests/__pycache__/
 profile*
 webapp/uploads/
