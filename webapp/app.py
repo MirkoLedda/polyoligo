@@ -171,8 +171,7 @@ def pcr():
     exe = "polyoligo-pcr"
     if request.method == 'POST':
         include_vcf = False
-        kwargs_names = ["roi", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth",
-                        "tm_delta", "primer3"]
+        kwargs_names = ["roi", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "primer3"]
         kwargs = {}
         for kwargs_name in kwargs_names:
             kwargs[kwargs_name] = None
@@ -217,7 +216,6 @@ def pcr():
                      }
         kwargs["depth"] = depth_map[kwargs["depth"]]
 
-        kwargs["tm_delta"] = float(request.form.get("tm_delta"))
         kwargs["seed"] = int(request.form.get("seed"))
 
         offtarget_size = parse_range(request.form.get("offtarget_size"))
@@ -300,7 +298,6 @@ def pcr():
             kwargs["reference"],
             "-n {}".format(kwargs["n"]),
             "--depth {}".format(kwargs["depth"]),
-            "--tm_delta {}".format(kwargs["tm_delta"]),
             "--primer3 {}".format(primer3_yaml),
             "--seed {}".format(kwargs["seed"]),
             "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
@@ -332,8 +329,7 @@ def kasp():
     exe = "polyoligo-kasp"
     if request.method == 'POST':
         include_vcf = False
-        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "dye1", "dye2",
-                        "tm_delta"]
+        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "dye1", "dye2"]
         kwargs = {}
         for kwargs_name in kwargs_names:
             kwargs[kwargs_name] = None
@@ -390,7 +386,6 @@ def kasp():
                      }
         kwargs["depth"] = depth_map[kwargs["depth"]]
 
-        kwargs["tm_delta"] = float(request.form.get("tm_delta"))
         kwargs["seed"] = int(request.form.get("seed"))
 
         offtarget_size = parse_range(request.form.get("offtarget_size"))
@@ -410,7 +405,6 @@ def kasp():
             "--depth {}".format(kwargs["depth"]),
             "--dye1 {}".format(kwargs["dye1"]),
             "--dye2 {}".format(kwargs["dye2"]),
-            "--tm_delta {}".format(kwargs["tm_delta"]),
             "--seed {}".format(kwargs["seed"]),
             "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
             "--offtarget_max_size {}".format(kwargs["offtarget_max_size"]),
@@ -440,8 +434,7 @@ def caps():
     exe = "polyoligo-caps"
     if request.method == 'POST':
         include_vcf = False
-        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes", "fragment_min_size",
-                        "tm_delta"]
+        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes", "fragment_min_size"]
         kwargs = {}
         for kwargs_name in kwargs_names:
             kwargs[kwargs_name] = None
@@ -505,7 +498,6 @@ def caps():
                      }
         kwargs["depth"] = depth_map[kwargs["depth"]]
 
-        kwargs["tm_delta"] = float(request.form.get("tm_delta"))
         kwargs["seed"] = int(request.form.get("seed"))
 
         offtarget_size = parse_range(request.form.get("offtarget_size"))
@@ -524,7 +516,6 @@ def caps():
             "-n {}".format(kwargs["n"]),
             "--depth {}".format(kwargs["depth"]),
             "--fragment_min_size {}".format(kwargs["fragment_min_size"]),
-            "--tm_delta {}".format(kwargs["tm_delta"]),
             "--seed {}".format(kwargs["seed"]),
             "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
             "--offtarget_max_size {}".format(kwargs["offtarget_max_size"]),

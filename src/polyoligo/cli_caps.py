@@ -155,8 +155,9 @@ def parse_args(inputargs):
         metavar="<FLOAT>",
         type=float,
         default=5.0,
-        help="The minimum difference in melting temperature between the primer tm and the various "
-             "structures that could form (homo/heterodimer and hairpins).",
+        # help="The minimum difference in melting temperature between the primer tm and the various "
+        #      "structures that could form (homo/heterodimer and hairpins).",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--offtarget_min_size",
