@@ -394,7 +394,7 @@ def main(strcmd=None):
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
     fp_out = join(out_path, args.output + ".txt")
-    markers.write_report(fp_out)
+    markers.write_kasp_report(fp_out)
 
     if not args.debug:
         shutil.rmtree(temp_path)

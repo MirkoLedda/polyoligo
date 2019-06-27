@@ -366,6 +366,9 @@ def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_prim
     flag_continue = True
     while flag_continue:
 
+        if len(p3_repo) == 0:
+            flag_continue = False
+
         for pp in p3_repo:
 
             if len(pps_repo) == n_primers:  # We have enough primers

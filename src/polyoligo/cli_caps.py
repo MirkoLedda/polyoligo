@@ -290,6 +290,15 @@ def main(strcmd=None):
 
     logger.info("Number of target markers = {}".format(len(markers)))
 
+    # Read enzymes if provided
+    if args.enzymes == "":
+        included_enzymes = None
+    else:
+        included_enzymes = []
+        with open(args.enzymes, "r") as f:
+            for line in f:
+                included_enzymes.append(line.strip())
+
     # Init a VCF object if a file is provided
     if args.vcf == "":
         vcf_obj = None
@@ -344,7 +353,7 @@ def main(strcmd=None):
             "fp_out": join(temp_path, marker.name + ".txt"),
             "blast_db": blast_db,
             "muscle": muscle,
-            "included_enzymes": args.enzymes,
+            "included_enzymes": included_enzymes,
             "n_primers": args.n_primers,
             "p3_search_depth": args.depth,
             "tm_delta": args.tm_delta,
@@ -379,7 +388,7 @@ def main(strcmd=None):
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
     fp_out = join(out_path, args.output + ".txt")
-    markers.write_report(fp_out)
+    markers.write_caps_report(fp_out)
 
     if not args.debug:
         shutil.rmtree(temp_path)

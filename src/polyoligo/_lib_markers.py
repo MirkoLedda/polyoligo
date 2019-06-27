@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import os
 
-from . import lib_blast, lib_utils, _lib_kasp
+from . import lib_blast, lib_utils, _lib_kasp, _lib_caps
 
 logger = logging.getLogger(__name__)  # Initialize the logger
 
@@ -298,8 +298,16 @@ class Markers:
 
         self.upload_fasta_ids(fasta_ids)  # Store FASTA ID of the markers in each FASTA file
 
-    def write_report(self, fp_out):
+    def write_kasp_report(self, fp_out):
         _lib_kasp.print_report_header(fp_out)
+        with open(fp_out, "a") as f:
+            for marker in self.markers:
+                with open(join(self.blast_db.temporary, marker.name + ".txt"), "r") as f_marker:
+                    for line in f_marker:
+                        f.write(line)
+
+    def write_caps_report(self, fp_out):
+        _lib_caps.print_report_header(fp_out)
         with open(fp_out, "a") as f:
             for marker in self.markers:
                 with open(join(self.blast_db.temporary, marker.name + ".txt"), "r") as f_marker:

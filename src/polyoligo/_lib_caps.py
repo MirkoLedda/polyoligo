@@ -30,6 +30,7 @@ class CAPS:
         self.substrings = None
         self.enzymes = []
         self.valid_enzymes = None
+        self.valid_enzymes_list = None
 
         enzymes = self.load_enzymes()
 
@@ -82,21 +83,26 @@ class CAPS:
         mseql = list(mseq)
         mseql[self.marker_pos] = self.marker.alt
         self.seqs = {
-            "F": mseq,
-            "R": "".join(mseql),
+            "REF": mseq,
+            "ALT": "".join(mseql),
         }
 
         self.substrings = {"REF": {}, "ALT": {}}
         for i in np.flip(range(1, self._get_recognition_site_max_length() + 1)):
-            self.substrings["REF"][i] = self.seqs["REF"][(self.marker_pos - (i - 1)):(self.marker_pos + (i + 1))]
-            self.substrings["ALT"][i] = self.seqs["ALT"][(self.marker_pos - (i - 1)):(self.marker_pos + (i + 1))]
+            self.substrings["REF"][i] = self.seqs["REF"][(self.marker_pos - (i - 1)):(self.marker_pos + (i + 1) + 1)]
+            self.substrings["ALT"][i] = self.seqs["ALT"][(self.marker_pos - (i - 1)):(self.marker_pos + (i + 1) + 1)]
 
     def find_valid_enzymes(self):
         self.valid_enzymes = []
+        self.valid_enzymes_list = []
 
         for enzyme in self.enzymes:
-            if self.will_it_single_cut(self.seqs["REF"], enzyme) and not self.will_it_cut(self.seqs["ALT"], enzyme):
+            flag_ref = self.will_it_single_cut(self.substrings["REF"][enzyme["n"]], enzyme)
+            flag_alt = self.will_it_cut(self.substrings["ALT"][enzyme["n"]], enzyme)
+
+            if flag_ref and flag_alt:
                 self.valid_enzymes.append(enzyme)
+                self.valid_enzymes_list.append(enzyme["name"])
 
     @staticmethod
     def will_it_cut(seq, enzyme):
@@ -169,7 +175,11 @@ def print_report(pcr, caps, fp, delimiter="\t"):
     for pt in primer_type_ordering:
         seq_ids[pt] = []
 
-    with open(fp, "a") as f:
+    enzyme_str = ",".join(caps.valid_enzymes_list)
+    if enzyme_str == "":
+        enzyme_str = "NA"
+
+    with open(fp, "w") as f:
         for i in sorted_scores:
             for pp in pcr.pps_pruned[i]:
                 pp.id = ppid
@@ -208,7 +218,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                         int(pcr.pos),
                         pcr.ref,
                         pcr.alt,
-                        ",".join(caps.valid_enzymes),
+                        enzyme_str,
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
                         d,
@@ -290,12 +300,13 @@ def main(kwarg_dict):
         marker=marker,
         included_enzymes=included_enzymes,
     )
+
     caps.find_valid_enzymes()
     logger_msg += "Number of possible restriction enzymes: {}\n".format(caps.valid_enzymes)
 
     # Set target in PRIMER3
     lib_primer3.set_globals(
-        SEQUENCE_TARGET=[caps.marker_pos - 50, 101],
+        SEQUENCE_TARGET=[max([1, caps.marker_pos - 49]), 101],
     )
 
     # Align homologs to the target sequence
@@ -334,40 +345,43 @@ def main(kwarg_dict):
 
     # Design primers
     pcr = PCR(marker.name, marker.chrom, marker.pos1, marker.ref, marker.alt)
-    map_names = {
-        "mism_mut": "Variants excluded | Homologs specific",
-        "partial_mism_mut": "Variants excluded | Homologs partial spec",
-        "all_mut": "Variants excluded | Unspecific",
-        "mism": "Variants included | Homologs specific",
-        "partial_mism": "Variants included | Homologs partial spec",
-        "all": "Variants included | Unspecific",
-    }
-    # Set the search mask ordering
-    if len(marker.mutations) > 0:
-        search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
-    else:
-        search_types = ["mism", "partial_mism", "all"]
 
-    for search_type in search_types:
-        if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
-            n_before = len(pcr.pps)
-            pcr.pps = _lib_pcr.design_primers(
-                pps_repo=pcr.pps,  # Primer pair repository
-                target_seq=marker.seq,
-                target_chrom=marker.chrom,
-                target_start=marker.start,
-                ivs=ivs[search_type],
-                n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
-            )
-            n_new = len(pcr.pps) - n_before
-            logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
+    # Only design primers if a restriction enzyme exists
+    if len(caps.valid_enzymes) > 0:
+        map_names = {
+            "mism_mut": "Variants excluded | Homologs specific",
+            "partial_mism_mut": "Variants excluded | Homologs partial spec",
+            "all_mut": "Variants excluded | Unspecific",
+            "mism": "Variants included | Homologs specific",
+            "partial_mism": "Variants included | Homologs partial spec",
+            "all": "Variants included | Unspecific",
+        }
+        # Set the search mask ordering
+        if len(marker.mutations) > 0:
+            search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
+        else:
+            search_types = ["mism", "partial_mism", "all"]
 
-    hit_cnts, valid_hit_cnts = pcr.check_offtargeting(blast_db, debug=debug)  # Check for off-targets
+        for search_type in search_types:
+            if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
+                n_before = len(pcr.pps)
+                pcr.pps = _lib_pcr.design_primers(
+                    pps_repo=pcr.pps,  # Primer pair repository
+                    target_seq=marker.seq,
+                    target_chrom=marker.chrom,
+                    target_start=marker.start,
+                    ivs=ivs[search_type],
+                    n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
+                )
+                n_new = len(pcr.pps) - n_before
+                logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
 
-    # Report hit counts
-    logger_msg += "Offtarget hits across the genome\n"
-    logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
-    logger_msg += "      Reverse : {:d}\n".format(valid_hit_cnts["R"])
+        hit_cnts, valid_hit_cnts = pcr.check_offtargeting(blast_db, debug=debug)  # Check for off-targets
+
+        # Report hit counts
+        logger_msg += "Offtarget hits across the genome\n"
+        logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
+        logger_msg += "      Reverse : {:d}\n".format(valid_hit_cnts["R"])
 
     pcr.add_mutations(marker.mutations)  # List mutations in primers
     pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
@@ -376,7 +390,6 @@ def main(kwarg_dict):
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
-    print_report_header(fp_out)
     print_report(pcr, caps, fp_out)
 
 
