@@ -9,6 +9,7 @@ from src.polyoligo import cli_kasp
 with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
+# STD
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
     KWARGS["marker"],
@@ -29,5 +30,4 @@ cli_kasp.main(strcmd=" ".join([
     "--primer3 {}".format(KWARGS["primer3_kasp"]),
     "-nt {}".format(KWARGS["nt"]),
     "--debug",
-
 ]))

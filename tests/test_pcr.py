@@ -9,6 +9,7 @@ from src.polyoligo import cli_pcr
 with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
+# STD
 cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
     KWARGS["roi"],
@@ -27,5 +28,4 @@ cli_pcr.main(strcmd=" ".join([
     "--primer3 {}".format(KWARGS["primer3_pcr"]),
     "-nt {}".format(KWARGS["nt"]),
     "--debug",
-
 ]))

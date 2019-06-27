@@ -9,6 +9,7 @@ from src.polyoligo import cli_caps
 with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
+# STD
 cli_caps.main(strcmd=" ".join([
     "polyoligo-caps",
     KWARGS["marker"],
@@ -29,5 +30,4 @@ cli_caps.main(strcmd=" ".join([
     "--primer3 {}".format(KWARGS["primer3_caps"]),
     "-nt {}".format(KWARGS["nt"]),
     "--debug",
-
 ]))
