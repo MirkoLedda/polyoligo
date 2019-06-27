@@ -6,9 +6,15 @@ import os
 import json
 from copy import deepcopy
 import re
+from Bio import Seq
 
 IUPAC_DNA_REGEX = "^[atgcrynmkATGCRYNMK]+$"
 IUPAC_RNA_REGEX = "^[augcrynmkAUGCRYNMK]+$"
+
+IUPAC_DNA = Seq.IUPAC.IUPACData.ambiguous_dna_values
+IUPAC_DNA_I = {}
+for k, v in IUPAC_DNA.items():
+    IUPAC_DNA_I[v] = k
 
 
 def round_tidy(x, n):
@@ -166,3 +172,20 @@ def is_dna(x):
         return True
     else:
         return bool(re.match(IUPAC_DNA_REGEX, x))
+
+
+def seqs2ambiguous_dna(seqs):
+    """Takes a list of same length sequences and returns their ambiguous form"""
+    nucs = list(map(set, zip(*seqs)))
+    nucs = ["".join(sorted(list(nuc))) for nuc in nucs]
+
+    seq_amb = []
+    for nuc in nucs:
+        try:
+            seq_amb.append(IUPAC_DNA_I[nuc])
+        except KeyError:
+            seq_amb.append("N")
+
+    seq_amb = "".join(seq_amb)
+
+    return seq_amb

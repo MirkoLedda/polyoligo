@@ -470,7 +470,7 @@ def print_report_header(fp, delimiter="\t"):
         "type",
         "assay_id",
         "seq_5_3",
-        "seq_5_3_w_reporter",
+        "seq_5_3_ambiguous",
         "primer_id",
         "goodness",
         "qcode",
@@ -506,18 +506,28 @@ def print_report(pcr, fp, delimiter="\t"):
 
                 dyes = {}
                 seqs = {}
+                seqs_amb = {}
 
                 for d in pp.primers.keys():
                     dyes[d] = pp.primers[d].reporter
 
                 if pp.dir == "F":
                     seqs["REF"] = pp.primers["F"].sequence[:-1].lower() + pp.primers["F"].sequence[-1]
+                    seqs_amb["REF"] = pp.primers["F"].sequence_ambiguous[:-1].lower() + \
+                                      pp.primers["F"].sequence_ambiguous[-1]
                     seqs["COM"] = pp.primers["R"].sequence.lower()
+                    seqs_amb["COM"] = pp.primers["R"].sequence_ambiguous[:-1].lower() + \
+                                      pp.primers["R"].sequence_ambiguous[-1]
                 else:
                     seqs["COM"] = pp.primers["F"].sequence.lower()
+                    seqs_amb["COM"] = pp.primers["F"].sequence_ambiguous.lower()
                     seqs["REF"] = pp.primers["R"].sequence[:-1].lower() + pp.primers["R"].sequence[-1]
+                    seqs_amb["REF"] = pp.primers["R"].sequence_ambiguous[:-1].lower() + \
+                                      pp.primers["R"].sequence_ambiguous[-1]
 
                 seqs["ALT"] = pp.primers["A"].sequence[:-1].lower() + pp.primers["A"].sequence[-1]
+                seqs_amb["ALT"] = pp.primers["A"].sequence_ambiguous[:-1].lower() + \
+                                  pp.primers["A"].sequence_ambiguous[-1]
 
                 curr_seq_ids = {}
 
@@ -573,8 +583,8 @@ def print_report(pcr, fp, delimiter="\t"):
                         direction,
                         ptype,
                         pp.id,
-                        seqs[ptype],
                         dyes[d] + seqs[ptype],
+                        dyes[d] + seqs_amb[ptype],
                         pcr.snp_id + "_" + curr_seq_ids[ptype],
                         pp.goodness,
                         pp.qcode,

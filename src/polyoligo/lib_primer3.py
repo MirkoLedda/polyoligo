@@ -9,7 +9,7 @@ import sys
 from os.path import join
 import os
 
-from . import lib_blast
+from . import lib_blast, lib_utils
 
 # Default Primer3 globals
 PRIMER3_GLOBALS = {}
@@ -39,6 +39,7 @@ class Primer:
         self.max_aaf = 0  # Max alternative allele frequency for mutations within the primer
         self.nN = 0  # Number of N's in the primer sequence
         self.seed = None  # Sequence of the seed region
+        self.sequence_ambiguous = None  # Sequence with mutations encoded
 
         # Attributes shared with PRIMER3
         self.sequence = None
@@ -49,7 +50,7 @@ class Primer:
         self.self_end_th = None
 
         # Set attributes from kwargs
-        kwargs2attr_deep(self, kwargs)
+        lib_utils.kwargs2attr_deep(self, kwargs)
 
     def calc_thermals(self):
         if not self.has_thermals:
@@ -138,12 +139,23 @@ class PrimerPair:
         # Check each primer individually
         for d in self.primers.keys():
             window = np.arange(self.primers[d].start, self.primers[d].stop + 1)
+            seqlist = list(self.primers[d].sequence)
+            self.primers[d].sequence_ambiguous = [self.primers[d].sequence]
 
             for m in mutations:
                 if m.pos in window:
-                    mut_txt = "{}{:d}{}:{}".format(m.ref, m.pos, "/".join(m.alt), round_tidy(m.aaf, 2))
+                    mut_txt = "{}{:d}{}:{}".format(m.ref, m.pos, "/".join(m.alt), lib_utils.round_tidy(m.aaf, 2))
+                    mut_seq = deepcopy(seqlist)
+                    ppos = m.pos-self.primers[d].start
+                    for malt in m.alt:
+                        mut_seq[ppos:(ppos+len(m.ref))] = list(malt)
+
+                        if len(mut_seq) == len(seqlist):
+                            self.primers[d].sequence_ambiguous.append("".join(mut_seq))
+
                     self.primers[d].mutations.append(mut_txt)
                     self.primers[d].max_aaf = np.max([self.primers[d].max_aaf, m.aaf])
+            self.primers[d].sequence_ambiguous = lib_utils.seqs2ambiguous_dna(self.primers[d].sequence_ambiguous)
 
         # Check indels in the PCR product
         window = np.arange(self.primers["F"].start, self.primers["R"].stop + 1)
@@ -475,25 +487,3 @@ def set_primer_seed(v):
     global PRIMER_SEED
     PRIMER_SEED = v
 
-
-def kwargs2attr_deep(obj, kwargs):
-    """Deep copy attributes values based on keyword arguments. Assign only if the attribute already exists in obj."""
-    if kwargs is None:
-        return
-
-    if not isinstance(kwargs, dict):
-        raise TypeError("Attempted to set arguments not using a dictionary.")
-
-    attr = obj.__dict__.keys()
-    for key in kwargs.keys():
-        if key in attr:
-            setattr(obj, key, deepcopy(kwargs[key]))
-
-
-def round_tidy(x, n):
-    """Return 'x' rounded to 'n' significant digits."""
-    y = np.abs(x)
-    if y <= sys.float_info.min:
-        return 0.0
-    else:
-        return np.round(x, int(n - np.ceil(np.log10(y))))
