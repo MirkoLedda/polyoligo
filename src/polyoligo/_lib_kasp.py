@@ -474,7 +474,6 @@ def print_report_header(fp, delimiter="\t"):
         "primer_id",
         "goodness",
         "qcode",
-        "dye",
         "length",
         "prod_size",
         "tm",

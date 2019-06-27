@@ -263,7 +263,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(delimiter.join(fields + 20 * ["NA"]) + "\n")
+            f.write(delimiter.join(fields + 21 * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")

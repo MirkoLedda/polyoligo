@@ -4,7 +4,7 @@ from Bio.Seq import Seq
 from os.path import join
 from primer3.thermoanalysis import ThermoAnalysis
 
-from . import lib_blast
+from . import lib_blast, lib_utils
 
 
 # noinspection PyPep8Naming
@@ -388,8 +388,23 @@ class Crispr:
     @staticmethod
     def write_report_header(fp, fp_bed):
         with open(fp, "w") as f:
-            f.write(
-                "CHR START END STRAND SEQ PAM N_PERFECT_OFFTARGETS N_OFFTARGETS_12MER N_OFFTARGETS_8MER 12_MER 8_MER TM TTTT\n")
+            headers = [
+                "CHR",
+                "START",
+                "END",
+                "STRAND",
+                "SEQ",
+                "PAM",
+                "N_PERFECT_OFFTARGETS",
+                "N_OFFTARGETS_12MER",
+                "N_OFFTARGETS_8MER",
+                "12_MER",
+                "8_MER",
+                "TM",
+                "TTTT",
+            ]
+            txt = "\t".join(headers)
+            f.write("{}\n".format(txt))
 
         with open(fp_bed, "w") as f:
             f.write("")
@@ -402,7 +417,7 @@ class Crispr:
                 else:
                     str_strand = "-"
 
-                f.write("{} {} {} {} {} {} {} {} {} {} {} {:.1f} {}\n".format(
+                l = [
                     self.chrom,
                     grna.start,
                     grna.end,
@@ -414,9 +429,12 @@ class Crispr:
                     grna.n_offtargets_8mer,
                     grna.n_12mers,
                     grna.n_8mers,
-                    grna.tm,
+                    lib_utils.round_tidy(grna.tm, 1),
                     grna.T_runs,
-                ))
+                ]
+                txt = [str(i) for i in l]
+                txt = "\t".join(txt)
+                f.write("{}\n".format(txt))
 
         with open(fp_bed, "a") as f:
             for grna in self.gRNAs:

@@ -76,7 +76,6 @@ Two output files are produced:
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
 |`goodness`|Heuristic goodness score based on multiple criteria. Maximum score is 10|
 |`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings <br>t = Bad TM<br>O = Off-targets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|
-|`dye`|Name of the reporter dye|
 |`length`|Primer length|
 |`prod_size`|Expected PCR product size|
 |`tm`|Predicted primer melting temperature (based on a NN thermodynamic model with SantaLucia et al, 1998 parameters)|
