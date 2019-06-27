@@ -67,6 +67,7 @@ Two output files are produced:
 |`direction`|Direction of the primer as F/R for forward/reverse, respectively|
 |`assay_id`|ID of the primer pairs|
 |`seq5_3`|Sequence of the primer in a 5'-3' direction|
+|`seq_5_3_ambiguous`|Sequence of the primer in a 5'-3' direction with ambiguous nucleotides for mutations (no indels)|
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
 |`goodness`|Heuristic goodness score based on multiple criteria. Maximum score is 10|
 |`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings <br>t = Bad TM<br>O = Off-targets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|

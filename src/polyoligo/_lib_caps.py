@@ -152,6 +152,7 @@ def print_report_header(fp, delimiter="\t"):
         "direction",
         "assay_id",
         "seq_5_3",
+        "seq_5_3_ambiguous",
         "primer_id",
         "goodness",
         "qcode",
@@ -235,6 +236,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                         d,
                         pp.id,
                         seqs[d],
+                        pp.primers[d].sequence_ambiguous,
                         curr_seq_ids[d],
                         pp.goodness,
                         pp.qcode,
@@ -263,7 +265,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(delimiter.join(fields + 21 * ["NA"]) + "\n")
+            f.write(delimiter.join(fields + 22 * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
