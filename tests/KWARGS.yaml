@@ -13,6 +13,9 @@ seed: 13
 offtarget_min_size: 100
 offtarget_max_size: 1000
 primer3: "sample_data/primer3_example.yaml"
-primer3_kasp: "sample_data/primer3_configs.yaml"
+primer3_kasp: "src/polyoligo/data/PRIMER3_KASP.yaml"
 dye1: "GAAGGTCGGAGTCAACGGATT"
 dye2: "GAAGGTGACCAAGTTCATGCT"
+enzymes: "sample_data/enzymes.txt"
+fragment_min_size: 50
+

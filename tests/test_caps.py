@@ -20,6 +20,8 @@ cli_caps.main(strcmd=" ".join([
     "--vcf_include {}".format(KWARGS["vcf_include"]),
     "--report_alts",
     "--depth {}".format(KWARGS["depth"]),
+    # "--enzymes {}".format(KWARGS["enzymes"]),
+    "--fragment_min_size {}".format(KWARGS["fragment_min_size"]),
     "--tm_delta {}".format(KWARGS["tm_delta"]),
     "--seed {}".format(KWARGS["seed"]),
     "--offtarget_min_size {}".format(KWARGS["offtarget_min_size"]),

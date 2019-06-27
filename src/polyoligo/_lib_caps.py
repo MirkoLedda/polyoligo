@@ -31,6 +31,7 @@ class CAPS:
         self.enzymes = []
         self.valid_enzymes = None
         self.valid_enzymes_list = None
+        self.valid_enzymes_suppliers = None
 
         enzymes = self.load_enzymes()
 
@@ -95,6 +96,7 @@ class CAPS:
     def find_valid_enzymes(self):
         self.valid_enzymes = []
         self.valid_enzymes_list = []
+        self.valid_enzymes_suppliers = []
 
         for enzyme in self.enzymes:
             flag_ref = self.will_it_single_cut(self.substrings["REF"][enzyme["n"]], enzyme)
@@ -103,6 +105,7 @@ class CAPS:
             if flag_ref and flag_alt:
                 self.valid_enzymes.append(enzyme)
                 self.valid_enzymes_list.append(enzyme["name"])
+                self.valid_enzymes_suppliers.append(enzyme["supplier"])
 
     @staticmethod
     def will_it_cut(seq, enzyme):
@@ -143,6 +146,7 @@ def print_report_header(fp, delimiter="\t"):
         "ref",
         "alt",
         "enzymes",
+        "enzyme_suppliers",
         "band_left",
         "band_right"
         "start",
@@ -180,6 +184,10 @@ def print_report(pcr, caps, fp, delimiter="\t"):
     enzyme_str = ",".join(caps.valid_enzymes_list)
     if enzyme_str == "":
         enzyme_str = "NA"
+
+    enzyme_suppliers = ",".join(caps.valid_enzymes_suppliers)
+    if enzyme_suppliers == "":
+        enzyme_suppliers = "NA"
 
     with open(fp, "w") as f:
         for i in sorted_scores:
@@ -221,6 +229,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                         pcr.ref,
                         pcr.alt,
                         enzyme_str,
+                        enzyme_suppliers,
                         int(pcr.pos) - int(pp.primers["F"].start),
                         int(pp.primers["R"].stop) - int(pcr.pos),
                         int(pp.primers[d].start),
@@ -274,6 +283,7 @@ def main(kwarg_dict):
     offtarget_size = kwarg_dict["offtarget_size"]
     primer3_configs = kwarg_dict["primer3_configs"]
     included_enzymes = kwarg_dict["included_enzymes"]
+    fragment_min_size = kwarg_dict["fragment_min_size"]
     debug = kwarg_dict["debug"]
 
     # Set primer3 globals
@@ -310,7 +320,7 @@ def main(kwarg_dict):
 
     # Set target in PRIMER3
     lib_primer3.set_globals(
-        SEQUENCE_TARGET=[max([1, caps.marker_pos - 49]), 101],
+        SEQUENCE_TARGET=[max([1, caps.marker_pos - fragment_min_size]), fragment_min_size*2 + 1],
     )
 
     # Align homologs to the target sequence

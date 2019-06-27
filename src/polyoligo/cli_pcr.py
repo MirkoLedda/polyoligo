@@ -21,6 +21,7 @@ BINARIES = {
     "win": join(os.path.dirname(__file__), "bin/win_x64"),
 }
 
+PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_PCR.yaml")
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
 
 
@@ -253,6 +254,13 @@ def main(strcmd=None):
     if args.primer3 != "":
         with open(args.primer3, "r") as f:
             primer3_configs = yaml.safe_load(f)
+
+    # Set primer3 default values for unset values
+    with open(PRIMER3_DEFAULTS, "r") as f:
+        primer3_defaults = yaml.safe_load(f)
+        for k, v in primer3_defaults.items():
+            if k not in primer3_configs.keys():  # overwrite only if not set
+                primer3_configs[k] = v
 
     # Init a VCF object if a file is provided
     if args.vcf == "":
