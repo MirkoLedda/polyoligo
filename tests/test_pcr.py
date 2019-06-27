@@ -24,7 +24,7 @@ cli_pcr.main(strcmd=" ".join([
     "--seed {}".format(KWARGS["seed"]),
     "--offtarget_min_size {}".format(KWARGS["offtarget_min_size"]),
     "--offtarget_max_size {}".format(KWARGS["offtarget_max_size"]),
-    "--primer3 {}".format(KWARGS["primer3"]),
+    "--primer3 {}".format(KWARGS["primer3_pcr"]),
     "-nt {}".format(KWARGS["nt"]),
     "--debug",
 

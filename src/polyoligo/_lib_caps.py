@@ -316,7 +316,7 @@ def main(kwarg_dict):
     )
 
     caps.find_valid_enzymes()
-    logger_msg += "Number of possible restriction enzymes: {}\n".format(caps.valid_enzymes)
+    logger_msg += "Possible restriction enzymes: {}\n".format(",".join(caps.valid_enzymes_list))
 
     # Set target in PRIMER3
     lib_primer3.set_globals(
