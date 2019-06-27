@@ -143,6 +143,8 @@ def print_report_header(fp, delimiter="\t"):
         "ref",
         "alt",
         "enzymes",
+        "band_left",
+        "band_right"
         "start",
         "end",
         "direction",
@@ -219,6 +221,8 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                         pcr.ref,
                         pcr.alt,
                         enzyme_str,
+                        int(pcr.pos) - int(pp.primers["F"].start),
+                        int(pp.primers["R"].stop) - int(pcr.pos),
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
                         d,
@@ -250,7 +254,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(delimiter.join(fields + 18 * ["NA"]) + "\n")
+            f.write(delimiter.join(fields + 20 * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
