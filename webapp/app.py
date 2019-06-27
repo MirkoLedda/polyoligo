@@ -189,7 +189,7 @@ def pcr():
         if kwargs["reference"] == 'Fragaria ananassa':
             include_vcf = True
 
-        # Selected populations
+        # Populations selection
         if include_vcf:
             selected_pops = []
             for i in range(9):
@@ -200,10 +200,12 @@ def pcr():
                     with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
                         for line in f:
                             selected_pops.append(line.strip())
-
-            with open(join(dest_folder, "vcf_include.txt"), "w") as f:
-                for selected_pop in selected_pops:
-                    f.write("{}\n".format(selected_pop))
+            if len(selected_pops) == 0:
+                include_vcf = False
+            else:
+                with open(join(dest_folder, "vcf_include.txt"), "w") as f:
+                    for selected_pop in selected_pops:
+                        f.write("{}\n".format(selected_pop))
 
         # Other kwargs
         kwargs["n"] = int(request.form.get("n"))
@@ -360,7 +362,7 @@ def kasp():
         kwargs["dye1"] = request.form.get("dye1")
         kwargs["dye2"] = request.form.get("dye2")
 
-        # Selected populations
+        # Populations selection
         if include_vcf:
             selected_pops = []
             for i in range(9):
@@ -371,10 +373,12 @@ def kasp():
                     with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
                         for line in f:
                             selected_pops.append(line.strip())
-
-            with open(join(dest_folder, "vcf_include.txt"), "w") as f:
-                for selected_pop in selected_pops:
-                    f.write("{}\n".format(selected_pop))
+            if len(selected_pops) == 0:
+                include_vcf = False
+            else:
+                with open(join(dest_folder, "vcf_include.txt"), "w") as f:
+                    for selected_pop in selected_pops:
+                        f.write("{}\n".format(selected_pop))
 
         # Other kwargs
         kwargs["n"] = int(request.form.get("n"))
@@ -473,7 +477,7 @@ def caps():
                 for enzyme in enzymes.strip().split():
                     f.write("{}\n".format(enzyme))
 
-        # Selected populations
+        # Populations selection
         if include_vcf:
             selected_pops = []
             for i in range(9):
@@ -484,10 +488,12 @@ def caps():
                     with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
                         for line in f:
                             selected_pops.append(line.strip())
-
-            with open(join(dest_folder, "vcf_include.txt"), "w") as f:
-                for selected_pop in selected_pops:
-                    f.write("{}\n".format(selected_pop))
+            if len(selected_pops) == 0:
+                include_vcf = False
+            else:
+                with open(join(dest_folder, "vcf_include.txt"), "w") as f:
+                    for selected_pop in selected_pops:
+                        f.write("{}\n".format(selected_pop))
 
         # Other kwargs
         kwargs["n"] = int(request.form.get("n"))
