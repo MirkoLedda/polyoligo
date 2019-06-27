@@ -131,7 +131,7 @@ def parse_range(txt):
 
 # CELERY -----------------------------------------------------------------------
 @celery.task()
-def task_kasp(strcmd, log_dest):
+def run_task(strcmd, log_dest):
     log = Log(log_dest)
     log.fetch()
     log.update_status("RUNNING")
@@ -159,38 +159,6 @@ def task_kasp(strcmd, log_dest):
         log.update_status("COMPLETED")
 
     return None
-
-
-@celery.task()
-def task_crispr(strcmd, log_dest):
-    log = Log(log_dest)
-    log.fetch()
-    log.update_status("RUNNING")
-
-    # log.message(strcmd)
-
-    try:
-        process = subprocess.Popen(strcmd, shell=True, stderr=STDOUT, stdout=subprocess.PIPE)
-        while True:
-            output = process.stdout.readline()
-            if process.poll() is not None:
-                break
-            if output:
-                msg = output.decode("utf-8")
-                if msg.startswith("INFO - nanobar - "):
-                    log.update_nanobar(msg)
-                else:
-                    log.message(msg)
-    except subprocess.CalledProcessError:
-        log.update_status("FAILED")
-
-    if not os.path.exists(join(log_dest, "output.txt")):
-        log.update_status("FAILED")
-    else:
-        log.update_status("COMPLETED")
-
-    return None
-
 
 # ROUTES -----------------------------------------------------------------------
 @app.route('/')
@@ -200,6 +168,7 @@ def home():
 
 @app.route('/pcr', methods=['GET', 'POST'])
 def pcr():
+    exe = "polyoligo-pcr"
     if request.method == 'POST':
         include_vcf = False
         kwargs_names = ["roi", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth",
@@ -323,7 +292,7 @@ def pcr():
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
-            "polyoligo-pcr",
+            exe,
             kwargs["roi"],
             join(dest_folder, "output"),
             kwargs["reference"],
@@ -349,7 +318,7 @@ def pcr():
         log.message("Job started ...")
         log.write()
 
-        task_kasp.delay(strcmd, dest_folder)
+        run_task.delay(strcmd, dest_folder)
 
         return redirect(url_for('processing', task_id=task_id))
     else:
@@ -358,6 +327,7 @@ def pcr():
 
 @app.route('/kasp', methods=['GET', 'POST'])
 def kasp():
+    exe = "polyoligo-kasp"
     if request.method == 'POST':
         include_vcf = False
         kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "dye1", "dye2",
@@ -428,7 +398,7 @@ def kasp():
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
-            "polyoligo-kasp",
+            exe,
             kwargs["markers"],
             join(dest_folder, "output"),
             kwargs["reference"],
@@ -455,15 +425,130 @@ def kasp():
         log.message("Job started ...")
         log.write()
 
-        task_kasp.delay(strcmd, dest_folder)
+        run_task.delay(strcmd, dest_folder)
 
         return redirect(url_for('processing', task_id=task_id))
     else:
         return render_template('kasp.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
+@app.route('/caps', methods=['GET', 'POST'])
+def caps():
+    exe = "polyoligo-caps"
+    if request.method == 'POST':
+        include_vcf = False
+        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes", "fragment_min_size",
+                        "tm_delta"]
+        kwargs = {}
+        for kwargs_name in kwargs_names:
+            kwargs[kwargs_name] = None
+
+        task_id, dest_folder = create_task_dest()
+        os.makedirs(dest_folder)
+
+        # Marker file
+        kwargs["markers"] = upload_file_to_server(request, "markers_file", dest_folder)
+        if kwargs["markers"] is None:
+            kwargs["markers"] = join(dest_folder, "markers.txt")
+            markers = request.form.get("markers")
+            with open(kwargs["markers"], "w") as f:
+                for line in markers:
+                    f.write(line)
+
+        # BlastDB
+        kwargs["reference"] = request.form.get("ncbi_taxid")
+        if kwargs["reference"] == "":
+            kwargs["reference"] = request.form.get("reference")
+
+        if kwargs["reference"] == 'Fragaria ananassa':
+            include_vcf = True
+
+        # Restriction fragment
+        kwargs["fragment_min_size"] = int(request.form.get("fragment_min_size"))
+
+        # Enzymes
+        enzymes = request.form.get("enzymes")
+        if enzymes:
+            kwargs["enzymes"] = join(dest_folder, "enzymes.txt")
+            with open(kwargs["enzymes"], "w") as f:
+                for enzyme in enzymes.strip().split():
+                    f.write("{}\n".format(enzyme))
+
+        # Selected populations
+        if include_vcf:
+            selected_pops = []
+            for i in range(9):
+                current_pop = "population{}".format(i)
+                fetched_pop = request.form.get(current_pop)
+
+                if fetched_pop:
+                    with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
+                        for line in f:
+                            selected_pops.append(line.strip())
+
+            with open(join(dest_folder, "vcf_include.txt"), "w") as f:
+                for selected_pop in selected_pops:
+                    f.write("{}\n".format(selected_pop))
+
+        # Other kwargs
+        kwargs["n"] = int(request.form.get("n"))
+
+        kwargs["depth"] = request.form.get("depth")
+        depth_map = {"superficial": 2.5,
+                     "standard": 10,
+                     "deep": 25,
+                     }
+        kwargs["depth"] = depth_map[kwargs["depth"]]
+
+        kwargs["tm_delta"] = float(request.form.get("tm_delta"))
+        kwargs["seed"] = int(request.form.get("seed"))
+
+        offtarget_size = parse_range(request.form.get("offtarget_size"))
+        kwargs["offtarget_min_size"] = offtarget_size[0]
+        kwargs["offtarget_max_size"] = offtarget_size[1]
+
+        # todo rename depth
+        kwargs["depth"] = kwargs["depth"]
+        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
+
+        strcmd = [
+            exe,
+            kwargs["markers"],
+            join(dest_folder, "output"),
+            kwargs["reference"],
+            "-n {}".format(kwargs["n"]),
+            "--depth {}".format(kwargs["depth"]),
+            "--fragment_min_size {}".format(kwargs["fragment_min_size"]),
+            "--tm_delta {}".format(kwargs["tm_delta"]),
+            "--seed {}".format(kwargs["seed"]),
+            "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
+            "--offtarget_max_size {}".format(kwargs["offtarget_max_size"]),
+            "-nt 1",
+            "--webapp",
+        ]
+
+        if include_vcf:
+            # TODO: upload proper file
+            strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], "vcf.txt.gz"))]
+            strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
+
+        if kwargs["enzymes"]:
+            strcmd += ["--enzymes {}".format(kwargs["enzymes"])]
+
+        strcmd = " ".join(strcmd)
+        log = Log(dest_folder)
+        log.message("File(s) successfully uploaded ...")
+        log.message("Job started ...")
+        log.write()
+
+        run_task.delay(strcmd, dest_folder)
+
+        return redirect(url_for('processing', task_id=task_id))
+    else:
+        return render_template('caps.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
 @app.route('/crispr', methods=['GET', 'POST'])
 def crispr():
+    exe = "polyoligo-crispr"
     if request.method == 'POST':
 
         kwargs_names = ["roi", "reference"]
@@ -484,7 +569,7 @@ def crispr():
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
-            "polyoligo-crispr",
+            exe,
             kwargs["roi"],
             join(dest_folder, "output"),
             kwargs["reference"],
@@ -498,7 +583,7 @@ def crispr():
         log.message("Job started ...")
         log.write()
 
-        task_crispr.delay(strcmd, dest_folder)
+        run_task.delay(strcmd, dest_folder)
 
         return redirect(url_for('processing', task_id=task_id))
     else:
