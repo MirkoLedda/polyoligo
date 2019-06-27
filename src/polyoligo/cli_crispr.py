@@ -174,7 +174,7 @@ def main(strcmd=None):
     crispr.fetch_roi()
 
     if args.webapp:
-        logger.info("nanobar - {:d}/{:d}".format(0, len(crispr.gRNAs)))
+        logger.info("nanobar - {:d}/{:d}".format(0, 1))
 
     # Find putative guide RNAs
     logger.info("Searching guide RNAs - PAM: {} - Region size: {} nts ...".format(crispr.pam, len(crispr.seq)))
