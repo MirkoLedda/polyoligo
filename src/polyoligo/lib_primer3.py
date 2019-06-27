@@ -241,21 +241,17 @@ class PCR:
 
     def get_unique_seed_sequences(self):
         self.get_seeds()
-        seqs_dict = {
-            "F": [],
-            "R": [],
-        }
+        seqs = []
 
         # List all sequences
         for pp in self.pps:
-            seqs_dict["F"].append(pp.primers["F"].seed)
-            seqs_dict["R"].append(pp.primers["R"].seed)
+            seqs.append(pp.primers["F"].seed)
+            seqs.append(pp.primers["R"].seed)
 
         # Get unique sequences
-        for d, seqs in seqs_dict.items():
-            seqs_dict[d] = list(np.unique(seqs))
+        seqs = list(np.unique(seqs))
 
-        return seqs_dict
+        return seqs
 
     # noinspection PyPep8Naming
     def check_offtargeting(self, blast_db, debug=False):
@@ -272,7 +268,7 @@ class PCR:
             # Lookup forward primers
             fp_query_F = join(blast_db.temporary, "{}_blast_F.fa".format(blast_db.job_id))
             fp_out_F = join(blast_db.temporary, "{}_blast_F.json".format(blast_db.job_id))
-            lib_blast.write_fasta(pseqs["F"], fp_query_F)
+            lib_blast.write_fasta(pseqs, fp_query_F)
             blast_db.blastn(
                 fp_query=fp_query_F,
                 fp_out=fp_out_F,
@@ -292,7 +288,7 @@ class PCR:
             # Lookup reverse primers
             fp_query_R = join(blast_db.temporary, "{}_blast_R.fa".format(blast_db.job_id))
             fp_out_R = join(blast_db.temporary, "{}_blast_R.json".format(blast_db.job_id))
-            lib_blast.write_fasta(pseqs["R"], fp_query_R)
+            lib_blast.write_fasta(pseqs, fp_query_R)
             blast_db.blastn(
                 fp_query=fp_query_R,
                 fp_out=fp_out_R,
@@ -314,7 +310,7 @@ class PCR:
                 valid_hits[d] = {}
 
                 for k, hit in hits[d].items():
-                    pseq = pseqs[d][int(k)]  # Sequence of the primer/blast query
+                    pseq = pseqs[int(k)]  # Sequence of the primer/blast query
                     valid_hits[d][pseq] = {}
 
                     for chrom, shit in hit.items():
@@ -329,10 +325,18 @@ class PCR:
 
             # Check for each primer pair if PCR products are made at offtarget sites
             for pp in self.pps:
-                pp_hits = {
-                    "F": deepcopy(valid_hits["F"][pp.primers["F"].seed]),
-                    "R": deepcopy(valid_hits["R"][pp.primers["R"].seed]),
-                }
+
+                # Combine Forward and Reverse hits to search both directions
+                pp_hits = {}
+                for d in ["F", "R"]:
+                    pp_hits[d] = {}
+                    for chrom, v in valid_hits[d][pp.primers["F"].seed].items():
+                        pp_hits[d][chrom] = deepcopy(v)
+                    for chrom, v in valid_hits[d][pp.primers["R"].seed].items():
+                        if chrom in pp_hits[d].keys():
+                            pp_hits[d][chrom] += deepcopy(v)
+                        else:
+                            pp_hits[d][chrom] = deepcopy(v)
 
                 offtargets = self.list_offtargets(pp_hits)
 
