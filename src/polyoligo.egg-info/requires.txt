@@ -1,8 +1,0 @@
-biopython
-numpy
-pandas
-pysam
-PyVCF
-PyYAML
-tqdm
-primer3-py
