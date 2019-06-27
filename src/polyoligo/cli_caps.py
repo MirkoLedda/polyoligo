@@ -287,7 +287,7 @@ def main(strcmd=None):
         MARKER_FLANKING_N=MARKER_FLANKING_N,
         MIN_ALIGN_LEN=MIN_ALIGN_LEN,
         MIN_ALIGN_ID=MIN_ALIGN_ID,
-        HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+        HOMOLOG_FLANKING_N=max([HOMOLOG_FLANKING_N, args.fragment_min_size + 500])
     )
 
     # Read markers
