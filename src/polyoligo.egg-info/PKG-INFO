@@ -6,22 +6,18 @@ Home-page: UNKNOWN
 Author: Mirko Ledda
 Author-email: maledda@ucdavis.edu
 License: BSD-2
-Description: # `polyoligo`
+Description: # `PolyOligo`
         
         Design oligos for complex genomes.
         
         ## What Is It?
         
-        A cross-platform Python-based set of tools to design oligonucleotides on complex genomes.
+        A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Can use known **mutations** across populations to refine designs.
         
-        Handles polyploid organims and genomic duplications, as well as known mutations within a selected population.
+        ## Included binaries
         
-        Threads are fully parallelized to benefit from multi-core system. 
-        
-        ## What Is Included?
-        
-        * **`polyoligo-kasp`**: Design optimal primers for genotyping assays using Kompetitive allele specific PCR (KASP).
-        <!--* **`polyoligo-pcr`**: Design optimal primers for PCR.-->
+        * **`polyoligo-kasp`**: Design primers for genotyping assays using Kompetitive allele specific PCR (KASP).
+        * **`polyoligo-pcr`**: Design primers for PCR.
         <!--* **`polyoligo-snpseq`**: Design optimal primers for SNP-Seq assays.-->
         * **`polyoligo-crispr`**: Design gRNAs for CRISPR/Cas9 assays.
         
@@ -87,7 +83,7 @@ Description: # `polyoligo`
         
         ## Reporting bugs and requesting features
         
-        **`polyoligo`** is actively supported and all changes are listed in the [CHANGELOG](CHANGES.md). To report a bug open a ticket in the [issues tracker](https://github.com/MirkoLedda/polyoligo/issues). Features can be requested by opening a ticket in the [pull request](https://github.com/MirkoLedda/polyoligo/pulls).
+        This software is actively supported and all changes are listed in the [CHANGELOG](CHANGES.md). To report a bug open a ticket in the [issues tracker](https://github.com/MirkoLedda/polyoligo/issues). Features can be requested by opening a ticket in the [pull request](https://github.com/MirkoLedda/polyoligo/pulls).
         
         <!-- ## Versioning
         

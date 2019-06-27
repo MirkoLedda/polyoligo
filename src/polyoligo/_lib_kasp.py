@@ -256,7 +256,7 @@ class PCR(lib_primer3.PCR):
                 if ontarget in offtargets:
                     _ = offtargets.pop(offtargets.index(ontarget))
                 else:
-                    sys.exit("ERROR: Oups, something went wrong. Please contact the developer.")
+                    pass
 
                 # Rename offtargets to adjust for seed padding
                 offtargets_parsed = []

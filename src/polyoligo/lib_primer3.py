@@ -328,7 +328,8 @@ class PCR:
                 if ontarget in offtargets:
                     _ = offtargets.pop(offtargets.index(ontarget))
                 else:
-                    sys.exit("ERROR: Oups, something went wrong. Please contact the developer.")
+                    pass
+                    # sys.exit("ERROR: Oups, something went wrong. Please contact the developer.")
 
                 # Rename offtargets to adjust for seed padding
                 offtargets_parsed = []

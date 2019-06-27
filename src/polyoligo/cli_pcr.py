@@ -150,7 +150,7 @@ def parse_args(inputargs):
         "--offtarget_max_size",
         metavar="<INT>",
         type=int,
-        default=1000,
+        default=10000,
         help="Maximum size of offtarget PCR products.",
     )
     parser.add_argument(

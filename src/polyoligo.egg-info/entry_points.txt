@@ -1,4 +1,5 @@
 [console_scripts]
+polyoligo-caps = polyoligo.cli_caps:main
 polyoligo-crispr = polyoligo.cli_crispr:main
 polyoligo-kasp = polyoligo.cli_kasp:main
 polyoligo-pcr = polyoligo.cli_pcr:main
