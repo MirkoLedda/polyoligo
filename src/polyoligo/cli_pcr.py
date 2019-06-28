@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_pcr, _logger_config, lib_utils, lib_vcf, _version, _lib_markers
+from . import lib_blast, _lib_pcr, _logger_config, lib_utils, lib_vcf, _version
 
 __version__ = _version.__version__
 
@@ -286,54 +286,25 @@ def main(strcmd=None):
     )
     roi.fetch_roi()
 
-    # Create two mock markers for the left and right window
-    markers = _lib_markers.Markers(
-        blast_db=blast_db,
+    # Create windows where to design primers
+    roi.get_primer_windows(
         MARKER_FLANKING_N=MARKER_FLANKING_N,
         MIN_ALIGN_LEN=MIN_ALIGN_LEN,
         MIN_ALIGN_ID=MIN_ALIGN_ID,
         HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
     )
 
-    al = roi.start - HOMOLOG_FLANKING_N
-    ar = roi.end + HOMOLOG_FLANKING_N
-    markers.markers = [
-        _lib_markers.Marker(
-            chrom=roi.chrom,
-            pos=al - 1,  # to 0-based indexing
-            ref_allele="X",
-            alt_allele="X",
-            name="winleft",
-            HOMOLOG_FLANKING_N=markers.HOMOLOG_FLANKING_N,
-        ),
-        _lib_markers.Marker(
-            chrom=roi.chrom,
-            pos=ar - 1,  # to 0-based indexing
-            ref_allele="X",
-            alt_allele="X",
-            name="winright",
-            HOMOLOG_FLANKING_N=markers.HOMOLOG_FLANKING_N,
-        )
-    ]
-
     # Find homologs
     logger.info("Finding homeologs/duplications by sequence homology ...")
-    seqs = markers.get_marker_flanks()
-    markers.find_homologs(seqs)
+    roi.find_homologs()
 
     if args.webapp:
         logger.info("nanobar - {:d}/{:d}".format(33, 100))
 
-    # Merge markers with the roi object
-    roi.fasta_names = {
-        "winleft": markers.markers[0].fasta_name,
-        "winright": markers.markers[1].fasta_name,
-    }
-
     # Upload VCF information
     if vcf_obj is not None:
         logger.info("Uploading the VCF file ...")
-        markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
+        roi.pwindows.upload_mutations(vcf_obj)  # Upload mutations in the primer regions
 
         # Write subjects containing alternative alleles for each mutations
         if args.report_alts:
@@ -343,13 +314,15 @@ def main(strcmd=None):
             if os.path.exists(args.report_alts):
                 os.remove(args.report_alts)
 
-            markers.print_alt_subjects(
+            roi.pwindows.print_alt_subjects(
                 vcf_obj=vcf_obj,
                 fp=args.report_alts,
             )
 
     # Upload mutations
-    roi.upload_mutations(vcf_obj, start=al-HOMOLOG_FLANKING_N, stop=ar+HOMOLOG_FLANKING_N)
+    roi.upload_mutations(vcf_obj,
+                         start=roi.pwindows.markers[0].pos-HOMOLOG_FLANKING_N,
+                         stop=roi.pwindows.markers[1].pos+HOMOLOG_FLANKING_N)
 
     # Start the search for candidate KASP primers
     logger.info("Designing primers - Region size: {} nts".format(len(roi.seq)))

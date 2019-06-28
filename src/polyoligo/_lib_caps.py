@@ -128,7 +128,7 @@ class CAPS:
             return False
 
 
-class PCR(_lib_pcr.PCR):
+class PCR(lib_primer3.PCR):
     def __init__(self, snp_id, chrom, pos, ref, alt):
         super().__init__(chrom=chrom)
         self.snp_id = snp_id

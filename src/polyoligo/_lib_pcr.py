@@ -11,7 +11,7 @@ import os
 import sys
 import pandas as pd
 
-from . import lib_blast, lib_utils, lib_primer3
+from . import lib_blast, lib_utils, lib_primer3, _lib_markers
 
 # Initialize the logger
 logger = logging.getLogger(__name__)
@@ -28,8 +28,42 @@ class ROI:
         self.n = None
         self.G = None  # Genotypes within the region
         self.mutations = []  # List of vcf_lib.Mutation objects
-        self.fasta_names = {"winleft": None, "winright": None}
-        self.win_seqs = {"winleft": None, "winright": None}
+        self.pwindows = None  # Windows where to build the primers (_lib_markers.Markers object)
+
+    def get_primer_windows(self, MARKER_FLANKING_N, MIN_ALIGN_LEN, MIN_ALIGN_ID, HOMOLOG_FLANKING_N):
+        # Create two mock markers for the left and right window
+        self.pwindows = _lib_markers.Markers(
+            blast_db=self.blast_db,
+            MARKER_FLANKING_N=MARKER_FLANKING_N,
+            MIN_ALIGN_LEN=MIN_ALIGN_LEN,
+            MIN_ALIGN_ID=MIN_ALIGN_ID,
+            HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+        )
+
+        al = self.start - HOMOLOG_FLANKING_N
+        ar = self.end + HOMOLOG_FLANKING_N
+        self.pwindows.markers = [
+            _lib_markers.Marker(
+                chrom=self.chrom,
+                pos=al - 1,  # to 0-based indexing
+                ref_allele="X",
+                alt_allele="X",
+                name="left",
+                HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+            ),
+            _lib_markers.Marker(
+                chrom=self.chrom,
+                pos=ar - 1,  # to 0-based indexing
+                ref_allele="X",
+                alt_allele="X",
+                name="right",
+                HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+            )
+        ]
+
+    def find_homologs(self):
+        seqs = self.pwindows.get_marker_flanks()
+        self.pwindows.find_homologs(seqs)
 
     def fetch_roi(self):
         query = [{
@@ -60,42 +94,6 @@ class ROI:
                 start=self.start,
                 stop=self.end,
             )
-
-
-class PCR(lib_primer3.PCR):
-    def __init__(self, chrom):
-        super().__init__([])
-        self.pps_classified = {}
-        self.pps_pruned = {}
-        self.chrom = chrom
-
-    def add_mutations(self, mutations):
-        if len(mutations) > 0:
-            for pp in self.pps:
-                pp.add_mutations(mutations)
-
-    def classify(self):
-        for pp in self.pps:
-            pp.score()
-            if pp.goodness not in self.pps_classified.keys():
-                self.pps_classified[pp.goodness] = []
-
-            self.pps_classified[pp.goodness].append(pp)
-
-    def prune(self, n):
-        nprim = 0
-        score_cats = np.sort(list(self.pps_classified.keys()))[::-1]
-
-        for score in score_cats:
-            self.pps_pruned[score] = []
-            for pp in self.pps_classified[score]:
-                if nprim < n:
-                    self.pps_pruned[score].append(pp)
-                    nprim += 1
-                else:
-                    break
-
-        return nprim
 
 
 def map_homologs(fp_aligned, target_name, target_len):
@@ -304,33 +302,34 @@ def main(kwarg_dict):
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
     # Read and align sequences for both the left and right window
-    win_maps = {"winleft": {}, "winright": {}}
-    for win_name in ["winleft", "winright"]:
-        fp_fasta = join(blast_db.temporary, win_name + ".fa")
+    for i in range(2):
+        fp_fasta = join(blast_db.temporary, roi.pwindows.markers[i].name + ".fa")
         seqs = lib_blast.read_fasta(fp_fasta)
 
-        roi.win_seqs[win_name] = seqs[roi.fasta_names[win_name]]
-        del seqs[roi.fasta_names[win_name]]
+        roi.pwindows.markers[i].seq = seqs[roi.pwindows.markers[i].fasta_name]
+        del seqs[roi.pwindows.markers[i].fasta_name]
 
         # Align homologs to the target sequence
         if len(seqs) > 49:
             # If more than 50 homoloous sequences were found, then do not run multialignment and
             # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
             mock_seqs = {
-                roi.fasta_name: roi.seq,
-                "mock": roi.seq,
+                roi.pwindows.markers[i].fasta_name: roi.pwindows.markers[i].seq,
+                "mock": roi.pwindows.markers[i].seq,
             }
             lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
-        fp_aligned = join(blast_db.temporary, win_name + "_malign.afa")
+        fp_aligned = join(blast_db.temporary, str(i) + "_malign.afa")
         muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
 
         # Map mismatches in the homeologs
-        win_maps[win_name]["all"] = np.repeat(True, len(roi.win_seqs[win_name]))
-        win_maps[win_name]["partial_mism"], win_maps[win_name]["mism"] = map_homologs(
+        roi.pwindows.markers[i].maps = dict()
+        roi.pwindows.markers[i].maps["all"] = np.repeat(True, len(roi.pwindows.markers[i].seq))
+        roi.pwindows.markers[i].maps["partial_mism"], roi.pwindows.markers[i].maps["mism"] = map_homologs(
             fp_aligned,
-            roi.fasta_names[win_name],
-            len(roi.win_seqs[win_name]))
+            roi.pwindows.markers[i].fasta_name,
+            len(roi.pwindows.markers[i].seq),
+        )
 
         # Cleanup temporary files
         if not debug:
@@ -339,17 +338,26 @@ def main(kwarg_dict):
 
     # Merge all maps
     maps = dict()
-    maps["all"] = np.concatenate(
-        [win_maps["winleft"]["all"][:-1], np.repeat(False, roi.n), win_maps["winright"]["all"][1:]])
-    maps["partial_mism"] = np.concatenate(
-        [win_maps["winleft"]["partial_mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["partial_mism"][1:]])
-    maps["mism"] = np.concatenate(
-        [win_maps["winleft"]["mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["mism"][1:]])
+    maps["all"] = np.concatenate([
+        roi.pwindows.markers[0].maps["all"][:-1],
+        np.repeat(False, roi.n),
+        roi.pwindows.markers[1].maps["all"][1:],
+    ])
+    maps["partial_mism"] = np.concatenate([
+        roi.pwindows.markers[0].maps["partial_mism"][:-1],
+        np.repeat(False, roi.n),
+        roi.pwindows.markers[1].maps["partial_mism"][1:],
+    ])
+    maps["mism"] = np.concatenate([
+        roi.pwindows.markers[0].maps["mism"][:-1],
+        np.repeat(False, roi.n),
+        roi.pwindows.markers[1].maps["mism"][1:],
+    ])
 
     # Get valid regions for the design of the primers
     ivs = {}
-    roi.start = int(roi.fasta_names["winleft"].split(":")[1].split("-")[0])
-    roi.end = int(roi.fasta_names["winright"].split(":")[1].split("-")[1])
+    roi.start = int(roi.pwindows.markers[0].fasta_name.split(":")[1].split("-")[0])
+    roi.end = int(roi.pwindows.markers[1].fasta_name.split(":")[1].split("-")[1])
     for k, mmap in maps.items():
         ivs[k] = {}
         k_mut = k + "_mut"
@@ -371,7 +379,7 @@ def main(kwarg_dict):
     roi.fetch_roi()
 
     # Design primers
-    pcr = PCR(roi.chrom)
+    pcr = lib_primer3.PCR(roi.chrom)
     map_names = {
         "mism_mut": "Variants excluded | Homologs specific",
         "partial_mism_mut": "Variants excluded | Homologs partial spec",
@@ -385,8 +393,6 @@ def main(kwarg_dict):
         search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
     else:
         search_types = ["mism", "partial_mism", "all"]
-
-    print(ivs["all"])
 
     for search_type in search_types:
         if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:

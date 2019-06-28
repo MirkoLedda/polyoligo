@@ -215,8 +215,11 @@ class PrimerPair:
 
 
 class PCR:
-    def __init__(self, primer_pairs=None):
+    def __init__(self, chrom=None, primer_pairs=None):
+        self.chrom = chrom
         self.pps = primer_pairs
+        self.pps_classified = {}
+        self.pps_pruned = {}
 
         if self.pps is None:
             self.pps = []
@@ -393,6 +396,34 @@ class PCR:
                             else:
                                 break
         return offtargets
+
+    def add_mutations(self, mutations):
+        if len(mutations) > 0:
+            for pp in self.pps:
+                pp.add_mutations(mutations)
+
+    def classify(self):
+        for pp in self.pps:
+            pp.score()
+            if pp.goodness not in self.pps_classified.keys():
+                self.pps_classified[pp.goodness] = []
+
+            self.pps_classified[pp.goodness].append(pp)
+
+    def prune(self, n):
+        nprim = 0
+        score_cats = np.sort(list(self.pps_classified.keys()))[::-1]
+
+        for score in score_cats:
+            self.pps_pruned[score] = []
+            for pp in self.pps_classified[score]:
+                if nprim < n:
+                    self.pps_pruned[score].append(pp)
+                    nprim += 1
+                else:
+                    break
+
+        return nprim
 
 
 def get_primers(primer3_seq_args, target_start=1):
