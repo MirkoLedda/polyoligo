@@ -146,9 +146,9 @@ class PrimerPair:
                 if m.pos in window:
                     mut_txt = "{}{:d}{}:{}".format(m.ref, m.pos, "/".join(m.alt), lib_utils.round_tidy(m.aaf, 2))
                     mut_seq = deepcopy(seqlist)
-                    ppos = m.pos-self.primers[d].start
+                    ppos = m.pos - self.primers[d].start
                     for malt in m.alt:
-                        mut_seq[ppos:(ppos+len(m.ref))] = list(malt)
+                        mut_seq[ppos:(ppos + len(m.ref))] = list(malt)
 
                         if len(mut_seq) == len(seqlist):
                             self.primers[d].sequence_ambiguous.append("".join(mut_seq))
@@ -387,7 +387,7 @@ class PCR:
                         if j <= i:
                             pass
                         else:
-                            delta = j-i
+                            delta = j - i
                             if (delta > MIN_OFFTARGET_SIZE) and (delta < MAX_OFFTARGET_SIZE):
                                 offtargets.append("{}:{}-{}".format(chrom, i, j))
                             else:
@@ -487,3 +487,14 @@ def set_primer_seed(v):
     global PRIMER_SEED
     PRIMER_SEED = v
 
+
+def get_exclusion_zone(v, hard_exclude=None):
+    if hard_exclude is None:
+        hard_exclude = np.array([])
+
+    exc_ixs = np.concatenate([np.where(~v)[0], hard_exclude])
+    exc_ixs = np.sort(np.unique(exc_ixs))
+
+    exc_ivs = lib_utils.list_2_ranges(exc_ixs)
+
+    return exc_ivs

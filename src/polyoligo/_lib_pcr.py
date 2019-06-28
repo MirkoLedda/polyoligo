@@ -132,48 +132,6 @@ def map_homologs(fp_aligned, target_name, target_len):
     return partial_mismatch, full_mismatch
 
 
-def get_valid_primer_regions(mmap, hard_exclude=None):
-    if hard_exclude is None:
-        hard_exclude = []
-
-    plen = lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"]
-    v = ~mmap
-    inc_ixs = []
-    for i in range(len(v) - plen + 1):
-        if np.all(v[i:(i + plen)]):
-            continue
-        else:
-            inc_ixs += list(np.arange(i, i + plen))
-    inc_ixs = np.unique(inc_ixs)
-
-    inc_ixs_pruned = []
-    for i in inc_ixs:
-        if i not in hard_exclude:
-            inc_ixs_pruned.append(i)
-    inc_ixs = np.array(inc_ixs_pruned)
-
-    valid_ivs = lib_utils.list_2_intervals(inc_ixs)
-
-    # Parse for PRIMER3
-    valid_reg = []
-
-    for valid_iv in valid_ivs:
-        valid_reg.append([
-            int(valid_iv[0] + 1) - 1,
-            int(valid_iv[1] - valid_iv[0] + 1),
-            0,
-            len(mmap),
-        ])
-        valid_reg.append([
-            0,
-            len(mmap),
-            int(valid_iv[0] + 1) - 1,
-            int(valid_iv[1] - valid_iv[0] + 1),
-        ])
-
-    return valid_reg
-
-
 def print_report_header(fp, delimiter="\t"):
     header = delimiter.join([
         "chr",
@@ -282,7 +240,7 @@ def print_report(pcr, fp, delimiter="\t"):
 def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_primers=10):
     primer3_seq_args = {
         'SEQUENCE_TEMPLATE': target_seq,
-        'SEQUENCE_PRIMER_PAIR_OK_REGION_LIST': ivs,
+        'SEQUENCE_EXCLUDED_REGION': ivs,
     }
 
     p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=target_start)
@@ -314,7 +272,6 @@ def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_prim
 
 
 def main(kwarg_dict):
-
     # kwargs to variables
     roi = kwarg_dict["roi"]
     blast_db = kwarg_dict["blast_db"]
@@ -382,9 +339,12 @@ def main(kwarg_dict):
 
     # Merge all maps
     maps = dict()
-    maps["all"] = np.concatenate([win_maps["winleft"]["all"][:-1], np.repeat(False, roi.n), win_maps["winright"]["all"][1:]])
-    maps["partial_mism"] = np.concatenate([win_maps["winleft"]["partial_mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["partial_mism"][1:]])
-    maps["mism"] = np.concatenate([win_maps["winleft"]["mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["mism"][1:]])
+    maps["all"] = np.concatenate(
+        [win_maps["winleft"]["all"][:-1], np.repeat(False, roi.n), win_maps["winright"]["all"][1:]])
+    maps["partial_mism"] = np.concatenate(
+        [win_maps["winleft"]["partial_mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["partial_mism"][1:]])
+    maps["mism"] = np.concatenate(
+        [win_maps["winleft"]["mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["mism"][1:]])
 
     # Get valid regions for the design of the primers
     ivs = {}
@@ -393,15 +353,14 @@ def main(kwarg_dict):
     for k, mmap in maps.items():
         ivs[k] = {}
         k_mut = k + "_mut"
-        ivs[k] = get_valid_primer_regions(mmap)  # Mutations not excluded
+        ivs[k] = lib_primer3.get_exclusion_zone(mmap)  # Mutations not excluded
 
         if len(roi.mutations) > 0:
             # Make a list of mutation positions based on mutation for exclusion
             mut_ixs = []
             for mutation in roi.mutations:
                 mut_ixs.append(mutation.pos - roi.start)
-            ivs[k_mut] = get_valid_primer_regions(mmap,
-                                                  hard_exclude=mut_ixs)
+            ivs[k_mut] = lib_primer3.get_exclusion_zone(mmap, hard_exclude=mut_ixs)
 
     # Set the product size range
     lib_primer3.set_globals(
@@ -426,6 +385,8 @@ def main(kwarg_dict):
         search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
     else:
         search_types = ["mism", "partial_mism", "all"]
+
+    print(ivs["all"])
 
     for search_type in search_types:
         if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:

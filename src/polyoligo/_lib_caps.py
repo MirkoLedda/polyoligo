@@ -353,11 +353,11 @@ def main(kwarg_dict):
     for k, mmap in maps.items():
         ivs[k] = {}
         k_mut = k + "_mut"
-        ivs[k] = _lib_pcr.get_valid_primer_regions(mmap)
+        ivs[k] = _lib_pcr.get_exclusion_zone(mmap)
 
         if len(marker.mutations) > 0:
-            ivs[k_mut] = _lib_pcr.get_valid_primer_regions(mmap,
-                                                           hard_exclude=marker.mutations)
+            ivs[k_mut] = _lib_pcr.get_exclusion_zone(mmap,
+                                                     hard_exclude=marker.mutations)
 
     # Design primers
     pcr = PCR(marker.name, marker.chrom, marker.pos1, marker.ref, marker.alt)

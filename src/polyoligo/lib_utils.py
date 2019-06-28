@@ -140,6 +140,29 @@ def list_2_intervals(ixs):
     return ivs
 
 
+def list_2_ranges(ixs):
+    """Take a list of indexes and returns a list of intervals in the form of [start, length] list."""
+    ivs = []
+
+    if len(ixs) != 0:
+        ixs = np.sort(np.array(ixs))
+        delta = np.diff(ixs)
+        anchors = np.array(ixs[1:])
+
+        i = ixs[0]
+        n = 1
+        for d, a in zip(delta, anchors):
+            if d == 1:
+                n += 1
+            else:
+                ivs.append([int(i), int(n)])
+                i = a
+                n = 1
+        ivs.append([int(i), int(n)])
+
+    return ivs
+
+
 def kwargs2attr_deep(obj, kwargs):
     """Deep copy attributes values based on keyword arguments. Assign only if the attribute already exists in obj."""
     if kwargs is None:

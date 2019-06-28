@@ -423,40 +423,6 @@ def map_homologs(fp_aligned, target_name, target_len):
     return partial_mismatch, full_mismatch
 
 
-def get_valid_primer_regions(mmap, n, hard_exclude=None):
-    if hard_exclude is None:
-        hard_exclude = []
-
-    plen = lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"]
-    v = ~mmap
-    inc_ixs = []
-    for i in range(len(v) - plen + 1):
-        if np.all(v[i:(i + plen)]):
-            continue
-        else:
-            inc_ixs += list(np.arange(i, i + plen))
-    inc_ixs = np.unique(inc_ixs)
-
-    inc_ixs_pruned = []
-    for i in inc_ixs:
-        if i not in hard_exclude:
-            inc_ixs_pruned.append(i)
-    inc_ixs = np.array(inc_ixs_pruned)
-
-    valid_ivs = lib_utils.list_2_intervals(inc_ixs)
-
-    # Parse for PRIMER3
-    fvalid = []
-    rvalid = []
-
-    for valid_iv in valid_ivs:
-        if int(valid_iv[1] - valid_iv[0]) >= plen:  # Ensure the region is large enough for a primer
-            fvalid.append([0, n, int(valid_iv[0] + 1) - 1, int(valid_iv[1] - valid_iv[0] + 1)])
-            rvalid.append([int(valid_iv[0] + 1) - 1, int(valid_iv[1] - valid_iv[0] + 1), 0, n])
-
-    return fvalid, rvalid
-
-
 def print_report_header(fp, delimiter="\t"):
     header = delimiter.join([
         "marker",
@@ -641,7 +607,7 @@ def design_primers(pps_repo, mpps, target_seq, target_start, ivs, n_primers=10):
     for pid, mpp in enumerate(mpps):
         primer3_seq_args = {
             'SEQUENCE_TEMPLATE': target_seq,
-            'SEQUENCE_PRIMER_PAIR_OK_REGION_LIST': ivs[mpp.dir],
+            'SEQUENCE_EXCLUDED_REGION': ivs,
         }
 
         if mpp.dir == "F":
@@ -764,11 +730,9 @@ def main(kwarg_dict):
     # Get valid regions for the design of complementary primers
     ivs = {}
     for k, mmap in maps.items():
-        ivs[k] = {}
         k_mut = k + "_mut"
-        ivs[k_mut] = {}
 
-        ivs[k]["F"], ivs[k]["R"] = get_valid_primer_regions(mmap, n=marker.n)  # Mutations not excluded
+        ivs[k] = lib_primer3.get_exclusion_zone(mmap)  # Mutations not excluded
 
         if len(marker.mutations) > 0:
             # Make a list of mutation positions based on mutation for exclusion
@@ -778,9 +742,7 @@ def main(kwarg_dict):
             for mutation in marker.mutations:
                 mut_ixs.append(mutation.pos - reg_start)
 
-            ivs[k_mut]["F"], ivs[k_mut]["R"] = get_valid_primer_regions(mmap,
-                                                                        n=marker.n,
-                                                                        hard_exclude=mut_ixs)
+            ivs[k_mut] = lib_primer3.get_exclusion_zone(mmap, hard_exclude=mut_ixs)
 
     # Loop across marker primers and design valid complementary primers using PRIMER3
     # PCR assay including multiple primer pairs
