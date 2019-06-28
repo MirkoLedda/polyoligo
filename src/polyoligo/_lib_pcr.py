@@ -23,6 +23,7 @@ class ROI:
         self.start = int(roi.strip().split(":")[1].split("-")[0])
         self.end = int(roi.strip().split(":")[1].split("-")[1])
         self.blast_db = blast_db
+        self.name = "{}:{}-{}".format(self.chrom, self.start, self.end)
 
         self.seq = None
         self.n = None
@@ -48,7 +49,7 @@ class ROI:
                 pos=al - 1,  # to 0-based indexing
                 ref_allele="X",
                 alt_allele="X",
-                name="left",
+                name="{}_left".format(self.name),
                 HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
             ),
             _lib_markers.Marker(
@@ -56,7 +57,7 @@ class ROI:
                 pos=ar - 1,  # to 0-based indexing
                 ref_allele="X",
                 alt_allele="X",
-                name="right",
+                name="{}_right".format(self.name),
                 HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
             )
         ]
@@ -96,6 +97,65 @@ class ROI:
             )
 
 
+class ROIs:
+    def __init__(self, blast_db):
+        self.rois = []
+        self.blast_db = blast_db
+
+    def upload_file(self, fp):
+        with open(fp, "r") as f:
+            for line in f:
+                roi = ROI(
+                    roi=line.strip(),
+                    blast_db=self.blast_db,
+                )
+                self.rois.append(roi)
+
+    def upload_list(self, ls):
+        for l in ls:
+            roi = ROI(
+                roi=l.strip(),
+                blast_db=self.blast_db,
+            )
+            self.rois.append(roi)
+
+    def fetch_roi(self):
+        for roi in self.rois:
+            roi.fetch_roi()
+
+    def find_homologs(self, MARKER_FLANKING_N, MIN_ALIGN_LEN, MIN_ALIGN_ID, HOMOLOG_FLANKING_N):
+        for roi in self.rois:
+            roi.get_primer_windows(MARKER_FLANKING_N, MIN_ALIGN_LEN, MIN_ALIGN_ID, HOMOLOG_FLANKING_N)
+            roi.find_homologs()
+
+    def upload_windows_mutations(self, vcf_obj):
+        for roi in self.rois:
+            roi.pwindows.upload_mutations(vcf_obj)
+
+    def print_alt_subjects(self, vcf_obj, fp):
+        for roi in self.rois:
+            roi.pwindows.print_alt_subjects(
+                vcf_obj=vcf_obj,
+                fp=fp,
+            )
+
+    def upload_mutations(self, vcf_obj, HOMOLOG_FLANKING_N):
+        for roi in self.rois:
+            roi.upload_mutations(
+                vcf_obj,
+                start=roi.pwindows.markers[0].pos - HOMOLOG_FLANKING_N,
+                stop=roi.pwindows.markers[1].pos + HOMOLOG_FLANKING_N,
+            )
+
+    def write_report(self, fp_out):
+        print_report_header(fp_out)
+        with open(fp_out, "a") as f:
+            for roi in self.rois:
+                with open(join(self.blast_db.temporary, roi.name + ".txt"), "r") as f_marker:
+                    for line in f_marker:
+                        f.write(line)
+
+
 def map_homologs(fp_aligned, target_name, target_len):
     seqs = lib_blast.read_fasta(fp_aligned)
     target_seq = seqs[target_name]
@@ -132,6 +192,7 @@ def map_homologs(fp_aligned, target_name, target_len):
 
 def print_report_header(fp, delimiter="\t"):
     header = delimiter.join([
+        "target",
         "chr",
         "start",
         "end",
@@ -166,7 +227,7 @@ def print_report(pcr, fp, delimiter="\t"):
     for pt in primer_type_ordering:
         seq_ids[pt] = []
 
-    with open(fp, "a") as f:
+    with open(fp, "w") as f:
         for i in sorted_scores:
             for pp in pcr.pps_pruned[i]:
                 pp.id = ppid
@@ -200,6 +261,7 @@ def print_report(pcr, fp, delimiter="\t"):
                         pp.qcode = "."
 
                     fields = [
+                        pcr.name,
                         pcr.chrom,
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
@@ -226,6 +288,7 @@ def print_report(pcr, fp, delimiter="\t"):
 
         if ppid == 0:
             fields = [
+                pcr.name,
                 pcr.chrom,
             ]
             fields = [str(x) for x in fields]
@@ -272,6 +335,7 @@ def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_prim
 def main(kwarg_dict):
     # kwargs to variables
     roi = kwarg_dict["roi"]
+    fp_out = kwarg_dict["fp_out"]
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]
@@ -302,8 +366,9 @@ def main(kwarg_dict):
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
     # Read and align sequences for both the left and right window
+    fa_suffixes = ["left", "right"]
     for i in range(2):
-        fp_fasta = join(blast_db.temporary, roi.pwindows.markers[i].name + ".fa")
+        fp_fasta = join(blast_db.temporary, "{}-{}".format(roi.name, fa_suffixes[i]) + ".fa")
         seqs = lib_blast.read_fasta(fp_fasta)
 
         roi.pwindows.markers[i].seq = seqs[roi.pwindows.markers[i].fasta_name]
@@ -319,7 +384,7 @@ def main(kwarg_dict):
             }
             lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
-        fp_aligned = join(blast_db.temporary, str(i) + "_malign.afa")
+        fp_aligned = join(blast_db.temporary, roi.name + str(i) + "_malign.afa")
         muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
 
         # Map mismatches in the homeologs
@@ -379,7 +444,7 @@ def main(kwarg_dict):
     roi.fetch_roi()
 
     # Design primers
-    pcr = lib_primer3.PCR(roi.chrom)
+    pcr = lib_primer3.PCR(chrom=roi.chrom, name=roi.name)
     map_names = {
         "mism_mut": "Variants excluded | Homologs specific",
         "partial_mism_mut": "Variants excluded | Homologs partial spec",
@@ -409,6 +474,7 @@ def main(kwarg_dict):
             logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
 
     hit_cnts, valid_hit_cnts = pcr.check_offtargeting(blast_db, debug=debug)  # Check for off-targets
+
     # Report hit counts
     logger_msg += "Offtarget hits across the genome\n"
     logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])

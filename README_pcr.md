@@ -61,6 +61,7 @@ Two output files are produced:
 
 |Column|Description|
 |---|---|
+|`name`|Target name|
 |`chr`|Chromosome|
 |`start`|Primer start position in the genome|
 |`end`|Primer end position in the genome|

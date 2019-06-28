@@ -31,7 +31,7 @@ WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using 
 
 def cprofile_worker(kwargs):
     """Wrapper to cProfile subprocesses."""
-    cProfile.runctx('_getkasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
+    cProfile.runctx('_lib_pcr.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["roi"].name))
 
 
 def parse_args(inputargs):
@@ -280,23 +280,18 @@ def main(strcmd=None):
 
     # Get target sequence
     logger.info("Retrieving target sequence ...")
-    roi = _lib_pcr.ROI(
-        roi=args.roi,
-        blast_db=blast_db,
-    )
-    roi.fetch_roi()
+    rois = _lib_pcr.ROIs(blast_db=blast_db)
+    rois.upload_list([args.roi])
+    rois.fetch_roi()
 
-    # Create windows where to design primers
-    roi.get_primer_windows(
+    # Find homologs
+    logger.info("Finding homeologs/duplications by sequence homology ...")
+    rois.find_homologs(
         MARKER_FLANKING_N=MARKER_FLANKING_N,
         MIN_ALIGN_LEN=MIN_ALIGN_LEN,
         MIN_ALIGN_ID=MIN_ALIGN_ID,
         HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
     )
-
-    # Find homologs
-    logger.info("Finding homeologs/duplications by sequence homology ...")
-    roi.find_homologs()
 
     if args.webapp:
         logger.info("nanobar - {:d}/{:d}".format(33, 100))
@@ -304,7 +299,7 @@ def main(strcmd=None):
     # Upload VCF information
     if vcf_obj is not None:
         logger.info("Uploading the VCF file ...")
-        roi.pwindows.upload_mutations(vcf_obj)  # Upload mutations in the primer regions
+        rois.upload_windows_mutations(vcf_obj)  # Upload mutations in the primer regions
 
         # Write subjects containing alternative alleles for each mutations
         if args.report_alts:
@@ -314,49 +309,75 @@ def main(strcmd=None):
             if os.path.exists(args.report_alts):
                 os.remove(args.report_alts)
 
-            roi.pwindows.print_alt_subjects(
+            rois.print_alt_subjects(
                 vcf_obj=vcf_obj,
                 fp=args.report_alts,
             )
 
     # Upload mutations
-    roi.upload_mutations(vcf_obj,
-                         start=roi.pwindows.markers[0].pos-HOMOLOG_FLANKING_N,
-                         stop=roi.pwindows.markers[1].pos+HOMOLOG_FLANKING_N)
+    rois.upload_mutations(vcf_obj,
+                          HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+                          )
 
-    # Start the search for candidate KASP primers
-    logger.info("Designing primers - Region size: {} nts".format(len(roi.seq)))
+    # Start the search for candidate primers
     if not args.webapp:
-        logger.info("Using {} parallel processes ...".format(args.n_tasks))
+        logger.info("Searching for primers using {} parallel processes ...".format(args.n_tasks))
     else:
-        logger.info("nanobar - {:d}/{:d}".format(50, 100))
+        logger.info("Searching for primers ...")
 
     # Purge sequences from BlastDB
     blast_db.purge()
 
-    # Kwargs
-    fp_out = join(out_path, args.output + ".txt")
-    kwarg_dict = {
-        "roi": roi,
-        "blast_db": blast_db,
-        "muscle": muscle,
-        "n_primers": args.n_primers,
-        "p3_search_depth": args.depth,
-        "debug": args.debug,
-        "fp_out": fp_out,
-        "tm_delta": args.tm_delta,
-        "offtarget_size": [args.offtarget_min_size, args.offtarget_max_size],
-        "primer_seed": args.seed,
-        "primer3_configs": primer3_configs,
-    }
+    # Initialize a list of kwargs for the worker and a job queue
+    kwargs_worker = []
 
-    _lib_pcr.main(kwarg_dict)
+    for roi in rois.rois:
+        blast_db.job_id = roi.name  # To make sure files are not overwritten during multiprocessing
+        blast_db.n_cpu = 1  # Blast should now only use 1 thread as we will be spawning jobs
+
+        kwarg_dict = {
+            "roi": roi,
+            "fp_out": join(temp_path, roi.name + ".txt"),
+            "blast_db": blast_db,
+            "muscle": muscle,
+            "n_primers": args.n_primers,
+            "p3_search_depth": args.depth,
+            "tm_delta": args.tm_delta,
+            "offtarget_size": [args.offtarget_min_size, args.offtarget_max_size],
+            "primer_seed": args.seed,
+            "primer3_configs": primer3_configs,
+            "debug": args.debug,
+        }
+        kwargs_worker.append(deepcopy(kwarg_dict))
+
+    # Run the job queue
+    if not args.webapp:  # Normal mode - i.e. multithreaded
+        n_jobs = len(kwargs_worker)
+        with mp.Pool(processes=args.n_tasks, maxtasksperchild=1) as p:
+            if args.debug:
+                _ = list(tqdm.tqdm(
+                    p.imap_unordered(cprofile_worker, kwargs_worker),
+                    total=n_jobs,
+                ))
+            else:
+                _ = list(tqdm.tqdm(
+                    p.imap_unordered(_lib_pcr.main, kwargs_worker),
+                    total=n_jobs,
+                    disable=args.silent,
+                ))
+    else:  # Webapp mode - single jobs
+        logger.info("nanobar - {:d}/{:d}".format(0, len(kwargs_worker)))
+        for i, kwargs_job in enumerate(kwargs_worker):
+            _lib_pcr.main(kwargs_job)
+            logger.info("nanobar - {:d}/{:d}".format(i, len(kwargs_worker)))
+
+    # Concatenate all primers for all markers into a single report
+    logger.info("Preparing report ...")
+    fp_out = join(out_path, args.output + ".txt")
+    rois.write_report(fp_out)
 
     if not args.debug:
         shutil.rmtree(temp_path)
-
-    if args.webapp:
-        logger.info("nanobar - {:d}/{:d}".format(100, 100))
 
     if not args.webapp:
         logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))

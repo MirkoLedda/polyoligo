@@ -215,11 +215,12 @@ class PrimerPair:
 
 
 class PCR:
-    def __init__(self, chrom=None, primer_pairs=None):
+    def __init__(self, chrom=None, primer_pairs=None, name=None):
         self.chrom = chrom
         self.pps = primer_pairs
         self.pps_classified = {}
         self.pps_pruned = {}
+        self.name = name
 
         if self.pps is None:
             self.pps = []
