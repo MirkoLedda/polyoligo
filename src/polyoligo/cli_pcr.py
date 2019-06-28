@@ -49,7 +49,7 @@ def parse_args(inputargs):
         "roi",
         metavar="ROI",
         type=str,
-        help="Target region as CHR:START-END.",
+        help="Target region around which to design primers. Declared as CHR:START-END.",
     )
     parser.add_argument(
         "output",
