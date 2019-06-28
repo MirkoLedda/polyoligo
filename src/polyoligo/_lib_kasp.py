@@ -771,9 +771,16 @@ def main(kwarg_dict):
         ivs[k]["F"], ivs[k]["R"] = get_valid_primer_regions(mmap, n=marker.n)  # Mutations not excluded
 
         if len(marker.mutations) > 0:
+            # Make a list of mutation positions based on mutation for exclusion
+            mut_ixs = []
+
+            reg_start = int(marker.fasta_name.split(":")[1].split("-")[0])
+            for mutation in marker.mutations:
+                mut_ixs.append(mutation.pos - reg_start)
+
             ivs[k_mut]["F"], ivs[k_mut]["R"] = get_valid_primer_regions(mmap,
                                                                         n=marker.n,
-                                                                        hard_exclude=marker.mutations)
+                                                                        hard_exclude=mut_ixs)
 
     # Loop across marker primers and design valid complementary primers using PRIMER3
     # PCR assay including multiple primer pairs

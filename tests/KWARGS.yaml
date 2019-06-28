@@ -13,7 +13,7 @@ depth: 10
 seed: 13
 offtarget_min_size: 100
 offtarget_max_size: 1000
-primer3_pcr: "sample_data/primer3_example.yaml"
+primer3_pcr: "src/polyoligo/data/PRIMER3_PCR.yaml"
 primer3_caps: "src/polyoligo/data/PRIMER3_CAPS.yaml"
 primer3_kasp: "src/polyoligo/data/PRIMER3_KASP.yaml"
 dye1: "GAAGGTCGGAGTCAACGGATT"

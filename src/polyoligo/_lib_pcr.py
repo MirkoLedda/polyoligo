@@ -28,7 +28,8 @@ class ROI:
         self.n = None
         self.G = None  # Genotypes within the region
         self.mutations = []  # List of vcf_lib.Mutation objects
-        self.fasta_name = None
+        self.fasta_names = {"winleft": None, "winright": None}
+        self.win_seqs = {"winleft": None, "winright": None}
 
     def fetch_roi(self):
         query = [{
@@ -39,17 +40,14 @@ class ROI:
 
         seqs = self.blast_db.fetch(query)
         self.seq = list(seqs.values())[0].upper()
-
-    def upload_sequence(self, seq):
-        self.seq = seq  # Sequence of the region
         self.n = len(self.seq)
 
-    def upload_mutations(self, vcf_obj):
+    def upload_mutations(self, vcf_obj, start, stop):
         if vcf_obj:
             self.G, self.mutations = vcf_obj.fetch_genotypes(
                 chrom=self.chrom,
-                start=self.start,
-                stop=self.end,
+                start=start,
+                stop=stop,
             )
         else:
             self.mutations = []
@@ -160,12 +158,18 @@ def get_valid_primer_regions(mmap, hard_exclude=None):
     valid_reg = []
 
     for valid_iv in valid_ivs:
-        if int(valid_iv[1] - valid_iv[0]) >= plen:  # Ensure the region is large enough for a primer
-            valid_reg.append([
-                int(valid_iv[0] + 1) - 1,
-                int(valid_iv[1] - valid_iv[0] + 1),
-                int(valid_iv[0] + 1) - 1,
-                int(valid_iv[1] - valid_iv[0] + 1)])
+        valid_reg.append([
+            int(valid_iv[0] + 1) - 1,
+            int(valid_iv[1] - valid_iv[0] + 1),
+            0,
+            len(mmap),
+        ])
+        valid_reg.append([
+            0,
+            len(mmap),
+            int(valid_iv[0] + 1) - 1,
+            int(valid_iv[1] - valid_iv[0] + 1),
+        ])
 
     return valid_reg
 
@@ -312,7 +316,6 @@ def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_prim
 def main(kwarg_dict):
 
     # kwargs to variables
-    fp_fasta = kwarg_dict["fp_fasta"]
     roi = kwarg_dict["roi"]
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
@@ -343,45 +346,70 @@ def main(kwarg_dict):
     sepline = "=" * (len(header) + 2)
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
-    # Read sequences
-    seqs = lib_blast.read_fasta(fp_fasta)
-    roi.upload_sequence(seqs[roi.fasta_name])
-    del seqs[roi.fasta_name]
+    # Read and align sequences for both the left and right window
+    win_maps = {"winleft": {}, "winright": {}}
+    for win_name in ["winleft", "winright"]:
+        fp_fasta = join(blast_db.temporary, win_name + ".fa")
+        seqs = lib_blast.read_fasta(fp_fasta)
 
-    # Align homologs to the target sequence
-    if (len(seqs) > 49) or (len(roi.seq) > 2001):
-        # If more than 50 homoloous sequences were found, then do not run multialignment and
-        # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
-        # same if the sequence is larger than 2000 nt
-        mock_seqs = {
-            roi.fasta_name: roi.seq,
-            "mock": roi.seq,
-        }
-        lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
+        roi.win_seqs[win_name] = seqs[roi.fasta_names[win_name]]
+        del seqs[roi.fasta_names[win_name]]
 
-    fp_aligned = join(blast_db.temporary, "malign.afa")
-    muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
+        # Align homologs to the target sequence
+        if len(seqs) > 49:
+            # If more than 50 homoloous sequences were found, then do not run multialignment and
+            # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
+            mock_seqs = {
+                roi.fasta_name: roi.seq,
+                "mock": roi.seq,
+            }
+            lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
-    # Map mismatches in the homeologs
+        fp_aligned = join(blast_db.temporary, win_name + "_malign.afa")
+        muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
+
+        # Map mismatches in the homeologs
+        win_maps[win_name]["all"] = np.repeat(True, len(roi.win_seqs[win_name]))
+        win_maps[win_name]["partial_mism"], win_maps[win_name]["mism"] = map_homologs(
+            fp_aligned,
+            roi.fasta_names[win_name],
+            len(roi.win_seqs[win_name]))
+
+        # Cleanup temporary files
+        if not debug:
+            os.remove(fp_fasta)
+            os.remove(fp_aligned)
+
+    # Merge all maps
     maps = dict()
-    maps["all"] = np.repeat(True, roi.n)
-    maps["partial_mism"], maps["mism"] = map_homologs(fp_aligned, roi.fasta_name, roi.n)
-
-    # Cleanup temporary files
-    if not debug:
-        os.remove(fp_fasta)
-        os.remove(fp_aligned)
+    maps["all"] = np.concatenate([win_maps["winleft"]["all"][:-1], np.repeat(False, roi.n), win_maps["winright"]["all"][1:]])
+    maps["partial_mism"] = np.concatenate([win_maps["winleft"]["partial_mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["partial_mism"][1:]])
+    maps["mism"] = np.concatenate([win_maps["winleft"]["mism"][:-1], np.repeat(False, roi.n), win_maps["winright"]["mism"][1:]])
 
     # Get valid regions for the design of the primers
     ivs = {}
+    roi.start = int(roi.fasta_names["winleft"].split(":")[1].split("-")[0])
+    roi.end = int(roi.fasta_names["winright"].split(":")[1].split("-")[1])
     for k, mmap in maps.items():
         ivs[k] = {}
         k_mut = k + "_mut"
         ivs[k] = get_valid_primer_regions(mmap)  # Mutations not excluded
 
         if len(roi.mutations) > 0:
+            # Make a list of mutation positions based on mutation for exclusion
+            mut_ixs = []
+            for mutation in roi.mutations:
+                mut_ixs.append(mutation.pos - roi.start)
             ivs[k_mut] = get_valid_primer_regions(mmap,
-                                                  hard_exclude=roi.mutations)
+                                                  hard_exclude=mut_ixs)
+
+    # Set the product size range
+    lib_primer3.set_globals(
+        PRIMER_PRODUCT_SIZE_RANGE=[roi.n, len(maps["all"])]
+    )
+
+    # Update roi to be the entire sequence including the side windows
+    roi.fetch_roi()
 
     # Design primers
     pcr = PCR(roi.chrom)

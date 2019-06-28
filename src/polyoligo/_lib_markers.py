@@ -238,7 +238,7 @@ class Markers:
                                                                        n=exp_seq_len)  # right padding
 
             # Assert that the REF alleles in the genomic reference matches the ones provided as input
-            if seqsr[marker.blast_name][self.MARKER_FLANKING_N] != marker.ref:
+            if (seqsr[marker.blast_name][self.MARKER_FLANKING_N] != marker.ref) and (marker.ref != "X"):
                 logger.error("REF allele in the marker file does not match the genomic REF allele.\n"
                              "SNP ID: {} | Marker {} vs Reference {}. "
                              "Please double check your marker file.".format(marker.name, marker.ref,

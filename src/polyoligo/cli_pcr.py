@@ -25,7 +25,7 @@ PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_PCR.yaml")
 MARKER_FLANKING_N = 50  # Number of nucleotides on each sides when retrieving the sequence flanking the marker
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
-# HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
+HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
 
@@ -286,50 +286,54 @@ def main(strcmd=None):
     )
     roi.fetch_roi()
 
-    # Create a mock marker object (center of the considered region)
+    # Create two mock markers for the left and right window
     markers = _lib_markers.Markers(
         blast_db=blast_db,
         MARKER_FLANKING_N=MARKER_FLANKING_N,
         MIN_ALIGN_LEN=MIN_ALIGN_LEN,
         MIN_ALIGN_ID=MIN_ALIGN_ID,
-        HOMOLOG_FLANKING_N=int(len(roi.seq)/2),
+        HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
     )
 
-    seq_center = int((roi.end - roi.start) / 2)
+    al = roi.start - HOMOLOG_FLANKING_N
+    ar = roi.end + HOMOLOG_FLANKING_N
     markers.markers = [
         _lib_markers.Marker(
             chrom=roi.chrom,
-            pos=roi.start + seq_center - 1,  # to 0-based indexing
-            ref_allele=roi.seq[seq_center],
-            alt_allele=roi.seq[seq_center],
-            name="target",
+            pos=al - 1,  # to 0-based indexing
+            ref_allele="X",
+            alt_allele="X",
+            name="winleft",
+            HOMOLOG_FLANKING_N=markers.HOMOLOG_FLANKING_N,
+        ),
+        _lib_markers.Marker(
+            chrom=roi.chrom,
+            pos=ar - 1,  # to 0-based indexing
+            ref_allele="X",
+            alt_allele="X",
+            name="winright",
             HOMOLOG_FLANKING_N=markers.HOMOLOG_FLANKING_N,
         )
     ]
 
-    if len(roi.seq) > 2001:
-        # Skip homolog search
-        logger.info("Region is > 2001 nt, skipping the homology search ...")
-        roi.fasta_name = "{}_{}_{}".format(roi.chrom, roi.start, roi.end)
-        seqs = {roi.fasta_name: roi.seq}
-        lib_blast.write_fasta(seqs, fp_out=join(blast_db.temporary, "target.fa"))
+    # Find homologs
+    logger.info("Finding homeologs/duplications by sequence homology ...")
+    seqs = markers.get_marker_flanks()
+    markers.find_homologs(seqs)
 
-    else:
-        # Find homologs
-        logger.info("Finding homeologs/duplications by sequence homology ...")
-        seqs = markers.get_marker_flanks()
-        markers.find_homologs(seqs)
+    if args.webapp:
+        logger.info("nanobar - {:d}/{:d}".format(33, 100))
 
-        if args.webapp:
-            logger.info("nanobar - {:d}/{:d}".format(33, 100))
-
-        # Merge markers with the roi object
-        roi.fasta_name = markers.markers[0].fasta_name
+    # Merge markers with the roi object
+    roi.fasta_names = {
+        "winleft": markers.markers[0].fasta_name,
+        "winright": markers.markers[1].fasta_name,
+    }
 
     # Upload VCF information
     if vcf_obj is not None:
         logger.info("Uploading the VCF file ...")
-        roi.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
+        markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
 
         # Write subjects containing alternative alleles for each mutations
         if args.report_alts:
@@ -339,10 +343,13 @@ def main(strcmd=None):
             if os.path.exists(args.report_alts):
                 os.remove(args.report_alts)
 
-            roi.print_alt_subjects(
+            markers.print_alt_subjects(
                 vcf_obj=vcf_obj,
                 fp=args.report_alts,
             )
+
+    # Upload mutations
+    roi.upload_mutations(vcf_obj, start=al-HOMOLOG_FLANKING_N, stop=ar+HOMOLOG_FLANKING_N)
 
     # Start the search for candidate KASP primers
     logger.info("Designing primers - Region size: {} nts".format(len(roi.seq)))
@@ -357,7 +364,6 @@ def main(strcmd=None):
     # Kwargs
     fp_out = join(out_path, args.output + ".txt")
     kwarg_dict = {
-        "fp_fasta": join(blast_db.temporary, "target.fa"),
         "roi": roi,
         "blast_db": blast_db,
         "muscle": muscle,
