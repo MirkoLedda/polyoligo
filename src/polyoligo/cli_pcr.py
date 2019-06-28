@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_pcr, _logger_config, lib_utils, lib_vcf, _version
+from . import lib_blast, _lib_pcr, _logger_config, lib_utils, lib_vcf, _version, _lib_markers
 
 __version__ = _version.__version__
 
@@ -22,7 +22,11 @@ BINARIES = {
 }
 
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_PCR.yaml")
+MARKER_FLANKING_N = 50  # Number of nucleotides on each sides when retrieving the sequence flanking the marker
+MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
+# HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
+WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
 
 def cprofile_worker(kwargs):
@@ -276,15 +280,43 @@ def main(strcmd=None):
 
     # Get target sequence
     logger.info("Retrieving target sequence ...")
-    roi = _lib_pcr.ROI(roi=args.roi, blast_db=blast_db, MIN_ALIGN_ID=MIN_ALIGN_ID)
+    roi = _lib_pcr.ROI(
+        roi=args.roi,
+        blast_db=blast_db,
+    )
     roi.fetch_roi()
 
-    # Find homologs and write them to a fasta file
+    # Create a mock marker object (center of the considered region)
+    markers = _lib_markers.Markers(
+        blast_db=blast_db,
+        MARKER_FLANKING_N=MARKER_FLANKING_N,
+        MIN_ALIGN_LEN=MIN_ALIGN_LEN,
+        MIN_ALIGN_ID=MIN_ALIGN_ID,
+        HOMOLOG_FLANKING_N=int(len(roi.seq)/2),
+    )
+
+    seq_center = int((roi.end - roi.start) / 2)
+    markers.markers = [
+        _lib_markers.Marker(
+            chrom=roi.chrom,
+            pos=roi.start + seq_center - 1,  # to 0-based indexing
+            ref_allele=roi.seq[seq_center],
+            alt_allele=roi.seq[seq_center],
+            name="target",
+            HOMOLOG_FLANKING_N=markers.HOMOLOG_FLANKING_N,
+        )
+    ]
+
+    # Find homologs
     logger.info("Finding homeologs/duplications by sequence homology ...")
-    roi.find_homologs()
+    seqs = markers.get_marker_flanks()
+    markers.find_homologs(seqs)
 
     if args.webapp:
         logger.info("nanobar - {:d}/{:d}".format(33, 100))
+
+    # Merge markers with the roi object
+    roi.fasta_name = markers.markers[0].fasta_name
 
     # Upload VCF information
     if vcf_obj is not None:

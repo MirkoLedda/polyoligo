@@ -10,20 +10,6 @@ from . import lib_blast, lib_utils, _lib_kasp, _lib_caps
 
 logger = logging.getLogger(__name__)  # Initialize the logger
 
-IUPAC = {"[A/G]": "R",
-         "[G/A]": "R",
-         "[C/T]": "Y",
-         "[T/C]": "Y",
-         "[G/C]": "S",
-         "[C/G]": "S",
-         "[A/T]": "W",
-         "[T/A]": "W",
-         "[G/T]": "K",
-         "[T/G]": "K",
-         "[A/C]": "M",
-         "[C/A]": "M"}
-
-
 class Marker:
     """Hold informations for a Marker."""
 
@@ -34,7 +20,6 @@ class Marker:
         self.ref = ref_allele
         self.alt = alt_allele
         self.variant = "[{}/{}]".format(self.ref, self.alt)
-        self.iupac_variant = IUPAC[self.variant]
         self.fasta_name = fasta_name
         self.start = None  # Region start
         self.stop = None  # Region stop

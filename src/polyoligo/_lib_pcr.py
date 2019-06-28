@@ -18,12 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class ROI:
-    def __init__(self, roi, blast_db, MIN_ALIGN_ID):
+    def __init__(self, roi, blast_db):
         self.chrom = roi.strip().split(":")[0]
         self.start = int(roi.strip().split(":")[1].split("-")[0])
         self.end = int(roi.strip().split(":")[1].split("-")[1])
         self.blast_db = blast_db
-        self.MIN_ALIGN_ID = MIN_ALIGN_ID
 
         self.seq = None
         self.n = None
@@ -39,87 +38,7 @@ class ROI:
         }]
 
         seqs = self.blast_db.fetch(query)
-        self.seq = list(seqs.values())[0]
-        self.seq = self.seq.upper()
-
-    def find_homologs(self):
-
-        # Write a file with queries for BLAST
-        fp_query = join(self.blast_db.temporary, "homologs_blast_in.txt")
-        k = "{}_{}_{}".format(self.chrom, self.start, self.end)
-        lib_blast.write_fasta(
-            seqs={k: self.seq},
-            fp_out=fp_query,
-        )
-
-        # Run BLAST
-        fp_blast_out = join(self.blast_db.temporary, "homologs_blast_out.txt")
-        self.blast_db.blastn(
-            fp_query=fp_query,
-            fp_out=fp_blast_out,
-            perc_identity=self.MIN_ALIGN_ID,
-            max_hsps=100,  # Max 100 HSPs returned as above 50 valid sequences we won't do multialignment
-            dust="no",
-            soft_masking="false",
-            outfmt='"6 std qseq sseq slen"',
-        )
-        fp_blast_out2 = join(self.blast_db.temporary, "homologs_blast_out_pruned.txt")
-
-        # Prune to keep only valid hit lengths (max 100 sequences)
-        self.blast_db.prune_blastn_output(fp_blast_out,
-                                          fp_blast_out2,
-                                          min_align_len=int(0.5 * len(self.seq)))
-
-        try:
-            queries = self.get_queries_for_homolog_flanking(fp_blast_out2)
-        except pd.errors.EmptyDataError:
-            sys.exit("ERROR - target sequence contains over 50% of missing nucleotides. Please adjust the search.")
-        _ = self.blast_db.fetch(queries, fp_out=join(self.blast_db.temporary, "target.fa"))
-
-    def get_queries_for_homolog_flanking(self, fp):
-
-        padding = int(np.ceil(len(self.seq) / 2))
-
-        df = self.blast_db.parse_blastn_output(fp)
-
-        queries = []
-        target_found = False
-
-        for _, row in df.iterrows():
-            if row["sstart"] > row["sstop"]:
-                strand = "minus"
-            else:
-                strand = "plus"
-
-            if (row["schr"] == self.chrom) and (row["sstart"] >= self.start) and (row["sstop"] <= self.end):
-                self.fasta_name = "{}:{:d}-{:d}".format(self.chrom, self.start, self.end)
-                target_found = True
-                q = {
-                    "name": "",
-                    "chr": self.chrom,
-                    "start": self.start,
-                    "stop": self.end,
-                    "strand": "plus",
-                }
-            else:
-                spos = np.min([row["sstart"], row["sstop"]])
-                sdif = np.abs([row["sstart"] - row["sstop"]])
-                midl = spos + int(np.ceil(sdif / 2))
-                q = {
-                    "name": "",
-                    "chr": row["schr"],
-                    "start": max([1, midl - padding]),
-                    "stop": midl + padding,
-                    "strand": strand,
-                }
-
-            queries.append(q)
-
-            # Limit to 50 homologous sequences as we won't do multialignment for more sequences
-            if target_found and (len(queries) >= 51):
-                break
-
-        return queries
+        self.seq = list(seqs.values())[0].upper()
 
     def upload_sequence(self, seq):
         self.seq = seq  # Sequence of the region
@@ -440,7 +359,7 @@ def main(kwarg_dict):
         lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
     fp_aligned = join(blast_db.temporary, "malign.afa")
-    muscle.align_fasta(fp=fp_fasta, fp_out=fp_aligned)
+    muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
 
     # Map mismatches in the homeologs
     maps = dict()

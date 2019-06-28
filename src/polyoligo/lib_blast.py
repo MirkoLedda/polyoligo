@@ -310,6 +310,20 @@ class Muscle:
         ])
         self.locked_call(cmd)
 
+    def fast_align_fasta(self, fp, fp_out=None):
+        if fp_out is None:
+            fp_out = join(self.temporary, "muscle_alignment.fa")
+
+        cmd = " ".join([
+            join(self.exe, "muscle"),
+            "-in {}".format(fp),
+            "-out {}".format(fp_out),
+            "-quiet",
+            "-maxiters 1",
+            "-diags",
+        ])
+        self.locked_call(cmd)
+
 
 def write_fasta(seqs, fp_out):
     with open(fp_out, "w") as f:
