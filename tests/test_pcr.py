@@ -12,10 +12,9 @@ with open("tests/KWARGS.yaml", "r") as f:
 # STD
 cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
-    KWARGS["roi"],
+    KWARGS["roi_pcr"],
     KWARGS["out"],
     KWARGS["reference"],
-    "--fast",
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),

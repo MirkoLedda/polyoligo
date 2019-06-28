@@ -1,4 +1,5 @@
 roi: "Fvb2-4:100000-101000"
+roi_pcr: "Fvb2-4:4042000-4048000"
 marker: "sample_data/markers.txt"
 out: "out"
 reference: "sample_data/blastdb"
@@ -19,4 +20,3 @@ dye1: "GAAGGTCGGAGTCAACGGATT"
 dye2: "GAAGGTGACCAAGTTCATGCT"
 enzymes: "sample_data/enzymes.txt"
 fragment_min_size: 500
-

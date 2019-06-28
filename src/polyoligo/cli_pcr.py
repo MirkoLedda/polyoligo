@@ -65,8 +65,9 @@ def parse_args(inputargs):
     parser.add_argument(
         "--fast",
         action="store_true",
-        help="Run in fast mode. This mode loads the entire reference genome in memory making the design "
-             "of large number of probes (> 1000) faster at the expense of heavy RAM consumption.",
+        # help="Run in fast mode. This mode loads the entire reference genome in memory making the design "
+        #      "of large number of probes (> 1000) faster at the expense of heavy RAM consumption.",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--silent",
