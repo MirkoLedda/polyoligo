@@ -349,9 +349,10 @@ def main(kwarg_dict):
     del seqs[roi.fasta_name]
 
     # Align homologs to the target sequence
-    if len(seqs) > 49:
+    if (len(seqs) > 49) or (len(roi.seq) > 2001):
         # If more than 50 homoloous sequences were found, then do not run multialignment and
         # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
+        # same if the sequence is larger than 2000 nt
         mock_seqs = {
             roi.fasta_name: roi.seq,
             "mock": roi.seq,

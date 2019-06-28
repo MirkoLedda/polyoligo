@@ -1,5 +1,5 @@
 roi: "Fvb2-4:100000-101000"
-roi_pcr: "Fvb2-4:4043000-4046000"
+roi_pcr: "Fvb2-4:4040000-4050000"
 marker: "sample_data/markers.txt"
 out: "out"
 reference: "sample_data/blastdb"

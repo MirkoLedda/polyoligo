@@ -307,16 +307,24 @@ def main(strcmd=None):
         )
     ]
 
-    # Find homologs
-    logger.info("Finding homeologs/duplications by sequence homology ...")
-    seqs = markers.get_marker_flanks()
-    markers.find_homologs(seqs)
+    if len(roi.seq) > 2001:
+        # Skip homolog search
+        logger.info("Region is > 2001 nt, skipping the homology search ...")
+        roi.fasta_name = "{}_{}_{}".format(roi.chrom, roi.start, roi.end)
+        seqs = {roi.fasta_name: roi.seq}
+        lib_blast.write_fasta(seqs, fp_out=join(blast_db.temporary, "target.fa"))
 
-    if args.webapp:
-        logger.info("nanobar - {:d}/{:d}".format(33, 100))
+    else:
+        # Find homologs
+        logger.info("Finding homeologs/duplications by sequence homology ...")
+        seqs = markers.get_marker_flanks()
+        markers.find_homologs(seqs)
 
-    # Merge markers with the roi object
-    roi.fasta_name = markers.markers[0].fasta_name
+        if args.webapp:
+            logger.info("nanobar - {:d}/{:d}".format(33, 100))
+
+        # Merge markers with the roi object
+        roi.fasta_name = markers.markers[0].fasta_name
 
     # Upload VCF information
     if vcf_obj is not None:
