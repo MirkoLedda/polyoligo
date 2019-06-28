@@ -399,9 +399,8 @@ class PCR:
         return offtargets
 
     def add_mutations(self, mutations):
-        if len(mutations) > 0:
-            for pp in self.pps:
-                pp.add_mutations(mutations)
+        for pp in self.pps:
+            pp.add_mutations(mutations)
 
     def classify(self):
         for pp in self.pps:

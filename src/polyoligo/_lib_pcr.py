@@ -18,12 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 class ROI:
-    def __init__(self, roi, blast_db):
+    def __init__(self, roi, blast_db, name=None):
         self.chrom = roi.strip().split(":")[0]
         self.start = int(roi.strip().split(":")[1].split("-")[0])
         self.end = int(roi.strip().split(":")[1].split("-")[1])
         self.blast_db = blast_db
-        self.name = "{}:{}-{}".format(self.chrom, self.start, self.end)
+        if name is not None:
+            self.name = name
+        else:
+            self.name = "{}:{}-{}".format(self.chrom, self.start, self.end)
 
         self.seq = None
         self.n = None
@@ -105,11 +108,21 @@ class ROIs:
     def upload_file(self, fp):
         with open(fp, "r") as f:
             for line in f:
-                roi = ROI(
-                    roi=line.strip(),
-                    blast_db=self.blast_db,
-                )
-                self.rois.append(roi)
+                line = line.strip()
+                if line != "":
+                    fields = line.split()
+                    if len(fields) == 2:
+                        roi = ROI(
+                            name=fields[1],
+                            roi=fields[0],
+                            blast_db=self.blast_db,
+                        )
+                    else:
+                        roi = ROI(
+                            roi=fields[0],
+                            blast_db=self.blast_db,
+                        )
+                    self.rois.append(roi)
 
     def upload_list(self, ls):
         for l in ls:
@@ -368,7 +381,7 @@ def main(kwarg_dict):
     # Read and align sequences for both the left and right window
     fa_suffixes = ["left", "right"]
     for i in range(2):
-        fp_fasta = join(blast_db.temporary, "{}-{}".format(roi.name, fa_suffixes[i]) + ".fa")
+        fp_fasta = join(blast_db.temporary, "{}-{}".format(roi.name.replace("_", "-"), fa_suffixes[i]) + ".fa")
         seqs = lib_blast.read_fasta(fp_fasta)
 
         roi.pwindows.markers[i].seq = seqs[roi.pwindows.markers[i].fasta_name]

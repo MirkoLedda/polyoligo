@@ -15,6 +15,12 @@ cli_caps.main(strcmd=" ".join([
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
+]))
+cli_caps.main(strcmd=" ".join([
+    "polyoligo-caps",
+    KWARGS["marker"],
+    KWARGS["out"],
+    KWARGS["reference"],
     "--fast",
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),

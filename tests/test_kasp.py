@@ -15,6 +15,13 @@ cli_kasp.main(strcmd=" ".join([
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
+]))
+
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
+    KWARGS["marker"],
+    KWARGS["out"],
+    KWARGS["reference"],
     "--fast",
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),

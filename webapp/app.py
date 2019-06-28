@@ -180,11 +180,13 @@ def pcr():
         os.makedirs(dest_folder)
 
         # ROI
-        kwargs["roi"] = request.form.get("roi")
+        kwargs["roi"] = join(dest_folder, "rois.txt")
+        rois = request.form.get("rois")
+        with open(kwargs["roi"], "w") as f:
+            f.write(rois)
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-
         if kwargs["reference"] == 'Fragaria ananassa':
             include_vcf = True
 
@@ -225,20 +227,12 @@ def pcr():
         # Primer3 configs
         primer3_yaml = join(dest_folder, "primer3.yaml")
         primer3 = {}
-        p_prod_len = request.form.get("p_prod_len")
         p_tm = request.form.get("p_tm")
         p_size = request.form.get("p_size")
         p_gc = request.form.get("p_gc")
-        p_include = request.form.get("p_include")
         p_seq_F = request.form.get("p_seq_F")
         p_seq_R = request.form.get("p_seq_R")
 
-        if len(p_prod_len) > 0:
-            r = parse_range(p_prod_len)
-            if isinstance(r, list):
-                primer3["PRIMER_PRODUCT_SIZE_RANGE"] = r
-            else:
-                primer3["PRIMER_PRODUCT_SIZE"] = r
         if len(p_tm) > 0:
             r = parse_range(p_tm)
             if isinstance(r, list):
@@ -267,13 +261,6 @@ def pcr():
             else:
                 primer3["PRIMER_MIN_GC"] = r
                 primer3["PRIMER_MAX_GC"] = r
-        if len(p_include) > 0:
-            r = parse_range(p_include)
-            start = int(kwargs["roi"].strip().split(":")[1].split("-")[0])
-            if isinstance(r, list):
-                primer3["SEQUENCE_TARGET"] = [r[0]-start, r[1]-r[0]]
-            else:
-                primer3["SEQUENCE_TARGET"] = [r-start, 1]
         if len(p_seq_F) > 0:
             primer3["SEQUENCE_PRIMER"] = p_seq_F
         if len(p_seq_R) > 0:
@@ -281,11 +268,6 @@ def pcr():
 
         with open(primer3_yaml, "w") as f:
             yaml.dump(primer3, f)
-
-        # Marker file
-        primer3_file = upload_file_to_server(request, "primer3_file", dest_folder)
-        if primer3_file is not None:
-            primer3_yaml = primer3_file
 
         # todo rename depth
         kwargs["depth"] = kwargs["depth"]
@@ -338,19 +320,13 @@ def kasp():
         os.makedirs(dest_folder)
 
         # Marker file
-        kwargs["markers"] = upload_file_to_server(request, "markers_file", dest_folder)
-        if kwargs["markers"] is None:
-            kwargs["markers"] = join(dest_folder, "markers.txt")
-            markers = request.form.get("markers")
-            with open(kwargs["markers"], "w") as f:
-                for line in markers:
-                    f.write(line)
+        kwargs["markers"] = join(dest_folder, "markers.txt")
+        markers = request.form.get("markers")
+        with open(kwargs["markers"], "w") as f:
+            f.write(markers)
 
         # BlastDB
-        kwargs["reference"] = request.form.get("ncbi_taxid")
-        if kwargs["reference"] == "":
-            kwargs["reference"] = request.form.get("reference")
-
+        kwargs["reference"] = request.form.get("reference")
         if kwargs["reference"] == 'Fragaria ananassa':
             include_vcf = True
 

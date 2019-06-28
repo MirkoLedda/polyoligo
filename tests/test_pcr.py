@@ -15,6 +15,12 @@ cli_pcr.main(strcmd=" ".join([
     KWARGS["roi_pcr"],
     KWARGS["out"],
     KWARGS["reference"],
+]))
+cli_pcr.main(strcmd=" ".join([
+    "polyoligo-pcr",
+    KWARGS["roi_pcr"],
+    KWARGS["out"],
+    KWARGS["reference"],
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),

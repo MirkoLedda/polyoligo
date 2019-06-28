@@ -289,9 +289,8 @@ class PCR(lib_primer3.PCR):
             pp.check_heterodimerization()
 
     def add_mutations(self, mutations):
-        if len(mutations) > 0:
-            for pp in self.pps:
-                pp.add_mutations(mutations)
+        for pp in self.pps:
+            pp.add_mutations(mutations)
 
     def classify(self):
         for pp in self.pps:

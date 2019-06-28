@@ -49,7 +49,8 @@ def parse_args(inputargs):
         "roi",
         metavar="ROI",
         type=str,
-        help="Target region around which to design primers. Declared as CHR:START-END.",
+        help="File containing target regions around which to design primers with no header and two columns: "
+             "CHR:START-END NAME(optional).",
     )
     parser.add_argument(
         "output",
@@ -275,13 +276,10 @@ def main(strcmd=None):
         logger.info("Loading VCF information ...")
         vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
 
-    if args.webapp:
-        logger.info("nanobar - {:d}/{:d}".format(0, 100))
-
     # Get target sequence
     logger.info("Retrieving target sequence ...")
     rois = _lib_pcr.ROIs(blast_db=blast_db)
-    rois.upload_list([args.roi])
+    rois.upload_file(args.roi)
     rois.fetch_roi()
 
     # Find homologs
@@ -292,9 +290,6 @@ def main(strcmd=None):
         MIN_ALIGN_ID=MIN_ALIGN_ID,
         HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
     )
-
-    if args.webapp:
-        logger.info("nanobar - {:d}/{:d}".format(33, 100))
 
     # Upload VCF information
     if vcf_obj is not None:
