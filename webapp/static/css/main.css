@@ -81,3 +81,55 @@ hr {
 div#footer {
     margin-left: 30px;
 }
+
+/* ----Arguments page---- */
+h3 {
+    margin-top: 0;
+}
+
+input {
+    background-color: lightgray;
+}
+
+.boxlarge {
+    box-sizing:border-box;
+    width: 100%;
+}
+
+.boxmedium {
+    box-sizing:border-box;
+    width: 50%;
+}
+
+.boxsmall {
+    box-sizing:border-box;
+    width: 25%;
+}
+
+input[type=checkbox] {
+    -ms-transform: scale(1.5); /* IE */
+    -moz-transform: scale(1.5); /* FF */
+    -webkit-transform: scale(1.5); /* Safari and Chrome */
+    -o-transform: scale(1.5); /* Opera */
+    transform: scale(1.5);
+    padding: 20px;
+}
+
+textarea {
+    box-sizing:border-box;
+    width: 100%;
+    background-color: lightgray;
+}
+
+.mandatory {
+    border: 3px solid;
+    margin: 2%;
+    padding: 2%;
+}
+
+.optional {
+    border: 3px solid grey;
+    margin: 2%;
+    padding: 2%;
+    background-color: WhiteSmoke;
+}

@@ -34,17 +34,15 @@
 {% block content %}
     <!-- KWARGS form -->
     <form id="crispr" method="POST" action="{{ url_for('crispr') }}" enctype="multipart/form-data">
-        <div>
-            <h2>Mandatory arguments</h2>
+        <div class="mandatory">
             <label>Target region</label> <i>- CHR:START-END </i> <br>
-            <input name="roi" type="string" value="Fvb2-4:100000-101000" size="50"><br><br>
+            <input class="boxmedium" name="roi" type="string" value=""><br><br>
             <label>Reference genome</label><br>
             <select name="reference">
                 {% for blastdb_option in blastdb_options %}
                     <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
                 {% endfor %}
-            </select>
-            <hr/>
+            </select><br>
         </div>
         <br>
 
