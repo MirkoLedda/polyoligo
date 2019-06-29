@@ -273,8 +273,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
 
 def main(kwarg_dict):
     # kwargs to variables
-    fp_fasta = kwarg_dict["fp_fasta"]
-    marker = kwarg_dict["marker"]
+    roi = kwarg_dict["roi"]
     fp_out = kwarg_dict["fp_out"]
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
@@ -285,7 +284,6 @@ def main(kwarg_dict):
     offtarget_size = kwarg_dict["offtarget_size"]
     primer3_configs = kwarg_dict["primer3_configs"]
     included_enzymes = kwarg_dict["included_enzymes"]
-    fragment_min_size = kwarg_dict["fragment_min_size"]
     debug = kwarg_dict["debug"]
 
     # Set primer3 globals
@@ -302,90 +300,127 @@ def main(kwarg_dict):
     lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
 
     # Set a logger message that will be printed at the end (to be threadsafe)
-    header = "Primer search results for {}".format(marker.name)
+    header = "Primer search results for {}".format(roi.name)
     sepline = "=" * (len(header) + 2)
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
-    # Read sequences
-    seqs = lib_blast.read_fasta(fp_fasta)
-    marker.upload_sequence(seqs[marker.fasta_name])
-    del seqs[marker.fasta_name]
-
-    # Find all restriction enzymes that may work on the marker
+    # Find all restriction enzymes that may work for the marker
     caps = CAPS(
-        marker=marker,
+        marker=roi.marker,
         included_enzymes=included_enzymes,
     )
-
     caps.find_valid_enzymes()
     logger_msg += "Possible restriction enzymes: {}\n".format(",".join(caps.valid_enzymes_list))
 
-    # Set target in PRIMER3
-    lib_primer3.set_globals(
-        SEQUENCE_TARGET=[max([1, caps.marker_pos - fragment_min_size]), fragment_min_size*2 + 1],
-    )
+    # Read and align sequences for both the left and right window
+    fa_suffixes = ["left", "right"]
+    for i in range(2):
+        fp_fasta = join(blast_db.temporary, "{}-{}".format(roi.name.replace("_", "-"), fa_suffixes[i]) + ".fa")
+        seqs = lib_blast.read_fasta(fp_fasta)
 
-    # Align homologs to the target sequence
-    if len(seqs) > 49:
-        # If more than 50 homoloous sequences were found, then do not run multialignment and
-        # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
-        mock_seqs = {
-            marker.fasta_name: marker.seq,
-            "mock": marker.seq,
-        }
-        lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
+        roi.pwindows.markers[i].seq = seqs[roi.pwindows.markers[i].fasta_name]
+        del seqs[roi.pwindows.markers[i].fasta_name]
 
-    fp_aligned = join(blast_db.temporary, marker.name + ".afa")
-    muscle.align_fasta(fp=fp_fasta, fp_out=fp_aligned)
+        # Align homologs to the target sequence
+        if len(seqs) > 49:
+            # If more than 50 homoloous sequences were found, then do not run multialignment and
+            # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
+            mock_seqs = {
+                roi.pwindows.markers[i].fasta_name: roi.pwindows.markers[i].seq,
+                "mock": roi.pwindows.markers[i].seq,
+            }
+            lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
-    # Map mismatches in the homeologs
+        fp_aligned = join(blast_db.temporary, roi.name + str(i) + "_malign.afa")
+        muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
+
+        # Map mismatches in the homeologs
+        roi.pwindows.markers[i].maps = dict()
+        roi.pwindows.markers[i].maps["all"] = np.repeat(True, len(roi.pwindows.markers[i].seq))
+        roi.pwindows.markers[i].maps["partial_mism"], roi.pwindows.markers[i].maps["mism"] = _lib_pcr.map_homologs(
+            fp_aligned,
+            roi.pwindows.markers[i].fasta_name,
+            len(roi.pwindows.markers[i].seq),
+        )
+
+        # Cleanup temporary files
+        if not debug:
+            os.remove(fp_fasta)
+            os.remove(fp_aligned)
+
+    # Merge all maps
     maps = dict()
-    maps["all"] = np.repeat(True, marker.n)
-    maps["partial_mism"], maps["mism"] = _lib_kasp.map_homologs(fp_aligned, marker.fasta_name, marker.n)
-
-    # Cleanup temporary files
-    if not debug:
-        os.remove(fp_fasta)
-        os.remove(fp_aligned)
+    maps["all"] = np.concatenate([
+        roi.pwindows.markers[0].maps["all"][:-1],
+        np.repeat(False, roi.n),
+        roi.pwindows.markers[1].maps["all"][1:],
+    ])
+    maps["partial_mism"] = np.concatenate([
+        roi.pwindows.markers[0].maps["partial_mism"][:-1],
+        np.repeat(False, roi.n),
+        roi.pwindows.markers[1].maps["partial_mism"][1:],
+    ])
+    maps["mism"] = np.concatenate([
+        roi.pwindows.markers[0].maps["mism"][:-1],
+        np.repeat(False, roi.n),
+        roi.pwindows.markers[1].maps["mism"][1:],
+    ])
 
     # Get valid regions for the design of the primers
     ivs = {}
+    roi.start = int(roi.pwindows.markers[0].fasta_name.split(":")[1].split("-")[0])
+    roi.end = int(roi.pwindows.markers[1].fasta_name.split(":")[1].split("-")[1])
     for k, mmap in maps.items():
         ivs[k] = {}
         k_mut = k + "_mut"
-        ivs[k] = _lib_pcr.get_exclusion_zone(mmap)
+        ivs[k] = lib_primer3.get_exclusion_zone(mmap)  # Mutations not excluded
 
-        if len(marker.mutations) > 0:
-            ivs[k_mut] = _lib_pcr.get_exclusion_zone(mmap,
-                                                     hard_exclude=marker.mutations)
+        if len(roi.mutations) > 0:
+            # Make a list of mutation positions based on mutation for exclusion
+            mut_ixs = []
+            for mutation in roi.mutations:
+                mut_ixs.append(mutation.pos - roi.start)
+            ivs[k_mut] = lib_primer3.get_exclusion_zone(mmap, hard_exclude=mut_ixs)
+
+    # Set the product size range
+    lib_primer3.set_globals(
+        PRIMER_PRODUCT_SIZE_RANGE=[roi.n, len(maps["all"])]
+    )
+
+    # Update roi to be the entire sequence including the side windows
+    roi.fetch_roi()
 
     # Design primers
-    pcr = PCR(marker.name, marker.chrom, marker.pos1, marker.ref, marker.alt)
+    pcr = PCR(
+        snp_id=roi.marker.name,
+              chrom=roi.marker.chrom,
+        pos = roi.marker.pos,
+        ref=roi.marker.ref,
+        alt=roi.marker.alt
+    )
+    map_names = {
+        "mism_mut": "Variants excluded | Homologs specific",
+        "partial_mism_mut": "Variants excluded | Homologs partial spec",
+        "all_mut": "Variants excluded | Unspecific",
+        "mism": "Variants included | Homologs specific",
+        "partial_mism": "Variants included | Homologs partial spec",
+        "all": "Variants included | Unspecific",
+    }
+    # Set the search mask ordering
+    if len(roi.mutations) > 0:
+        search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
+    else:
+        search_types = ["mism", "partial_mism", "all"]
 
-    # Only design primers if a restriction enzyme exists
     if len(caps.valid_enzymes) > 0:
-        map_names = {
-            "mism_mut": "Variants excluded | Homologs specific",
-            "partial_mism_mut": "Variants excluded | Homologs partial spec",
-            "all_mut": "Variants excluded | Unspecific",
-            "mism": "Variants included | Homologs specific",
-            "partial_mism": "Variants included | Homologs partial spec",
-            "all": "Variants included | Unspecific",
-        }
-        # Set the search mask ordering
-        if len(marker.mutations) > 0:
-            search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
-        else:
-            search_types = ["mism", "partial_mism", "all"]
-
         for search_type in search_types:
             if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
                 n_before = len(pcr.pps)
                 pcr.pps = _lib_pcr.design_primers(
                     pps_repo=pcr.pps,  # Primer pair repository
-                    target_seq=marker.seq,
-                    target_chrom=marker.chrom,
-                    target_start=marker.start,
+                    target_seq=roi.seq,
+                    target_chrom=roi.chrom,
+                    target_start=roi.start,
                     ivs=ivs[search_type],
                     n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
                 )
@@ -399,14 +434,19 @@ def main(kwarg_dict):
         logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
         logger_msg += "      Reverse : {:d}\n".format(valid_hit_cnts["R"])
 
-    pcr.add_mutations(marker.mutations)  # List mutations in primers
+    pcr.add_mutations(roi.mutations)  # List mutations in primers
     pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
-    print_report(pcr, caps, fp_out)
+    print_report_header(fp_out)
+    print_report(
+        pcr=pcr,
+        caps=caps,
+        fp=fp_out,
+    )
 
 
 if __name__ == "__main__":

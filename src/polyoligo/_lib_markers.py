@@ -102,7 +102,6 @@ class Markers:
         """
 
         df = pd.read_csv(fp, delim_whitespace=True, header=None)
-        print(df)
         df.columns = ["chr", "pos", "name", "ref", "alt"]
 
         self.markers = []

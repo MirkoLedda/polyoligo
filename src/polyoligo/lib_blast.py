@@ -98,7 +98,7 @@ class BlastDB:
         self.seqs = None
 
     def fetch(self, *args, **kwargs):
-        if self.has_fasta:
+        if self.seqs is not None:
             return self.fetch_fasta(*args, **kwargs)
         else:
             return self.fetch_blastdb(*args, **kwargs)

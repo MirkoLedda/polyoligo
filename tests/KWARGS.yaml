@@ -8,8 +8,8 @@ vcf_include: "sample_data/vcf_include.txt"
 vcf_exclude: "sample_data/vcf_include.txt"
 nt: 4
 tm_delta: 10
-n: 20
-depth: 10
+n: 200
+depth: 1
 seed: 13
 offtarget_min_size: 100
 offtarget_max_size: 1000

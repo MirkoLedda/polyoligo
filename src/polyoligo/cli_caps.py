@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_caps, _lib_markers, _logger_config, lib_utils, lib_vcf, _version
+from . import lib_blast, _lib_caps, _lib_markers, _logger_config, lib_utils, lib_vcf, _version, _lib_pcr
 
 __version__ = _version.__version__
 
@@ -25,13 +25,13 @@ PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_CAPS.yaml")
 MARKER_FLANKING_N = 50  # Number of nucleotides on each sides when retrieving the sequence flanking the marker
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
-HOMOLOG_FLANKING_N = 1000  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
+HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
 
 def cprofile_worker(kwargs):
     """Wrapper to cProfile subprocesses."""
-    cProfile.runctx('_lib_caps.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
+    cProfile.runctx('_lib_caps.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["roi"].name))
 
 
 def parse_args(inputargs):
@@ -282,39 +282,6 @@ def main(strcmd=None):
             if k not in primer3_configs.keys():  # overwrite only if not set
                 primer3_configs[k] = v
 
-    # Init Markers object
-    markers = _lib_markers.Markers(
-        blast_db=blast_db,
-        MARKER_FLANKING_N=MARKER_FLANKING_N,
-        MIN_ALIGN_LEN=MIN_ALIGN_LEN,
-        MIN_ALIGN_ID=MIN_ALIGN_ID,
-        HOMOLOG_FLANKING_N=max([HOMOLOG_FLANKING_N, args.fragment_min_size + 500])
-    )
-
-    # Read markers
-    try:
-        markers.read_markers(args.markers)
-    except:
-        logger.error("Failed to read input markers. Please double check the format is CHR POS NAME REF ALT")
-        sys.exit(1)
-
-    if args.webapp:
-        if len(markers) > WEBAPP_MAX_N:
-            markers.markers = markers.markers[0:WEBAPP_MAX_N]
-            logger.warning("Number of target markers exceeds the limit of {}. "
-                           "Only designing first {} markers".format(WEBAPP_MAX_N, WEBAPP_MAX_N))
-
-    logger.info("Number of target markers = {}".format(len(markers)))
-
-    # Read enzymes if provided
-    if args.enzymes == "":
-        included_enzymes = None
-    else:
-        included_enzymes = []
-        with open(args.enzymes, "r") as f:
-            for line in f:
-                included_enzymes.append(line.strip())
-
     # Init a VCF object if a file is provided
     if args.vcf == "":
         vcf_obj = None
@@ -322,17 +289,32 @@ def main(strcmd=None):
         logger.info("Loading VCF information ...")
         vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
 
-    # Get flanking sequences around the markers
-    logger.info("Retrieving flanking sequence around markers ...")
-    seqs = markers.get_marker_flanks()
+    # Init ROIs object
+    rois = _lib_pcr.ROIs(blast_db=blast_db)
+    # try:
+    rois.upload_markers(
+        fp=args.markers,
+        padding=args.fragment_min_size,
+        HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+    )
+    # except:
+    #     logger.error("Failed to read input markers. Please double check the format is CHR POS NAME REF ALT")
+    #     sys.exit(1)
+    rois.fetch_roi()
 
-    # Find homologs for each marker and write them to a unique fasta file per marker
+    # Find homologs
     logger.info("Finding homeologs/duplications by sequence homology ...")
-    markers.find_homologs(seqs)
+    rois.find_homologs(
+        MARKER_FLANKING_N=MARKER_FLANKING_N,
+        MIN_ALIGN_LEN=MIN_ALIGN_LEN,
+        MIN_ALIGN_ID=MIN_ALIGN_ID,
+        HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+    )
 
+    # Upload VCF information
     if vcf_obj is not None:
         logger.info("Uploading the VCF file ...")
-        markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
+        rois.upload_windows_mutations(vcf_obj)  # Upload mutations in the primer regions
 
         # Write subjects containing alternative alleles for each mutations
         if args.report_alts:
@@ -342,10 +324,32 @@ def main(strcmd=None):
             if os.path.exists(args.report_alts):
                 os.remove(args.report_alts)
 
-            markers.print_alt_subjects(
+            rois.print_alt_subjects(
                 vcf_obj=vcf_obj,
                 fp=args.report_alts,
             )
+
+    # Upload mutations
+    rois.upload_mutations(vcf_obj,
+                          HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+                          )
+
+    if args.webapp:
+        if len(rois.rois) > WEBAPP_MAX_N:
+            rois.rois = rois.rois[0:WEBAPP_MAX_N]
+            logger.warning("Number of target markers exceeds the limit of {}. "
+                           "Only designing first {} markers".format(WEBAPP_MAX_N, WEBAPP_MAX_N))
+
+    logger.info("Number of target markers = {}".format(len(rois.rois)))
+
+    # Read enzymes if provided
+    if args.enzymes == "":
+        included_enzymes = None
+    else:
+        included_enzymes = []
+        with open(args.enzymes, "r") as f:
+            for line in f:
+                included_enzymes.append(line.strip())
 
     # Start the search for candidate KASP primers
     if not args.webapp:
@@ -359,18 +363,16 @@ def main(strcmd=None):
     # Initialize a list of kwargs for the worker and a job queue
     kwargs_worker = []
 
-    for marker in markers.markers:
-        blast_db.job_id = marker.name  # To make sure files are not overwritten during multiprocessing
+    for roi in rois.rois:
+        blast_db.job_id = roi.name  # To make sure files are not overwritten during multiprocessing
         blast_db.n_cpu = 1  # Blast should now only use 1 thread as we will be spawning jobs
 
         kwarg_dict = {
-            "fp_fasta": join(temp_path, marker.name + ".fa"),
-            "marker": marker,
-            "fp_out": join(temp_path, marker.name + ".txt"),
+            "roi": roi,
+            "fp_out": join(temp_path, roi.name + ".txt"),
             "blast_db": blast_db,
             "muscle": muscle,
             "included_enzymes": included_enzymes,
-            "fragment_min_size": args.fragment_min_size,
             "n_primers": args.n_primers,
             "p3_search_depth": args.depth,
             "tm_delta": args.tm_delta,
@@ -392,7 +394,7 @@ def main(strcmd=None):
                 ))
             else:
                 _ = list(tqdm.tqdm(
-                    p.imap_unordered(_lib_caps.main, kwargs_worker),
+                    p.imap_unordered(_lib_pcr.main, kwargs_worker),
                     total=n_jobs,
                     disable=args.silent,
                 ))
@@ -405,7 +407,7 @@ def main(strcmd=None):
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
     fp_out = join(out_path, args.output + ".txt")
-    markers.write_caps_report(fp_out)
+    rois.write_report(fp_out)
 
     if not args.debug:
         shutil.rmtree(temp_path)

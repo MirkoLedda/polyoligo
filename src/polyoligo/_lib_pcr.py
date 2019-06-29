@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class ROI:
-    def __init__(self, roi, blast_db, name=None):
+    def __init__(self, roi, blast_db, name=None, marker=None):
         self.chrom = roi.strip().split(":")[0]
         self.start = int(roi.strip().split(":")[1].split("-")[0])
         self.end = int(roi.strip().split(":")[1].split("-")[1])
@@ -33,6 +33,9 @@ class ROI:
         self.G = None  # Genotypes within the region
         self.mutations = []  # List of vcf_lib.Mutation objects
         self.pwindows = None  # Windows where to build the primers (_lib_markers.Markers object)
+
+        # For markers based PCR assays
+        self.marker = marker
 
     def get_primer_windows(self, MARKER_FLANKING_N, MIN_ALIGN_LEN, MIN_ALIGN_ID, HOMOLOG_FLANKING_N):
         # Create two mock markers for the left and right window
@@ -129,6 +132,37 @@ class ROIs:
             roi = ROI(
                 roi=l.strip(),
                 blast_db=self.blast_db,
+            )
+            self.rois.append(roi)
+
+    def upload_markers(self, fp, padding, HOMOLOG_FLANKING_N):
+        df = pd.read_csv(fp, delim_whitespace=True, header=None)
+        df.columns = ["chr", "pos", "name", "ref", "alt"]
+
+        for _, row in df.iterrows():
+            target = "{}:{}-{}".format(row["chr"], max([1, row["pos"] - padding]), row["pos"] + padding)
+            marker = _lib_markers.Marker(
+                chrom=row["chr"],
+                pos=row["pos"] - 1,  # to 0-based indexing
+                ref_allele=row["ref"],
+                alt_allele=row["alt"],
+                name=row["name"],
+                HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
+            )
+
+            q = [{
+                "chr": marker.chrom,
+                "start": max(1, marker.pos1 - HOMOLOG_FLANKING_N),
+                "stop": marker.pos1 + HOMOLOG_FLANKING_N,
+            }]
+
+            marker.seq = list(self.blast_db.fetch(q).values())[0]
+
+            roi = ROI(
+                roi=target,
+                blast_db=self.blast_db,
+                name=marker.name,
+                marker=marker,
             )
             self.rois.append(roi)
 
@@ -348,7 +382,6 @@ def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_prim
 def main(kwarg_dict):
     # kwargs to variables
     roi = kwarg_dict["roi"]
-    fp_out = kwarg_dict["fp_out"]
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]

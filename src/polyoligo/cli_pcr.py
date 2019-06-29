@@ -282,6 +282,8 @@ def main(strcmd=None):
     rois.upload_file(args.roi)
     rois.fetch_roi()
 
+    logger.info("Number of targets = {}".format(len(rois.rois)))
+
     # Find homologs
     logger.info("Finding homeologs/duplications by sequence homology ...")
     rois.find_homologs(
