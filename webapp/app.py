@@ -419,19 +419,13 @@ def caps():
         os.makedirs(dest_folder)
 
         # Marker file
-        kwargs["markers"] = upload_file_to_server(request, "markers_file", dest_folder)
-        if kwargs["markers"] is None:
-            kwargs["markers"] = join(dest_folder, "markers.txt")
-            markers = request.form.get("markers")
-            with open(kwargs["markers"], "w") as f:
-                for line in markers:
-                    f.write(line)
+        kwargs["markers"] = join(dest_folder, "markers.txt")
+        markers = request.form.get("markers")
+        with open(kwargs["markers"], "w") as f:
+            f.write(markers)
 
         # BlastDB
-        kwargs["reference"] = request.form.get("ncbi_taxid")
-        if kwargs["reference"] == "":
-            kwargs["reference"] = request.form.get("reference")
-
+        kwargs["reference"] = request.form.get("reference")
         if kwargs["reference"] == 'Fragaria ananassa':
             include_vcf = True
 

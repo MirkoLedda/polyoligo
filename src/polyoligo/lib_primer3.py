@@ -117,6 +117,7 @@ class PrimerPair:
         self.offtargets = []  # List of offtarget sites
         self.max_indel_size = 0  # Maximum indel size within the PCR product
         self.chrom = None
+        self.dimer = None  # Will it form a heterodimer
         self.goodness = None  # Heuristic goodness score
         self.qcode = None  # Heuristic quality code, gives context to the goodness score
 
@@ -133,6 +134,26 @@ class PrimerPair:
         self.compl_end_th = pp3.compl_end_th
         self.product_size = pp3.product_size
         self.penalty = pp3.penalty
+
+    # noinspection PyUnresolvedReferences
+    def check_heterodimerization(self):
+
+        for d in self.primers.keys():
+            if not self.primers[d].has_thermals:
+                self.primers[d].calc_thermals()
+
+        seqs = {}
+        for d in self.primers.keys():
+            seqs[d] = self.primers[d].sequence
+
+        thals_obj = ThermoAnalysis()  # Initialize a primer3 thal object
+        tm_ref = thals_obj.calcHeterodimer(seqs["F"], seqs["R"]).tm
+
+        # Primer with the reference allele
+        if (tm_ref <= (self.primers["F"].tm-self.tm_delta)) and (tm_ref <= (self.primers["R"].tm - self.tm_delta)):
+            self.dimer = False
+        else:
+            self.dimer = True
 
     def add_mutations(self, mutations):
 
@@ -170,7 +191,7 @@ class PrimerPair:
 
         tms = np.array([self.primers[d].tm for d in self.primers.keys()])
         tms_l1_norm = np.sum(np.abs(tms - np.mean(tms)))
-        if tms_l1_norm <= 3:
+        if tms_l1_norm <= 5:
             score += 1
         else:
             qcode += "t"
@@ -180,12 +201,10 @@ class PrimerPair:
         else:
             qcode += "O"
 
-        # todo heterodimers
-        # if (not self.ref_dimer) and (not self.alt_dimer):
-        #     score += 1
-        # else:
-        #     qcode += "d"
-        score += 1
+        if not self.dimer:
+            score += 1
+        else:
+            qcode += "d"
 
         max_aafs = np.array([self.primers[d].max_aaf for d in self.primers.keys()])
         if np.all(max_aafs < 0.1):
@@ -244,6 +263,10 @@ class PCR:
         seqs = list(np.unique(seqs))
 
         return seqs
+
+    def check_heterodimerization(self):
+        for pp in self.pps:
+            pp.check_heterodimerization()
 
     # noinspection PyPep8Naming
     def check_offtargeting(self, blast_db, debug=False):

@@ -526,6 +526,7 @@ def main(kwarg_dict):
     logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
     logger_msg += "      Reverse : {:d}\n".format(valid_hit_cnts["R"])
 
+    pcr.check_heterodimerization()  # Check for heterodimerization
     pcr.add_mutations(roi.mutations)  # List mutations in primers
     pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers

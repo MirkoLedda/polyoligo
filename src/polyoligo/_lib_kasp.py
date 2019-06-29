@@ -70,13 +70,13 @@ class PrimerPair(lib_primer3.PrimerPair):
             tm_alt = thals_obj.calcHeterodimer(seqs["F"], seqs["A"]).tm - self.tm_delta
 
         # Primer with the reference allele
-        if (tm_ref <= self.primers["F"].tm) and (tm_ref <= self.primers["R"].tm):
+        if (tm_ref <= (self.primers["F"].tm-self.tm_delta)) and (tm_ref <= (self.primers["R"].tm-self.tm_delta)):
             self.ref_dimer = False
         else:
             self.ref_dimer = True
 
         # Primer with the alternative allele
-        if (tm_alt <= self.primers["F"].tm) and (tm_alt <= self.primers["R"].tm):
+        if (tm_alt <= (self.primers["F"].tm-self.tm_delta)) and (tm_alt <= (self.primers["R"].tm-self.tm_delta)):
             self.alt_dimer = False
         else:
             self.alt_dimer = True
@@ -87,7 +87,7 @@ class PrimerPair(lib_primer3.PrimerPair):
 
         tms = np.array([self.primers[d].tm for d in self.primers.keys()])
         tms_l1_norm = np.sum(np.abs(tms - np.mean(tms)))
-        if tms_l1_norm <= 3:
+        if tms_l1_norm <= 5:
             score += 1
         else:
             qcode += "t"
