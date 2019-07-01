@@ -95,10 +95,10 @@ Two output files are produced:
 Optionally, a list of all subjects containing alternative alleles can be requested using the flag `--report_alts`, if a VCF file if provided. The list will be reported in `<OUTPUT>_altlist.txt`. Each mutation is listed in a pseudo-FASTA format as `>REFPOSALT`, similar to what is reported in the standard output but without allele frequencies. The first and second lines list all hets and homozygotes, respectively. This file can be used to investigate markers where no primers exempt of mutations exists.
 
 ### Example usage and tips
-In the following example, CAPS primers will be designed with reporter dyes included and by considering both homologs and mutations within a selected subset population:
+In the following example, CAPS primers will be designed by considering both homologs and mutations within a selected subset population:
 
 ```
-polyoligo-caps sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt --reporters sample_data/VIC_FAM_reporters.txt
+polyoligo-caps sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
 ```
 
 For the design of a large number of probes (>1000), for example to design CAPS assays across an entire genome, the use of the option `--fast` is recommended. This mode is faster than the standard mode for designing numerous probes because the entire reference genome in momentarily loaded in memory, which reduces I/O actions but increases RAM consumption substantially.
