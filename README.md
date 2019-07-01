@@ -8,10 +8,10 @@ A Python-based **multicore enabled** set of tools to **design oligonucleotides**
 
 ## Included binaries
 
-* **`polyoligo-kasp`**: Design primers for genotyping assays using Kompetitive allele specific PCR (KASP).
-* **`polyoligo-pcr`**: Design primers for PCR.
-<!--* **`polyoligo-snpseq`**: Design optimal primers for SNP-Seq assays.-->
-* **`polyoligo-crispr`**: Design gRNAs for CRISPR/Cas9 assays.
+* [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_kasp.md): Design primers for genotyping assays using Kompetitive allele specific PCR (KASP).
+* [**`polyoligo-caps`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_caps.md): Design primers for CAPS assays.
+* [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_pcr.md): Design primers for PCR.
+* [**`polyoligo-crispr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_crispr.md): Design gRNAs for CRISPR/Cas9 assays.
 
 ## Getting Started
 
@@ -58,15 +58,9 @@ python3 setup.py install --user
 echo 'export PATH="$PATH:~/.local/bin"' >> ~/.bashrc; source ~/.bashrc
 ```
 
-### Instructions
+<!--### Instructions-->
 
 <!--See this [wiki](https://github.com/MirkoLedda/polyoligo.git).-->
-
-* [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/README_kasp.md)
-* [**`polyoligo-crispr`**](https://github.com/MirkoLedda/polyoligo/README_crispr.md)
-* [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/README_pcr.md)
-<!--* **`polyoligo-snpseq`**: Design optimal primers for SNP-Seq assays.-->
-
 
 
 ## Citation
