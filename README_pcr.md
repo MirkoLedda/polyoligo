@@ -11,7 +11,7 @@ polyoligo-pcr -v
 You can now run a full test by entering the command:
 
 ```
-polyoligo-pcr sample_data/markers.txt out sample_data/blastdb
+polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb
 ```
 
 > This will create two output files called `out.txt` and `out.log` in the current folder.
@@ -36,7 +36,7 @@ Recommendations (when applicable) are given in the option caption. Note that swi
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: The region of interest declared as CHR:START-END.
+**`<INPUT>`**: Regions of interest declared as CHR:START-END NAME(optional).
 
 **`<OUTPUT>`**: The base name of the output files.
 
@@ -89,5 +89,5 @@ Optionally, a list of all subjects containing alternative alleles can be request
 In the following example, primer pairs will be designed by considering both homologs and mutations within a selected subset population:
 
 ```
-polyoligo-pcr Fvb2-4:100000-101000 out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt --reporters sample_data/VIC_FAM_reporters.txt
+polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
 ```
