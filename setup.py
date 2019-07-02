@@ -77,6 +77,7 @@ setup(
     # Create the executable
     entry_points={
         'console_scripts': [
+            'polyoligo = polyoligo.logo:main',
             'polyoligo-kasp = polyoligo.cli_kasp:main',
             'polyoligo-crispr = polyoligo.cli_crispr:main',
             'polyoligo-pcr = polyoligo.cli_pcr:main',

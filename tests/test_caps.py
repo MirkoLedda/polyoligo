@@ -15,6 +15,7 @@ cli_caps.main(strcmd=" ".join([
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
+    "--silent"
 ]))
 cli_caps.main(strcmd=" ".join([
     "polyoligo-caps",

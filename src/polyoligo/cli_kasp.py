@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_kasp, _lib_markers, _logger_config, lib_utils, lib_vcf, _version
+from . import lib_blast, _lib_kasp, _lib_markers, _logger_config, lib_utils, lib_vcf, _version, logo
 
 __version__ = _version.__version__
 
@@ -199,6 +199,7 @@ def parse_args(inputargs):
 
 
 def main(strcmd=None):
+
     main_time = lib_utils.timer_start()  # Set main timer
 
     # Input arguments handling
@@ -231,6 +232,10 @@ def main(strcmd=None):
     # Init the logger
     _logger_config.setup_logging(log_fp=join(out_path, args.output + ".log"), verbose=not args.silent)
     logger = logging.getLogger(__name__)
+
+    if not args.silent and not args.webapp:
+        logo.main()
+    logger.info("Designing KASP assays")
 
     # Detect the os and point to respective binaries
     curr_os = lib_utils.get_os()

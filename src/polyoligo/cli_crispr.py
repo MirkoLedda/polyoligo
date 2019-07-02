@@ -8,7 +8,7 @@ import shutil
 import multiprocessing as mp
 import cProfile
 
-from . import lib_blast, _lib_crispr, _logger_config, lib_utils, _version
+from . import lib_blast, _lib_crispr, _logger_config, lib_utils, _version, logo
 
 __version__ = _version.__version__
 
@@ -127,6 +127,10 @@ def main(strcmd=None):
     # Init the logger
     _logger_config.setup_logging(log_fp=join(out_path, args.output + ".log"), verbose=not args.silent)
     logger = logging.getLogger(__name__)
+
+    if not args.silent and not args.webapp:
+        logo.main()
+    logger.info("Designing CRISPR/Cas9 assays")
 
     # Detect the os and point to respective binaries
     curr_os = lib_utils.get_os()

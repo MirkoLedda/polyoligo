@@ -58,6 +58,14 @@ python3 setup.py install --user
 echo 'export PATH="$PATH:~/.local/bin"' >> ~/.bashrc; source ~/.bashrc
 ```
 
+## Running a test
+
+To make sure the installation ran properly, run:
+
+```
+polyoligo
+```
+
 <!--### Instructions-->
 
 <!--See this [wiki](https://github.com/MirkoLedda/polyoligo.git).-->

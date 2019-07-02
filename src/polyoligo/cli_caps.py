@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_caps, _lib_markers, _logger_config, lib_utils, lib_vcf, _version, _lib_pcr
+from . import lib_blast, _lib_caps, _lib_markers, _logger_config, lib_utils, lib_vcf, _version, _lib_pcr, logo
 
 __version__ = _version.__version__
 
@@ -231,6 +231,10 @@ def main(strcmd=None):
     # Init the logger
     _logger_config.setup_logging(log_fp=join(out_path, args.output + ".log"), verbose=not args.silent)
     logger = logging.getLogger(__name__)
+
+    if not args.silent and not args.webapp:
+        logo.main()
+    logger.info("Designing CAPS assays")
 
     # Detect the os and point to respective binaries
     curr_os = lib_utils.get_os()
