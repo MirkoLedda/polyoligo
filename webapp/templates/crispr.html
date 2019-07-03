@@ -7,28 +7,6 @@
 
 {% block head %}
     {{ super() }}
-    <style>
-        .column {
-            float: left;
-            width: 33.33%;
-        }
-
-        .row {
-            margin-left: 10px;
-        }
-
-        /* Clear floats after the columns */
-        .row:after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-
-        form label {
-            font-size: 20px;
-        }
-
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -42,7 +20,9 @@
                 {% for blastdb_option in blastdb_options %}
                     <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
                 {% endfor %}
-            </select><br>
+            </select>
+            <!-- or enter a FASTA file <input type="file" name="reference_file" ><br><br> -->
+            <small>Note that currently only the canonical PAM site (NGG) is supported. This may change in future releases.</small><br>
         </div>
         <br>
 

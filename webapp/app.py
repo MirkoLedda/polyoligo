@@ -163,7 +163,7 @@ def run_task(strcmd, log_dest):
 # ROUTES -----------------------------------------------------------------------
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('home.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
 
 @app.route('/pcr', methods=['GET', 'POST'])

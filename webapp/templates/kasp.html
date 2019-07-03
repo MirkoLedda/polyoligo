@@ -7,28 +7,6 @@
 
 {% block head %}
     {{ super() }}
-    <style>
-        .column {
-            float: left;
-            width: 33.33%;
-        }
-
-        .row {
-            margin-left: 10px;
-        }
-
-        /* Clear floats after the columns */
-        .row:after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-
-        form label {
-            font-size: 20px;
-        }
-
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -36,13 +14,14 @@
     <form id="kasp" method="POST" action="{{ url_for('kasp') }}" enctype="multipart/form-data">
         <div class="mandatory">
             <label>Input markers <i>(Limited to 100 max)</i></label> <i>- One marker per line with columns CHR POS NAME REF ALT.</i><br>
-            <textarea type="textarea" name="markers" rows="10" width="100%"></textarea><br>
+            <textarea type="textarea" name="markers" rows="10" width="100%"></textarea><br><br>
             <label>Reference genome</label><br>
             <select name="reference">
                 {% for blastdb_option in blastdb_options %}
                     <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
                 {% endfor %}
-            </select><br>
+            </select>
+            <!-- or enter a FASTA file <input type="file" name="reference_file" > -->
             <!-- <b>OR</b> enter a <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi">NCBI taxid</a> &nbsp <input type="text" name="ncbi_taxid"> -->
         </div>
         <div class="optional">

@@ -1,16 +1,8 @@
-/* .container {
-  width: 500px;
-  clear: both;
+/* ----Body---- */
+body {
+  font-size: calc(12px + (20 - 12) * ((100vw - 300px) / (1600 - 300)));
+  line-height: calc(1.2em + (1.5 - 1.2) * ((100vw - 300px)/(1600 - 300)));
 }
-
-.container input {
-  width: 100%;
-  clear: both;
-}
-
-.container label {
-  font-weight: bold;
-} */
 
 /* ----Nav bar---- */
 .navbar {
@@ -29,7 +21,7 @@
     text-align: center;
     padding: 14px 16px;
     text-decoration: none;
-    font-size: 20px;
+    font-size: calc(16px + (24 - 16) * ((100vw - 300px) / (1600 - 300)));
 }
 
 .navbar a:hover {
@@ -42,29 +34,33 @@
 #page-container {
     position: relative;
     min-height: 100vh;
-    font-size: 15px;
+    /* font-size: 15px; */
 }
 
 #content-wrap {
-    margin-top: 100px;
+    margin-top: calc(50px + (90 - 50) * ((100vw - 300px) / (1600 - 300)));
     margin-left: 2%;
     width: 95%;
     padding-bottom: 2.5rem;    /* Footer height */
 }
 
 #footer {
-    margin-left: 30px;
+    margin-left: 2%;
     position: absolute;
     bottom: 0;
     width: 95%;
     height: 2.5rem;
+    font-size: calc(10px + (14 - 10) * ((100vw - 300px) / (1600 - 300)));
 }
 
 #summary {
-    font-size: 20px;
+    /* font-size: 20px; */
     /* color: gray; */
-    margin-left: 50px;
-    width: 90%;
+    /* margin-left: 2%; */
+    /* width: 95%; */
+    background-color: lightgray;
+    border: 1px solid black;
+    padding:10px;
 }
 
 /* ----Console---- */
@@ -80,10 +76,11 @@ button, input[type="button"], input[type="submit"] {
     background-color: black;
     font-weight: bold;
     color: white;
-    width: 200px;
-    height: 50px;
+    width: calc(100px + (200 - 100) * ((100vw - 300px) / (1600 - 300)));
+    height: calc(25px + (50 - 25) * ((100vw - 300px) / (1600 - 300)));
     text-align: center;
-    font-size: 20px;
+    margin-left: 2%;
+    /* font-size: 20px; */
 }
 
 /* ----Utils---- */
@@ -97,7 +94,34 @@ hr {
 }
 
 /* ----Arguments page---- */
+form label {
+    font-size: calc(14px + (24 - 14) * ((100vw - 300px) / (1600 - 300)));
+}
+
+form select {
+    font-size: calc(12px + (20 - 12) * ((100vw - 300px) / (1600 - 300)));
+}
+
+input[type=file] {
+    display: inline-block;
+}
+
+h2 {
+    font-size: calc(25px + (34 - 25) * ((100vw - 300px) / (1600 - 300)));
+    margin-top: 0;
+}
+
 h3 {
+    font-size: calc(20px + (30 - 20) * ((100vw - 300px) / (1600 - 300)));
+    margin-top: 0;
+}
+
+#assay_arrow {
+    margin-left: 100px
+}
+
+h4 {
+    font-size: calc(16px + (24 - 16) * ((100vw - 300px) / (1600 - 300)));
     margin-top: 0;
 }
 
@@ -126,7 +150,7 @@ input[type=checkbox] {
     -webkit-transform: scale(1.5); /* Safari and Chrome */
     -o-transform: scale(1.5); /* Opera */
     transform: scale(1.5);
-    padding: 20px;
+    padding: 2vw;
 }
 
 textarea {
@@ -146,4 +170,20 @@ textarea {
     margin: 2%;
     padding: 2%;
     background-color: WhiteSmoke;
+}
+
+/* ----Column layout---- */
+.column {
+    float: left;
+    width: 33.33%;
+}
+
+.row {
+    margin-left: 10px;
+}
+
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
 }

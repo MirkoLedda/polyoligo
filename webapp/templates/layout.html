@@ -5,6 +5,7 @@
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
             <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
             <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+            <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
             <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
             <title>PolyOligo - {% block title %}{% endblock %}</title>
         {% endblock %}
@@ -31,7 +32,7 @@
                     Last updated: 2019-06-30<br>
                     Built with <a href="Flask">Flask </a> and powered by <a href="https://github.com/MirkoLedda/polyoligo">PolyOligo v0.1</a><br>
                     Provided by the <a href="https://knapp.plantsciences.ucdavis.edu/">Knapp Lab</a>.</br>
-                    &copy; Copyright 2019 to Mirko Ledda, under a <a href="https://github.com/MirkoLedda/polyoligo/blob/master/LICENSE">BSD-2 License</a>.
+                    &copy; Copyright 2019 to Mirko Ledda, under the <a href="https://github.com/MirkoLedda/polyoligo/blob/master/LICENSE">BSD-2 License</a>.
                     <br><br>
                 {% endblock %}
             </div>

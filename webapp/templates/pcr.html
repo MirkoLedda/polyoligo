@@ -7,28 +7,6 @@
 
 {% block head %}
     {{ super() }}
-    <style>
-        .column {
-            float: left;
-            width: 33.33%;
-        }
-
-        .row {
-            margin-left: 10px;
-        }
-
-        /* Clear floats after the columns */
-        .row:after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-
-        form label {
-            font-size: 20px;
-        }
-
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -36,13 +14,14 @@
     <form id="pcr" method="POST" action="{{ url_for('pcr') }}" enctype="multipart/form-data">
         <div class="mandatory">
             <label>Target regions <i>(Limited to 100 max)</i></label> <i>- One target per line as CHR:START-END NAME(optional).</i><br>
-            <textarea type="textarea" name="rois" rows="10" cols="150"></textarea><br>
+            <textarea type="textarea" name="rois" rows="10" cols="150"></textarea><br><br>
             <label>Reference genome</label><br>
             <select name="reference">
                 {% for blastdb_option in blastdb_options %}
                     <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
                 {% endfor %}
             </select>
+            <!-- or enter a FASTA file <input type="file" name="reference_file" > -->
         </div>
         <div class="optional">
             <h3>Optional</h3>
