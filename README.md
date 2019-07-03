@@ -90,4 +90,4 @@ We use the [SemVer](http://semver.org/) convention for versioning. For the versi
 
 ## License
 
-This software is licensed under the BSD-2 License - see the [LICENSE](LICENSE.txt) file for details.
+This software is licensed under the BSD-2 License - see the [LICENSE](https://github.com/MirkoLedda/polyoligo/blob/master/LICENSE) file for details.

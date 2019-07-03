@@ -11,29 +11,30 @@
     </head>
 
     <body>
-        <div class="navbar">
-            <a href="{{ url_for('home') }}"><b>Home</b></a>
-            <a href="{{ url_for('pcr') }}">PCR</a>
-            <a href="{{ url_for('kasp') }}">KASP</a>
-            <a href="{{ url_for('caps') }}">CAPS</a>
-            <a href="{{ url_for('crispr') }}">CRISPR/Cas9</a>
-        </div>
 
-        <div class="content container">
-            {% block content %}
-            {% endblock %}
-        </div>
+        <div id="page-container">
+            <div class="navbar">
+                <a href="{{ url_for('home') }}"><b>Home</b></a>
+                <a href="{{ url_for('pcr') }}">PCR</a>
+                <a href="{{ url_for('kasp') }}">KASP</a>
+                <a href="{{ url_for('caps') }}">CAPS</a>
+                <a href="{{ url_for('crispr') }}">CRISPR/Cas9</a>
+            </div>
+            <div id="content-wrap">
+                {% block content %}
+                {% endblock %}
+            </div>
 
-        <hr>
-
-        <div id="footer">
-            {% block footer %}
-                Last updated: 2019-06-30<br>
-                Built with <a href="Flask">Flask </a> and powered by <a href="https://github.com/MirkoLedda/polyoligo">PolyOligo v0.1</a><br>
-                <b>Provided by the <a href="https://knapp.plantsciences.ucdavis.edu/">Knapp Lab</a>.</br>
-                &copy; Copyright 2019 to Mirko Ledda, under a BSD-2 License.</b>
-                <br><br>
-            {% endblock %}
+            <div id="footer">
+                <hr>
+                {% block footer %}
+                    Last updated: 2019-06-30<br>
+                    Built with <a href="Flask">Flask </a> and powered by <a href="https://github.com/MirkoLedda/polyoligo">PolyOligo v0.1</a><br>
+                    Provided by the <a href="https://knapp.plantsciences.ucdavis.edu/">Knapp Lab</a>.</br>
+                    &copy; Copyright 2019 to Mirko Ledda, under a <a href="https://github.com/MirkoLedda/polyoligo/blob/master/LICENSE">BSD-2 License</a>.
+                    <br><br>
+                {% endblock %}
+            </div>
         </div>
     </body>
 </html>

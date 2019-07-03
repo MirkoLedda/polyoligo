@@ -10,9 +10,10 @@
 {% endblock %}
 
 {% block content %}
-    <h2>Welcome to <b>PolyOligo</b> - a suite for designing oligonucleotides on complex genomes</h2>
+    <h2>Welcome to <b>PolyOligo</b> <small>v0.1</small> <h4> - a suite for designing oligonucleotides on polyploid and complex genomes.</h4></h2>
     <hr>
-    <h3>Please select below the assay type you would like to design:</h3>
+
+    <center><h3>&darr; Please choose an assay below &darr;</h3>
     <p>
         <form action="{{ url_for('pcr')}}">
             <input type="submit" value="PCR or Sanger">
@@ -27,4 +28,15 @@
             <input type="submit" value="CRISPR/Cas9">
         </form><br>
     </p>
+    </center>
+
+    <p id="summary">
+        <h3>Important information</b></h3>
+        Note that PolyOligo is available as an open-source standalone command line software <a href="https://github.com/MirkoLedda/polyoligo">HERE</a>. To avoid overloading the server, the scope had to be limited. <b>Notably, the number of designs is capped and mutations (i.e. harnessing a VCF file) cannot be considered here (excl. strawberries).</b> The standalone version is free, unlimited and much faster because multi-core enabled.<br><br>
+        Also note that we do not use cookies and under no circumstances are we storing or using data that is uploaded to this server. Once a job completes, only results files are kept and this for 24h to ensure recovery before being permanently deleted.<br><br>
+
+        To cite this tool, please use:<br>
+        TBA<br>
+    <p>
+
 {% endblock %}
