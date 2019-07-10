@@ -194,13 +194,23 @@ class ROIs:
                 stop=roi.pwindows.markers[1].pos + HOMOLOG_FLANKING_N,
             )
 
-    def write_report(self, fp_out):
-        print_report_header(fp_out)
-        with open(fp_out, "a") as f:
+    def write_reports(self, fp_base_out):
+        print_report_header(fp_base_out + ".txt")
+        with open(fp_base_out + ".txt", "a") as f:
             for roi in self.rois:
                 with open(join(self.blast_db.temporary, roi.name + ".txt"), "r") as f_marker:
                     for line in f_marker:
                         f.write(line)
+
+        # BED file
+        line_memory = []
+        with open(fp_base_out + ".bed", "w") as f:
+            for roi in self.rois:
+                with open(join(self.blast_db.temporary, roi.name + ".bed"), "r") as f_marker:
+                    for line in f_marker:
+                        if line not in line_memory:
+                            line_memory.append(line)
+                            f.write(line)
 
 
 def map_homologs(fp_aligned, target_name, target_len):
@@ -274,7 +284,7 @@ def print_report(pcr, fp, delimiter="\t"):
     for pt in primer_type_ordering:
         seq_ids[pt] = []
 
-    with open(fp, "w") as f:
+    with open(fp + ".txt", "w") as f, open(fp + ".bed", "w") as f_bed:
         for i in sorted_scores:
             for pp in pcr.pps_pruned[i]:
                 pp.id = ppid
@@ -330,6 +340,23 @@ def print_report(pcr, fp, delimiter="\t"):
                         mutations,
                     ]
                     f.write("{}\n".format(delimiter.join([str(x) for x in fields])))
+
+                    # BED file
+                    if d == "F":
+                        direction = "+"
+                    else:
+                        direction = "-"
+
+                    fields = [
+                        pcr.chrom,
+                        int(pp.primers[d].start),
+                        int(pp.primers[d].stop),
+                        "{}_{}-{}".format(pcr.name, curr_seq_ids[d], pp.goodness),
+                        "0",
+                        direction,
+                    ]
+                    f_bed.write("{}\n".format("\t".join([str(x) for x in fields])))
+
                 f.write("\n")
                 ppid += 1
 
@@ -391,7 +418,7 @@ def main(kwarg_dict):
     offtarget_size = kwarg_dict["offtarget_size"]
     primer3_configs = kwarg_dict["primer3_configs"]
     debug = kwarg_dict["debug"]
-    fp_out = kwarg_dict["fp_out"]
+    fp_base_out = kwarg_dict["fp_base_out"]
 
     # Set primer3 globals
     if len(primer3_configs) > 0:
@@ -534,8 +561,7 @@ def main(kwarg_dict):
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
-    print_report_header(fp_out)
-    print_report(pcr, fp_out)
+    print_report(pcr, fp_base_out)
 
 
 if __name__ == "__main__":

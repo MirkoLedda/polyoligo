@@ -13,7 +13,7 @@ import sys
 import json
 import re
 
-from . import lib_blast, lib_utils, lib_primer3, _lib_pcr, _lib_kasp
+from . import lib_blast, lib_utils, lib_primer3, _lib_pcr
 
 ENZYME_FILENAME = join(os.path.dirname(__file__), "data/type2.json")
 
@@ -190,7 +190,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
     if enzyme_suppliers == "":
         enzyme_suppliers = "NA"
 
-    with open(fp, "w") as f:
+    with open(fp + ".txt", "w") as f, open(fp + ".bed", "w") as f_bed:
         for i in sorted_scores:
             for pp in pcr.pps_pruned[i]:
                 pp.id = ppid
@@ -253,6 +253,23 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                         mutations,
                     ]
                     f.write("{}\n".format(delimiter.join([str(x) for x in fields])))
+
+                    # BED file
+                    if d == "F":
+                        direction = "+"
+                    else:
+                        direction = "-"
+
+                    fields = [
+                        pcr.chrom,
+                        int(pp.primers[d].start),
+                        int(pp.primers[d].stop),
+                        "{}_{}-{}".format(pcr.snp_id, curr_seq_ids[d], pp.goodness),
+                        "0",
+                        direction,
+                    ]
+                    f_bed.write("{}\n".format("\t".join([str(x) for x in fields])))
+
                 f.write("\n")
                 ppid += 1
 
@@ -274,7 +291,7 @@ def print_report(pcr, caps, fp, delimiter="\t"):
 def main(kwarg_dict):
     # kwargs to variables
     roi = kwarg_dict["roi"]
-    fp_out = kwarg_dict["fp_out"]
+    fp_base_out = kwarg_dict["fp_base_out"]
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]
@@ -393,8 +410,8 @@ def main(kwarg_dict):
     # Design primers
     pcr = PCR(
         snp_id=roi.marker.name,
-              chrom=roi.marker.chrom,
-        pos = roi.marker.pos,
+        chrom=roi.marker.chrom,
+        pos=roi.marker.pos,
         ref=roi.marker.ref,
         alt=roi.marker.alt
     )
@@ -442,11 +459,10 @@ def main(kwarg_dict):
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
-    print_report_header(fp_out)
     print_report(
         pcr=pcr,
         caps=caps,
-        fp=fp_out,
+        fp=fp_base_out,
     )
 
 

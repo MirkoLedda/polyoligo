@@ -302,14 +302,6 @@ class Markers:
                             line_memory.append(line)
                             f.write(line)
 
-    def write_caps_report(self, fp_out):
-        _lib_caps.print_report_header(fp_out)
-        with open(fp_out, "a") as f:
-            for marker in self.markers:
-                with open(join(self.blast_db.temporary, marker.name + ".txt"), "r") as f_marker:
-                    for line in f_marker:
-                        f.write(line)
-
 
 if __name__ == "__main__":
     pass
