@@ -576,7 +576,7 @@ def print_report(pcr, fp, delimiter="\t"):
                         pcr.chrom,
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
-                        "{}_{}_sc{}".format(pcr.snp_id, curr_seq_ids[ptype], pp.goodness),
+                        "{}_{}-{}".format(pcr.snp_id, curr_seq_ids[ptype], pp.goodness),
                         "0",
                         direction,
                     ]

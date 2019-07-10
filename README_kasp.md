@@ -57,7 +57,9 @@ Two output files are produced:
 
 **`<OUTPUT>.log`**: A log file which contain details on the number of valid primers found during each search and for each marker.
 
-**`<OUTPUT>.txt`** KASP primers reported as a space-separated list with the following columns:
+**`<OUTPUT>.bed`** KASP primers reported in BED format for use with genome browsers. Names are composites of `<primer_id>-<goodness>` (see below).
+
+**`<OUTPUT>.txt`** KASP primers reported as a tab-separated list with the following columns:
 
 |Column|Description|
 |---|---|

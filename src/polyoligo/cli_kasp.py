@@ -414,7 +414,7 @@ def main(strcmd=None):
 
     if not args.webapp:
         logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
-        logger.info("Report written to -> {}".format(join(out_path, args.output) + ".txt"))
+        logger.info("Report written to -> {} [{}, {}]".format(join(out_path, args.output) + ".txt", ".bed", ".log"))
     else:
         logger.info("Reports are ready !")
 
