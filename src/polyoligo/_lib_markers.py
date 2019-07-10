@@ -10,6 +10,7 @@ from . import lib_blast, lib_utils, _lib_kasp, _lib_caps
 
 logger = logging.getLogger(__name__)  # Initialize the logger
 
+
 class Marker:
     """Hold informations for a Marker."""
 
@@ -283,17 +284,17 @@ class Markers:
 
         self.upload_fasta_ids(fasta_ids)  # Store FASTA ID of the markers in each FASTA file
 
-    def write_kasp_report(self, fp_out):
-        _lib_kasp.print_report_header(fp_out)
-        with open(fp_out, "a") as f:
+    def write_kasp_reports(self, fp_base_out):
+        _lib_kasp.print_report_header(fp_base_out + ".txt")
+        with open(fp_base_out + ".txt", "a") as f:
             for marker in self.markers:
                 with open(join(self.blast_db.temporary, marker.name + ".txt"), "r") as f_marker:
                     for line in f_marker:
                         f.write(line)
 
-    def write_kasp_bed(self, fp_out):
+        # BED file
         line_memory = []
-        with open(fp_out, "w") as f:
+        with open(fp_base_out + ".bed", "w") as f:
             for marker in self.markers:
                 with open(join(self.blast_db.temporary, marker.name + ".bed"), "r") as f_marker:
                     for line in f_marker:

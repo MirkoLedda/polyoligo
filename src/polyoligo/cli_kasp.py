@@ -407,19 +407,16 @@ def main(strcmd=None):
 
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
-    fp_out = join(out_path, args.output + ".txt")
-    fp_bed_out = join(out_path, args.output + ".bed")
-    markers.write_kasp_report(fp_out)
-    markers.write_kasp_bed(fp_bed_out)
+    markers.write_kasp_reports(join(out_path, args.output))
 
     if not args.debug:
         shutil.rmtree(temp_path)
 
     if not args.webapp:
         logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
-        logger.info("Report written to -> {}".format(fp_out))
+        logger.info("Report written to -> {}".format(join(out_path, args.output) + ".txt"))
     else:
-        logger.info("Report ready !")
+        logger.info("Reports are ready !")
 
 
 if __name__ == "__main__":
