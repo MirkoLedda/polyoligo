@@ -129,6 +129,7 @@ def parse_range(txt):
     else:
         return [int(range[0]), int(range[1])]
 
+
 # CELERY -----------------------------------------------------------------------
 @celery.task()
 def run_task(strcmd, log_dest):
@@ -158,7 +159,19 @@ def run_task(strcmd, log_dest):
     else:
         log.update_status("COMPLETED")
 
+        # Compress result files for download
+        strcmd = [
+            "cd {};".format(log_dest),
+            "ls;",
+            "tar -cvf 'output.tar' output.*;",
+            "gzip output.tar;",
+            "cd ..;",
+        ]
+        strcmd = " ".join(strcmd)
+        subprocess.Popen(strcmd, shell=True)
+
     return None
+
 
 # ROUTES -----------------------------------------------------------------------
 @app.route('/')
@@ -236,7 +249,7 @@ def pcr():
         if len(p_tm) > 0:
             r = parse_range(p_tm)
             if isinstance(r, list):
-                primer3["PRIMER_OPT_TM"] = int(r[0] + (r[1]-r[0])/2)
+                primer3["PRIMER_OPT_TM"] = int(r[0] + (r[1] - r[0]) / 2)
                 primer3["PRIMER_MIN_TM"] = r[0]
                 primer3["PRIMER_MAX_TM"] = r[1]
             else:
@@ -246,7 +259,7 @@ def pcr():
         if len(p_size) > 0:
             r = parse_range(p_size)
             if isinstance(r, list):
-                primer3["PRIMER_OPT_SIZE"] = int(r[0] + (r[1]-r[0])/2)
+                primer3["PRIMER_OPT_SIZE"] = int(r[0] + (r[1] - r[0]) / 2)
                 primer3["PRIMER_MIN_SIZE"] = r[0]
                 primer3["PRIMER_MAX_SIZE"] = r[1]
             else:
@@ -405,12 +418,14 @@ def kasp():
     else:
         return render_template('kasp.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
+
 @app.route('/caps', methods=['GET', 'POST'])
 def caps():
     exe = "polyoligo-caps"
     if request.method == 'POST':
         include_vcf = False
-        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes", "fragment_min_size"]
+        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes",
+                        "fragment_min_size"]
         kwargs = {}
         for kwargs_name in kwargs_names:
             kwargs[kwargs_name] = None
@@ -513,6 +528,7 @@ def caps():
     else:
         return render_template('caps.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
+
 @app.route('/crispr', methods=['GET', 'POST'])
 def crispr():
     exe = "polyoligo-crispr"
@@ -572,8 +588,8 @@ def get_status(task_id):
 
 @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
 def download(task_id):
-    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.txt")
-    return send_file(filename)
+    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
+    return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
 
 
 if __name__ == "__main__":
