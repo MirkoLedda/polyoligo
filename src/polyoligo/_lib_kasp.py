@@ -464,7 +464,7 @@ def print_report(pcr, fp, delimiter="\t"):
     for pt in primer_type_ordering:
         seq_ids[pt] = []
 
-    with open(fp, "w") as f:
+    with open(fp + ".txt", "w") as f, open(fp + ".bed", "w") as f_bed:
         for i in sorted_scores:
             for pp in pcr.pps_pruned[i]:
                 pp.id = ppid
@@ -565,6 +565,23 @@ def print_report(pcr, fp, delimiter="\t"):
                         mutations,
                     ]
                     f.write("{}\n".format(delimiter.join([str(x) for x in fields])))
+
+                    # BED file
+                    if direction == "F":
+                        direction = "+"
+                    else:
+                        direction = "-"
+
+                    fields = [
+                        pcr.chrom,
+                        int(pp.primers[d].start),
+                        int(pp.primers[d].stop),
+                        "{}_{}_sc{}".format(pcr.snp_id, curr_seq_ids[ptype], pp.goodness),
+                        "0",
+                        direction,
+                    ]
+                    f_bed.write("{}\n".format("\t".join([str(x) for x in fields])))
+
                 f.write("\n")
                 ppid += 1
 
@@ -664,7 +681,7 @@ def main(kwarg_dict):
     # kwargs to variables
     fp_fasta = kwarg_dict["fp_fasta"]
     marker = kwarg_dict["marker"]
-    fp_out = kwarg_dict["fp_out"]
+    fp_base_out = kwarg_dict["fp_base_out"]
     blast_db = kwarg_dict["blast_db"]
     muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]
@@ -790,8 +807,7 @@ def main(kwarg_dict):
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
-    print_report(pcr, fp_out)
-
+    print_report(pcr, join(fp_base_out))
 
 if __name__ == "__main__":
     pass

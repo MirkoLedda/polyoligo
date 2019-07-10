@@ -370,7 +370,7 @@ def main(strcmd=None):
         kwarg_dict = {
             "fp_fasta": join(temp_path, marker.name + ".fa"),
             "marker": marker,
-            "fp_out": join(temp_path, marker.name + ".txt"),
+            "fp_base_out": join(temp_path, marker.name),
             "blast_db": blast_db,
             "muscle": muscle,
             "reporters": reporters,
@@ -408,7 +408,9 @@ def main(strcmd=None):
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
     fp_out = join(out_path, args.output + ".txt")
+    fp_bed_out = join(out_path, args.output + ".bed")
     markers.write_kasp_report(fp_out)
+    markers.write_kasp_bed(fp_bed_out)
 
     if not args.debug:
         shutil.rmtree(temp_path)

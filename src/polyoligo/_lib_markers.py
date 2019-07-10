@@ -291,6 +291,16 @@ class Markers:
                     for line in f_marker:
                         f.write(line)
 
+    def write_kasp_bed(self, fp_out):
+        line_memory = []
+        with open(fp_out, "w") as f:
+            for marker in self.markers:
+                with open(join(self.blast_db.temporary, marker.name + ".bed"), "r") as f_marker:
+                    for line in f_marker:
+                        if line not in line_memory:
+                            line_memory.append(line)
+                            f.write(line)
+
     def write_caps_report(self, fp_out):
         _lib_caps.print_report_header(fp_out)
         with open(fp_out, "a") as f:

@@ -453,7 +453,7 @@ class Crispr:
                     grna.T_runs,
                 )
 
-                f.write("{} {} {} {} {} {}\n".format(
+                f.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(
                     self.chrom,
                     grna.start,
                     grna.end,
