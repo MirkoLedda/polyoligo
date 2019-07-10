@@ -48,7 +48,7 @@ Three output files are produced:
 
 **`<OUTPUT>.log`**: Log file.
 
-**`<OUTPUT>.bed`**: BED file containing the list of designed gRNA.
+**`<OUTPUT>.bed`**: BED file containing the list of designed gRNA. Names are composites of `<N_PERFECT_OFFTARGETS>_<N_OFFTARGETS_12MER>_<N_OFFTARGETS_8MER>_<12_MER>_<8_MER>_<TM>_<TTTT>` (see below).
 
 **`<OUTPUT>.txt`** List of gRNAs with the following columns:
 

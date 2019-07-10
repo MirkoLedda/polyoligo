@@ -59,6 +59,8 @@ Two output files are produced:
 
 **`<OUTPUT>.log`**: A log file which contain details on the number of valid primers found during each search and for each marker.
 
+**`<OUTPUT>.bed`** CAPS primers reported in BED format for use with genome browsers. Names are composites of `<primer_id>-<goodness>` (see below).
+
 **`<OUTPUT>.txt`** CAPS primers reported as a space-separated list with the following columns:
 
 |Column|Description|
