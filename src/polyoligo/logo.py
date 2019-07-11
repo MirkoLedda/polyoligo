@@ -6,7 +6,13 @@ from . import _version
 def main():
     argv = sys.argv[1:]
 
-    if len(argv) == 0:
+    print_logo = True
+    if len(argv) > 0:
+        if argv[0] == "cite":
+            print("Citation TBA.")
+            print_logo = False
+
+    if print_logo:
         print(
             " ___     _       ___  _ _          \n"
             "| _ \___| |_  _ / _ \| (_)__ _ ___ \n"
@@ -26,8 +32,6 @@ def main():
             # "\n"
             "Copyright 2019 to Mirko Ledda, under a BSD-2 License\n".format(_version.__version__)
         )
-    else:
-        print("Citation TBA.")
 
 
 if __name__ == "__main__":

@@ -44,7 +44,16 @@ setup(
     author="Mirko Ledda",
     author_email="maledda@ucdavis.edu",
     license="BSD-2",
-    keywords=["genomics", "bioinformatics", "complex genomes", "KASP", "CRISPR"],
+    keywords=[
+        "genomics",
+        "bioinformatics",
+        "polyploid",
+        "genotyping",
+        "KASP",
+        "CAPS",
+        "PCR",
+        "CRISPR",
+    ],
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -56,7 +65,7 @@ setup(
     ],
 
     # Python requirements
-    python_requires=">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4",
+    python_requires=">=3, <4",
 
     # Specify source packages
     packages=find_packages('src'),
@@ -87,9 +96,13 @@ setup(
 
     # Requirements for tests and coverage analysis
     setup_requires=["pytest-runner"],
-    tests_require=["pytest",
-                   "coverage",
-                   "pytest_cov"],
+    tests_require=[
+        "pytest",
+        "coverage",
+        "pytest_cov",
+        "memory_profiler",
+        "matplotlib",
+    ],
 
     package_data={
         'bin/linux_x64': ['bin/linux_x64/*'],
