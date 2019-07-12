@@ -19,3 +19,4 @@ profile*
 webapp/uploads/
 webapp/__pycache__/
 venv.sh
+footprinting/footprinting_data/
