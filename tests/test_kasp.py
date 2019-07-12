@@ -10,13 +10,13 @@ with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
 # STD
-# cli_kasp.main(strcmd=" ".join([
-#     "polyoligo-kasp",
-#     KWARGS["marker"],
-#     KWARGS["out"],
-#     KWARGS["reference"],
-#     # "--debug",
-# ]))
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
+    KWARGS["marker"],
+    KWARGS["out"],
+    KWARGS["reference"],
+    # "--debug",
+]))
 
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
