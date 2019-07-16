@@ -17,7 +17,7 @@ colnames(df) <- c("CPU", "MEM")
 # Main --------------------------------------------------------------------
 p <- ggplot(data=df, aes(x=df$CPU, y=df$MEM)) +
   geom_point(size=3) +
-  geom_smooth(method='lm',formula=y~x)+
+  geom_smooth(method='lm',formula=y~x, color="black")+
   xlab("Number of CPUs") +
   ylab("RAM [MB]") +
   ylim(c(0, 2500))+
@@ -28,4 +28,4 @@ p <- ggplot(data=df, aes(x=df$CPU, y=df$MEM)) +
   ) +
   geom_hline(yintercept=405.947, linetype=2)
 
-ggsave(out, p, width=6.5, height=5)
+ggsave(out, p, width=4.8, height=3.7)
