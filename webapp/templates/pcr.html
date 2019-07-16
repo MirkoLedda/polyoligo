@@ -14,7 +14,7 @@
     <form id="pcr" method="POST" action="{{ url_for('pcr') }}" enctype="multipart/form-data">
         <div class="mandatory">
             <label>Target regions <i>(Limited to 100 max)</i></label> <i>- One target per line as CHR:START-END NAME(optional).</i><br>
-            <textarea type="textarea" name="rois" rows="10" cols="150"></textarea><br><br>
+            <textarea type="textarea" name="rois" rows="10" width="100%" placeholder="CHR:START-END NAME[optional]"></textarea><br><br>
             <label>Reference genome</label><br>
             <select name="reference">
                 {% for blastdb_option in blastdb_options %}

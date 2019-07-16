@@ -18,7 +18,7 @@ app.secret_key = "secret key"
 app.config['UPLOAD_FOLDER'] = os.path.abspath('./uploads')
 app.config["BLASTDB_REPO"] = os.path.abspath("../sample_data")
 app.config["VCF_REPO"] = os.path.abspath("../sample_data")
-app.config["BLASTDB_OPTIONS"] = ['Fragaria ananassa']
+app.config["BLASTDB_OPTIONS"] = ['Fragaria x ananassa']
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
@@ -200,7 +200,7 @@ def pcr():
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria ananassa':
+        if kwargs["reference"] == 'Fragaria x ananassa':
             include_vcf = True
 
         # Populations selection
@@ -340,7 +340,7 @@ def kasp():
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria ananassa':
+        if kwargs["reference"] == 'Fragaria x ananassa':
             include_vcf = True
 
         # Dyes
@@ -441,7 +441,7 @@ def caps():
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria ananassa':
+        if kwargs["reference"] == 'Fragaria x ananassa':
             include_vcf = True
 
         # Restriction fragment
@@ -544,6 +544,8 @@ def crispr():
 
         # ROI
         kwargs["roi"] = request.form.get("roi")
+        if kwargs["roi"] == "":
+            kwargs["roi"]="CHR:0-0"
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
