@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+{% extends "layout.html" %}
+
+{% block title %}
+    PCR
+{% endblock %}
+
+{% block head %}
+    {{ super() }}
+{% endblock %}
+
+{% block content %}
+    <!-- KWARGS form -->
+    <form id="pcr" method="POST" action="{{ url_for('pcr') }}" enctype="multipart/form-data">
+        <div class="mandatory">
+            <label>Target regions <i>(Limited to 100 max)</i></label> <i>- One target per line as CHR:START-END NAME(optional).</i><br>
+<<<<<<< HEAD
+            <textarea type="textarea" name="rois" rows="10" width="100%" placeholder="CHR:START-END NAME[optional]"></textarea><br><br>
+=======
+            <textarea type="textarea" name="rois" rows="10" width="100%" placeholder="CHR:START-END NAME(optional)">
+Fvb2-4:4025000-4030000 Region_1
+Fvb2-4:4030000-4040000 Region_2
+Fvb2-4:4040000-4055000 Region_3
+            </textarea><br><br>
+>>>>>>> demo
+            <label>Reference genome</label><br>
+            <select name="reference">
+                {% for blastdb_option in blastdb_options %}
+                    <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
+                {% endfor %}
+            </select>
+            <!-- or enter a FASTA file <input type="file" name="reference_file" > -->
+        </div>
+        <div class="optional">
+            <h3>Optional</h3>
+            <label>n</label> <i>- Maximum number of primer pairs to return </i> <br>
+            <input class="boxsmall" name="n" type="number" value="10"><br><br>
+            <label>Depth</label> <i>- Exhaustiveness of the search </i><br>
+            <select name="depth">
+                <option value= "superficial">Superficial - FAST</option>
+                <option value= "standard" SELECTED>Standard - STD</option>
+                <option value= "deep">Deep - SLOW</option>
+            </select><br><br>
+
+            <label>Assay options</label> <i>- Ranges are declared as MIN-MAX (included) </i> <br>
+            <input class="boxsmall" name="p_tm" type="string" value="55-65"> TM (&#xb0;C)<br>
+            <input class="boxsmall" name="p_size" type="string" value="18-25"> Primer size<br>
+            <input class="boxsmall" name="p_gc" type="string" value="20-80"> Primer %GC<br>
+            <input class="boxmedium" name="p_seq_F" type="string" value=""> Forward primer sequence (5'-3')<br>
+            <input class="boxmedium" name="p_seq_R" type="string" value=""> Reverse primer sequence (5'-3')<br><br>
+
+            <label>Off-targets</label><br>
+            <input class="boxsmall" name="seed" type="number" value="12"> 3'-end seed size (small values will make the process slow)<br>
+            <input class="boxsmall" name="offtarget_size" type="string" value="0-10000"> Size range of possible off-target PCR products<br><br>
+
+            <label>Strawberry populations</label> <i>- For Fragaria only ! Choose as many genetic backgrounds that apply to your assay </i>
+            <div class="row">
+                <div class="column">
+                    <input type="checkbox" name="population0" value="F.xananassa_VCFinclude.txt" checked> <i>F. x ananassa</i><br>
+                    <input type="checkbox" name="population1" value="F.chiloensis-chiloensis_VCFinclude.txt"> <i>F.chiloensis chiloensis</i><br>
+                    <input type="checkbox" name="population2" value="F.chiloensis-lucida_VCFinclude.txt"> <i>F.chiloensis lucida</i><br>
+                </div>
+                <div class="column">
+                    <input type="checkbox" name="population3" value="F.chiloensis-pacifica_VCFinclude.txt"> <i>F.chiloensis pacifica</i><br>
+                    <input type="checkbox" name="population4" value="F.chiloensis-patagonica_VCFinclude.txt"> <i>F.chiloensis patagonica</i><br>
+                    <input type="checkbox" name="population5" value="F.virginiana-glauca_VCFinclude.txt"> <i>F.virginiana glauca</i><br>
+                </div>
+                <div class="column">
+                    <input type="checkbox" name="population6" value="F.virginiana-grayana_VCFinclude.txt"> <i>F.virginiana grayana</i><br>
+                    <input type="checkbox" name="population7" value="F.virginiana-platypetala_VCFinclude.txt"> <i>F.virginiana platypetala</i><br>
+                    <input type="checkbox" name="population8" value="F.virginiana-virginiana_VCFinclude.txt"> <i>F.virginiana virginiana</i><br>
+                </div>
+            </div>
+            <br>
+
+            <br>
+        </font></div>
+        <input type="submit" value="Submit"> &nbsp&nbsp&nbsp&nbsp or &nbsp&nbsp&nbsp&nbsp  </pre> <button type="reset" style="background-color:grey;">Reset</button><br><br>
+    </form>
+{% endblock %}
