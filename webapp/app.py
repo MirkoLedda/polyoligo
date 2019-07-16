@@ -18,7 +18,7 @@ app.secret_key = "secret key"
 app.config['UPLOAD_FOLDER'] = os.path.abspath('./uploads')
 app.config["BLASTDB_REPO"] = os.path.abspath("../sample_data")
 app.config["VCF_REPO"] = os.path.abspath("../sample_data")
-app.config["BLASTDB_OPTIONS"] = ['Fragaria ananassa']
+app.config["BLASTDB_OPTIONS"] = ['Fragaria x ananassa']
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
@@ -200,7 +200,7 @@ def pcr():
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria ananassa':
+        if kwargs["reference"] == 'Fragaria x ananassa':
             include_vcf = True
 
         # Populations selection
@@ -340,7 +340,7 @@ def kasp():
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria ananassa':
+        if kwargs["reference"] == 'Fragaria x ananassa':
             include_vcf = True
 
         # Dyes
@@ -441,7 +441,7 @@ def caps():
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria ananassa':
+        if kwargs["reference"] == 'Fragaria x ananassa':
             include_vcf = True
 
         # Restriction fragment
@@ -586,11 +586,17 @@ def get_status(task_id):
     return jsonify(log.content)
 
 
+# @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
+# def download(task_id):
+#     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
+#     return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
+
 @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
 def download(task_id):
-    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
-    return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
-
+    with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
+	       content = f.read()
+    # return Response(content, mimetype='text/plain')
+    return render_template("results.html", content=content)
 
 if __name__ == "__main__":
     app.run(debug=True)
