@@ -81,6 +81,9 @@ setup(
         "PyYAML",
         "tqdm",
         "primer3-py",
+        "celery",
+        "redis",
+        "Flask",
     ],
 
     # Create the executable
