@@ -1,32 +1,21 @@
 import os
-from flask import Flask, flash, request, redirect, render_template, url_for, Response, jsonify, send_file
+from flask import Flask, request, redirect, render_template, url_for, jsonify, send_file
 from werkzeug.utils import secure_filename
 from os.path import join
 from datetime import datetime, timedelta
 from uuid import uuid4
-from threading import Thread, Event
 import json
 import time
 import subprocess
-from subprocess import STDOUT, CalledProcessError
+from subprocess import STDOUT
 from celery import Celery
 import yaml
 
 # APP CONFIGS ------------------------------------------------------------------
-app = Flask(__name__)
-app.secret_key = "secret key"
-app.config['UPLOAD_FOLDER'] = os.path.abspath('./uploads')
-app.config["BLASTDB_REPO"] = os.path.abspath("../sample_data")
-app.config["VCF_REPO"] = os.path.abspath("../sample_data")
-app.config["BLASTDB_OPTIONS"] = ['Fragaria x ananassa']
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_pyfile('config.py')
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
-
 
 # SERVER TO CLIENT MESSAGING ---------------------------------------------------
 class Log():
@@ -136,8 +125,6 @@ def run_task(strcmd, log_dest):
     log = Log(log_dest)
     log.fetch()
     log.update_status("RUNNING")
-
-    # log.message(strcmd)
 
     try:
         process = subprocess.Popen(strcmd, shell=True, stderr=STDOUT, stdout=subprocess.PIPE)
@@ -282,7 +269,6 @@ def pcr():
         with open(primer3_yaml, "w") as f:
             yaml.dump(primer3, f)
 
-        # todo rename depth
         kwargs["depth"] = kwargs["depth"]
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
@@ -381,7 +367,6 @@ def kasp():
         kwargs["offtarget_min_size"] = offtarget_size[0]
         kwargs["offtarget_max_size"] = offtarget_size[1]
 
-        # todo rename depth
         kwargs["depth"] = kwargs["depth"]
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
@@ -489,7 +474,6 @@ def caps():
         kwargs["offtarget_min_size"] = offtarget_size[0]
         kwargs["offtarget_max_size"] = offtarget_size[1]
 
-        # todo rename depth
         kwargs["depth"] = kwargs["depth"]
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
@@ -545,12 +529,10 @@ def crispr():
         # ROI
         kwargs["roi"] = request.form.get("roi")
         if kwargs["roi"] == "":
-            kwargs["roi"]="CHR:0-0"
+            kwargs["roi"] = "CHR:0-0"
 
         # BlastDB
         kwargs["reference"] = request.form.get("reference")
-
-        # todo rename depth
         kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
@@ -588,17 +570,17 @@ def get_status(task_id):
     return jsonify(log.content)
 
 
-# @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
-# def download(task_id):
-#     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
-#     return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
-
 @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
 def download(task_id):
-    with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
-	       content = f.read()
-    # return Response(content, mimetype='text/plain')
-    return render_template("results.html", content=content)
+    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
+    return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
+
+# @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
+# def download(task_id):
+#     with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
+#         content = f.read()
+#     return render_template("results.html", content=content)
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

@@ -50,7 +50,7 @@ body {
     bottom: 0;
     width: 95%;
     height: 2.5rem;
-    font-size: calc(10px + (14 - 10) * ((100vw - 300px) / (1600 - 300)));
+    font-size: calc(12px + (16 - 12) * ((100vw - 300px) / (1600 - 300)));
 }
 
 #summary {
