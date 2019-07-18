@@ -18,5 +18,5 @@ tests/__pycache__/
 profile*
 webapp/uploads/
 webapp/__pycache__/
-venv.sh
+webapp/redis-stable/
 footprinting/footprinting_data/

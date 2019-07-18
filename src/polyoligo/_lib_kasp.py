@@ -47,8 +47,10 @@ class PrimerPair(lib_primer3.PrimerPair):
             self.primers["R"].reporter = ""
         else:
             self.primers["F"].reporter = ""
-            self.primers["A"].reporter = str(Seq(reporters[1]).reverse_complement())
-            self.primers["R"].reporter = str(Seq(reporters[0]).reverse_complement())
+            self.primers["A"].reporter = reporters[0]
+            self.primers["R"].reporter = reporters[1]
+            # self.primers["A"].reporter = str(Seq(reporters[1]).reverse_complement())
+            # self.primers["R"].reporter = str(Seq(reporters[0]).reverse_complement())
 
     # noinspection PyUnresolvedReferences
     def check_heterodimerization(self):
