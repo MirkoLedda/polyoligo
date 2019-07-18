@@ -36,21 +36,29 @@
 
     <div id="summary">
         <p>
-            <h4><b>Important information</b></h4>
-            PolyOligo is available open-source with a command line interface <b><a href="https://github.com/MirkoLedda/polyoligo">HERE</a></b>. The standalone version can be used with any reference genome and VCF file, has more features and is faster because multi-core enabled.<br><br>
-            To avoid overloading the server and transferring large amount of data, most methods come with limitations here. Notably, only a limited number of reference genomes are made available (current list:
-            <select name="reference">
-                {% for blastdb_option in blastdb_options %}
-                    <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
-                {% endfor %}
-            </select>
-            - more can be added upon <a href="">request</a>), the number of concurrent designs is capped and mutations from a VCF file cannot be considered (excl. strawberries).<br><br>
+            <h4><b>Important information - please read before starting</b></h4>
+            PolyOligo is available as an open-source command line interface software <b><a href="https://github.com/MirkoLedda/polyoligo">HERE</a></b>. This standalone version can be used with any reference genome and VCF file, has more features and is faster because multi-core enabled.<br><br>
+
+            To avoid overloading the server and transferring large amount of data, we implemented the following limitations here:<br>
+
+            <ol>
+                <li>
+                    Currently supported genomes are
+                    <select name="reference">
+                        {% for blastdb_option in blastdb_options %}
+                            <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
+                        {% endfor %}
+                    </select> (more can be added upon <b><a href="https://github.com/MirkoLedda/polyoligo/issues">request</a></b>).
+                </li>
+                <li>The number of concurrent assay designs is capped.</li>
+                <li>Mutations across populations other than strawberries cannot be used (i.e. no VCF file upload).</li>
+            </ol><br>
 
             If you find this tool useful, please support us by citing:<br>
-            TBA<br>
-            <br>
-            Feel free to <a href="">contact us</a> for feedbacks, feature requests or additions of reference genomes or mutation maps across populations.<br><br>
-            <i><b>Disclaimer</b> We do not use cookies and under no circumstances are we using or accessing data that is uploaded to this server. Once a job completes, all files will be permanently deleted after a grace period of 24h. We simply keep track of the server usage to adjust resources accordingly.<br><br></i>
+            TBA<br><br>
+            For feature requests, reporting bugs or addition of reference genomes/population mutations, please fill <b><a href="https://github.com/MirkoLedda/polyoligo/issues">this form</a></b> or <b><a href="mailto:maledda@ucdavis.edu?Subject=PolyOligo%20support">contact us</a></b>.<br><br>
+
+            <small><i><b>Disclaimer</b> We do not use cookies and under no circumstances are we using or accessing data that is uploaded to this server. Once a job completes, all files will be permanently deleted after a grace period of 24h. We simply keep track of the server usage to adjust computational resources accordingly.</i></small><br>
         <p>
     </div>
 

@@ -17,6 +17,13 @@ app.config.from_pyfile('config.py')
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
+# GLOBALS ----------------------------------------------------------------------
+DEPTH_MAP = {"superficial": 2.5,
+             "standard": 10,
+             "deep": 25,
+             }
+
+
 # SERVER TO CLIENT MESSAGING ---------------------------------------------------
 class Log():
     def __init__(self, dest):
@@ -119,6 +126,42 @@ def parse_range(txt):
         return [int(range[0]), int(range[1])]
 
 
+def parse_blastdb_kwargs(kwargs, request, dest_folder):
+    kwargs["include_vcf"] = False
+
+    # BlastDB
+    reference = request.form.get("reference")
+    reference = reference.replace(" ", "_")
+    if reference == 'Fragaria_x_ananassa':
+        kwargs["include_vcf"] = True
+    kwargs["reference"] = join(app.config["BLASTDB_REPO"], reference)
+
+    # Populations selection
+    if kwargs["include_vcf"]:
+        selected_pops = []
+        for i in range(9):
+            current_pop = "population{}".format(i)
+            fetched_pop = request.form.get(current_pop)
+
+            if fetched_pop:
+                with open(os.path.abspath(join(app.config["VCF_SUBSETS"], fetched_pop)), "r") as f:
+                    for line in f:
+                        selected_pops.append(line.strip())
+        if len(selected_pops) == 0:
+            kwargs["include_vcf"] = False
+        else:
+            with open(join(dest_folder, "vcf_include.txt"), "w") as f:
+                for selected_pop in selected_pops:
+                    f.write("{}\n".format(selected_pop))
+
+    strcmd = []
+    if kwargs["include_vcf"]:
+        strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], reference + ".gz"))]
+        strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
+
+    return kwargs, strcmd
+
+
 # CELERY -----------------------------------------------------------------------
 @celery.task()
 def run_task(strcmd, log_dest):
@@ -170,7 +213,7 @@ def home():
 def pcr():
     exe = "polyoligo-pcr"
     if request.method == 'POST':
-        include_vcf = False
+
         kwargs_names = ["roi", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "primer3"]
         kwargs = {}
         for kwargs_name in kwargs_names:
@@ -185,41 +228,14 @@ def pcr():
         with open(kwargs["roi"], "w") as f:
             f.write(rois)
 
-        # BlastDB
-        kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria x ananassa':
-            include_vcf = True
-
-        # Populations selection
-        if include_vcf:
-            selected_pops = []
-            for i in range(9):
-                current_pop = "population{}".format(i)
-                fetched_pop = request.form.get(current_pop)
-
-                if fetched_pop:
-                    with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
-                        for line in f:
-                            selected_pops.append(line.strip())
-            if len(selected_pops) == 0:
-                include_vcf = False
-            else:
-                with open(join(dest_folder, "vcf_include.txt"), "w") as f:
-                    for selected_pop in selected_pops:
-                        f.write("{}\n".format(selected_pop))
+        # Genome kwargs
+        kwargs, nstrcmd = parse_blastdb_kwargs(kwargs=kwargs, request=request, dest_folder=dest_folder)
 
         # Other kwargs
         kwargs["n"] = int(request.form.get("n"))
-
         kwargs["depth"] = request.form.get("depth")
-        depth_map = {"superficial": 2.5,
-                     "standard": 10,
-                     "deep": 25,
-                     }
-        kwargs["depth"] = depth_map[kwargs["depth"]]
-
+        kwargs["depth"] = DEPTH_MAP[kwargs["depth"]]
         kwargs["seed"] = int(request.form.get("seed"))
-
         offtarget_size = parse_range(request.form.get("offtarget_size"))
         kwargs["offtarget_min_size"] = offtarget_size[0]
         kwargs["offtarget_max_size"] = offtarget_size[1]
@@ -269,9 +285,6 @@ def pcr():
         with open(primer3_yaml, "w") as f:
             yaml.dump(primer3, f)
 
-        kwargs["depth"] = kwargs["depth"]
-        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
-
         strcmd = [
             exe,
             kwargs["roi"],
@@ -287,11 +300,7 @@ def pcr():
             "--webapp",
         ]
 
-        if include_vcf:
-            # TODO: upload proper file
-            strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], "vcf.txt.gz"))]
-            strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
-
+        strcmd += nstrcmd
         strcmd = " ".join(strcmd)
         log = Log(dest_folder)
         log.message("File(s) successfully uploaded ...")
@@ -309,7 +318,7 @@ def pcr():
 def kasp():
     exe = "polyoligo-kasp"
     if request.method == 'POST':
-        include_vcf = False
+
         kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "dye1", "dye2"]
         kwargs = {}
         for kwargs_name in kwargs_names:
@@ -324,51 +333,22 @@ def kasp():
         with open(kwargs["markers"], "w") as f:
             f.write(markers)
 
-        # BlastDB
-        kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria x ananassa':
-            include_vcf = True
+        # Genome kwargs
+        kwargs, nstrcmd = parse_blastdb_kwargs(kwargs=kwargs, request=request, dest_folder=dest_folder)
 
         # Dyes
         kwargs["dye1"] = request.form.get("dye1")
         kwargs["dye2"] = request.form.get("dye2")
 
-        # Populations selection
-        if include_vcf:
-            selected_pops = []
-            for i in range(9):
-                current_pop = "population{}".format(i)
-                fetched_pop = request.form.get(current_pop)
-
-                if fetched_pop:
-                    with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
-                        for line in f:
-                            selected_pops.append(line.strip())
-            if len(selected_pops) == 0:
-                include_vcf = False
-            else:
-                with open(join(dest_folder, "vcf_include.txt"), "w") as f:
-                    for selected_pop in selected_pops:
-                        f.write("{}\n".format(selected_pop))
-
         # Other kwargs
         kwargs["n"] = int(request.form.get("n"))
-
         kwargs["depth"] = request.form.get("depth")
-        depth_map = {"superficial": 2.5,
-                     "standard": 10,
-                     "deep": 25,
-                     }
-        kwargs["depth"] = depth_map[kwargs["depth"]]
-
+        kwargs["depth"] = DEPTH_MAP[kwargs["depth"]]
         kwargs["seed"] = int(request.form.get("seed"))
 
         offtarget_size = parse_range(request.form.get("offtarget_size"))
         kwargs["offtarget_min_size"] = offtarget_size[0]
         kwargs["offtarget_max_size"] = offtarget_size[1]
-
-        kwargs["depth"] = kwargs["depth"]
-        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
             exe,
@@ -386,11 +366,7 @@ def kasp():
             "--webapp",
         ]
 
-        if include_vcf:
-            # TODO: upload proper file
-            strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], "vcf.txt.gz"))]
-            strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
-
+        strcmd += nstrcmd
         strcmd = " ".join(strcmd)
         log = Log(dest_folder)
         log.message("File(s) successfully uploaded ...")
@@ -408,7 +384,6 @@ def kasp():
 def caps():
     exe = "polyoligo-caps"
     if request.method == 'POST':
-        include_vcf = False
         kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes",
                         "fragment_min_size"]
         kwargs = {}
@@ -424,10 +399,8 @@ def caps():
         with open(kwargs["markers"], "w") as f:
             f.write(markers)
 
-        # BlastDB
-        kwargs["reference"] = request.form.get("reference")
-        if kwargs["reference"] == 'Fragaria x ananassa':
-            include_vcf = True
+        # Genome kwargs
+        kwargs, nstrcmd = parse_blastdb_kwargs(kwargs=kwargs, request=request, dest_folder=dest_folder)
 
         # Restriction fragment
         kwargs["fragment_min_size"] = int(request.form.get("fragment_min_size"))
@@ -440,42 +413,15 @@ def caps():
                 for enzyme in enzymes.strip().split():
                     f.write("{}\n".format(enzyme))
 
-        # Populations selection
-        if include_vcf:
-            selected_pops = []
-            for i in range(9):
-                current_pop = "population{}".format(i)
-                fetched_pop = request.form.get(current_pop)
-
-                if fetched_pop:
-                    with open(os.path.abspath(join("./static/data", fetched_pop)), "r") as f:
-                        for line in f:
-                            selected_pops.append(line.strip())
-            if len(selected_pops) == 0:
-                include_vcf = False
-            else:
-                with open(join(dest_folder, "vcf_include.txt"), "w") as f:
-                    for selected_pop in selected_pops:
-                        f.write("{}\n".format(selected_pop))
-
         # Other kwargs
         kwargs["n"] = int(request.form.get("n"))
-
         kwargs["depth"] = request.form.get("depth")
-        depth_map = {"superficial": 2.5,
-                     "standard": 10,
-                     "deep": 25,
-                     }
-        kwargs["depth"] = depth_map[kwargs["depth"]]
-
+        kwargs["depth"] = DEPTH_MAP[kwargs["depth"]]
         kwargs["seed"] = int(request.form.get("seed"))
 
         offtarget_size = parse_range(request.form.get("offtarget_size"))
         kwargs["offtarget_min_size"] = offtarget_size[0]
         kwargs["offtarget_max_size"] = offtarget_size[1]
-
-        kwargs["depth"] = kwargs["depth"]
-        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
 
         strcmd = [
             exe,
@@ -492,14 +438,10 @@ def caps():
             "--webapp",
         ]
 
-        if include_vcf:
-            # TODO: upload proper file
-            strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], "vcf.txt.gz"))]
-            strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
-
         if kwargs["enzymes"]:
             strcmd += ["--enzymes {}".format(kwargs["enzymes"])]
 
+        strcmd += nstrcmd
         strcmd = " ".join(strcmd)
         log = Log(dest_folder)
         log.message("File(s) successfully uploaded ...")
@@ -531,9 +473,8 @@ def crispr():
         if kwargs["roi"] == "":
             kwargs["roi"] = "CHR:0-0"
 
-        # BlastDB
-        kwargs["reference"] = request.form.get("reference")
-        kwargs["reference"] = join(app.config["BLASTDB_REPO"], "blastdb")
+        # Genome kwargs
+        kwargs, nstrcmd = parse_blastdb_kwargs(kwargs=kwargs, request=request, dest_folder=dest_folder)
 
         strcmd = [
             exe,
@@ -544,6 +485,7 @@ def crispr():
             "--webapp",
         ]
 
+        strcmd += nstrcmd
         strcmd = " ".join(strcmd)
         log = Log(dest_folder)
         log.message("File(s) successfully uploaded ...")
@@ -570,16 +512,17 @@ def get_status(task_id):
     return jsonify(log.content)
 
 
-@app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
-def download(task_id):
-    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
-    return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
-
 # @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
 # def download(task_id):
-#     with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
-#         content = f.read()
-#     return render_template("results.html", content=content)
+#     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
+#     return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
+
+
+@app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
+def download(task_id):
+    with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
+        content = f.read()
+    return render_template("results.html", content=content)
 
 
 if __name__ == "__main__":
