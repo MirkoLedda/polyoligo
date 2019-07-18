@@ -512,17 +512,17 @@ def get_status(task_id):
     return jsonify(log.content)
 
 
-# @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
-# def download(task_id):
-#     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
-#     return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
-
-
 @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
 def download(task_id):
-    with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
-        content = f.read()
-    return render_template("results.html", content=content)
+    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
+    return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
+
+
+# @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
+# def download(task_id):
+#     with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
+#         content = f.read()
+#     return render_template("results.html", content=content)
 
 
 if __name__ == "__main__":
