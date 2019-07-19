@@ -6,7 +6,7 @@ Design oligos for complex genomes.
 
 A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Can use known **mutations** across populations to refine designs.
 
-## Included binaries
+## Included binaries (click on the command for more information)
 
 * [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_kasp.md): Design primers for genotyping assays using Kompetitive allele specific PCR (KASP).
 * [**`polyoligo-caps`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_caps.md): Design primers for CAPS assays.
