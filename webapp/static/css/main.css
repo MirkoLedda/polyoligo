@@ -57,7 +57,7 @@ body {
     font-size: calc(12px + (16 - 12) * ((100vw - 300px) / (1600 - 300)));
 }
 
-#summary {
+#methods {
     /* font-size: 20px; */
     /* color: gray; */
     /* margin-left: 2%; */
@@ -65,13 +65,13 @@ body {
     background-color: lightgray;
     border: 1px solid black;
     padding:10px;
-}
-
-#methods {
-    border: 1px solid black;
-    padding:10px;
     padding-left: 0px;
     padding-top: 20px;
+}
+
+#summary {
+    border: 1px solid black;
+    padding:10px;
 }
 
 /* ----Console---- */
