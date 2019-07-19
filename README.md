@@ -73,7 +73,7 @@ polyoligo
 
 ## Citation
 
-TBA
+Ledda M., Cobo N., Lorant A., Hardigan M.A. and Knapp S.J., PolyOligo: A Bioinformatic Platform for Identifying Target DNA Sequences for the Development of Sub-Genome Specific DNA Markers in Polyploid/Complex Genomes. Poster presented at: Annual Conference of the American Society of Horticultural Sciences; 2019 July 21-25; Las Vegas, NV, USA
 
 ## Reporting bugs and requesting features
 

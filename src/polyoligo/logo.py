@@ -9,7 +9,7 @@ def main():
     print_logo = True
     if len(argv) > 0:
         if argv[0] == "cite":
-            print("Citation TBA.")
+            print("Ledda M., Cobo N., Lorant A., Hardigan M.A. and Knapp S.J., PolyOligo: A Bioinformatic Platform for Identifying Target DNA Sequences for the Development of Sub-Genome Specific DNA Markers in Polyploid/Complex Genomes. Poster presented at: Annual Conference of the American Society of Horticultural Sciences; 2019 July 21-25; Las Vegas, NV, USA.\n")
             print_logo = False
 
     if print_logo:
@@ -21,8 +21,8 @@ def main():
             "           |__/          |___/     v{}\n"
             "\n"
             "Design oligonucleotides for complex genomes. See https://github.com/MirkoLedda/polyoligo for more information.\n"
-            "Please cite: TBA.\n"
-            "(Bibtex reference available via 'polyoligo cite').\n"
+            "Citation available via 'polyoligo cite').\n"
+            # "(Bibtex reference available via 'polyoligo cite').\n"
             "\n"
             # "Available tools\n"
             # "   KASP       : polyoligo-kasp \n"
