@@ -1,22 +1,5 @@
 # `polyoligo-pcr`
 
-### Running a test
-
-To make sure the installation completed, run the command:
-
-```
-polyoligo-pcr -v
-```
-
-You can now run a full test by entering the command:
-
-```
-polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb
-```
-
-> This will create two output files called `out.txt` and `out.log` in the current folder.
-
-
 ## Usage
 
 ### General usage and available options

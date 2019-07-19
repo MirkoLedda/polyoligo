@@ -1,22 +1,5 @@
 # `polyoligo-crispr`
 
-### Running a test
-
-To make sure the installation completed, run the command:
-
-```
-polyoligo-crispr -v
-```
-
-You can now run a full test by entering the command:
-
-```
-polyoligo-crispr Fvb2-4 1000 2000 out sample_data/blastdb
-```
-
-> This will create three output files called `out.txt`, `out.bed` and `out.log` in the current folder.
-
-
 ## Usage
 
 ### General usage and available options
