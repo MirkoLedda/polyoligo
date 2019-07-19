@@ -1,6 +1,6 @@
 /* ----Body---- */
 body {
-  font-size: calc(12px + (20 - 12) * ((100vw - 300px) / (1600 - 300)));
+  font-size: calc(14px + (20 - 14) * ((100vw - 300px) / (1600 - 300)));
   line-height: calc(1.2em + (1.5 - 1.2) * ((100vw - 300px)/(1600 - 300)));
 }
 
@@ -12,6 +12,10 @@ body {
     top: 0;
     width: 100%;
     border-radius: 0px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    flex-shrink: 0
 }
 
 .navbar a {
@@ -21,7 +25,7 @@ body {
     text-align: center;
     padding: 14px 16px;
     text-decoration: none;
-    font-size: calc(16px + (24 - 16) * ((100vw - 300px) / (1600 - 300)));
+    font-size: calc(22px + (28 - 22) * ((100vw - 300px) / (1600 - 300)));
 }
 
 .navbar a:hover {
@@ -63,6 +67,13 @@ body {
     padding:10px;
 }
 
+#methods {
+    border: 1px solid black;
+    padding:10px;
+    padding-left: 0px;
+    padding-top: 20px;
+}
+
 /* ----Console---- */
 .console {
     background-color: lightgray;
@@ -96,11 +107,11 @@ hr {
 
 /* ----Arguments page---- */
 form label {
-    font-size: calc(14px + (24 - 14) * ((100vw - 300px) / (1600 - 300)));
+    font-size: calc(16px + (24 - 16) * ((100vw - 300px) / (1600 - 300)));
 }
 
 form select {
-    font-size: calc(12px + (20 - 12) * ((100vw - 300px) / (1600 - 300)));
+    font-size: calc(14px + (20 - 14) * ((100vw - 300px) / (1600 - 300)));
 }
 
 input[type=file] {
@@ -115,10 +126,6 @@ h2 {
 h3 {
     font-size: calc(20px + (30 - 20) * ((100vw - 300px) / (1600 - 300)));
     margin-top: 0;
-}
-
-#assay_arrow {
-    margin-left: 100px
 }
 
 h4 {

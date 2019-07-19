@@ -30,14 +30,23 @@
 {% endblock %}
 
 {% block content %}
-    <h2>Welcome to <b>PolyOligo</b> <small>v0.1</small> <h4> - a suite for designing oligonucleotides on polyploid and complex genomes.</h4></h2><br><br>
+<h2>Welcome to <b>PolyOligo</b> <small>v0.1</small> <h4> <font color="gray">- a suite for designing oligonucleotides on polyploid and complex genomes.</font></h4></h2>
+<hr><br>
 
-<h3 id="assay_arrow"><b>&uarr; Choose your assay above &uarr;</b></h3><br><br>
-
+    <h4> &darr; Choose your method &darr;</h4><br>
+    <div id="methods">
+        <ul style="list-style: none;">
+            <li> <b><a href="{{ url_for('pcr') }}">PCR/Sanger</a></b> - Standard PCR or Sanger sequencing primers.
+            <li> <b><a href="{{ url_for('kasp') }}">KASP</a></b> - Genotyping by sequencing using the Kompetitive allele specific PCR (KASP) method.
+            <li> <b><a href="{{ url_for('caps') }}">CAPS</a></b> - Genotyping by sequencing using the Cleaved Amplified Polymorphic Sequences (CAPS) method.
+            <li> <b><a href="{{ url_for('crispr') }}">CRISPR/Cas9</a></b> - Guide RNAs for CRISPR/Cas9 assays.
+        </ul>
+    </div>
+    <br>
     <div id="summary">
         <p>
             <h4><b>Important information - please read before starting</b></h4>
-            PolyOligo is available as an open-source command line interface software <b><a href="https://github.com/MirkoLedda/polyoligo">HERE</a></b>. This standalone version can be used with any reference genome and VCF file, has more features and is faster because multi-core enabled.<br><br>
+            Complete documentation and a command line interface (CLI) version of this software is available <b><a href="https://github.com/MirkoLedda/polyoligo">HERE</a></b>. The CLI version can be used with any reference genome and VCF file, has more features and is faster because multi-threads enabled.<br><br>
 
             To avoid overloading the server and transferring large amount of data, we implemented the following limitations here:<br>
 
@@ -51,14 +60,13 @@
                     </select> (more can be added upon <b><a href="https://github.com/MirkoLedda/polyoligo/issues">request</a></b>).
                 </li>
                 <li>The number of concurrent assay designs is capped.</li>
+                <li>The number of threads is limited to 1 per job.</li>
                 <li>Mutations across populations other than strawberries cannot be used (i.e. no VCF file upload).</li>
             </ol><br>
 
             If you find this tool useful, please support us by citing:<br><br>
             <small>Ledda M., Cobo N., Lorant A., Hardigan M.A. and Knapp S.J., PolyOligo: A Bioinformatic Platform for Identifying Target DNA Sequences for the Development of Sub-Genome Specific DNA Markers in Polyploid/Complex Genomes. Poster presented at: Annual Conference of the American Society of Horticultural Sciences; 2019 July 21-25; Las Vegas, NV, USA.</small><br><br>
-            For feature requests, reporting bugs or addition of reference genomes/population mutations, please fill <b><a href="https://github.com/MirkoLedda/polyoligo/issues">this form</a></b> or <b><a href="mailto:maledda@ucdavis.edu?Subject=PolyOligo%20support">contact us</a></b>.<br><br>
-
-            <small><i><b>Disclaimer</b> We do not use cookies and under no circumstances are we using or accessing data that is uploaded to this server. Once a job completes, all files will be permanently deleted after a grace period of 24h. We simply keep track of the server usage to adjust computational resources accordingly.</i></small><br>
+            For feature requests, reporting bugs or addition of reference genomes/population mutations, please fill <b><a href="https://github.com/MirkoLedda/polyoligo/issues">this form</a></b> or <b><a href="mailto:maledda@ucdavis.edu?Subject=PolyOligo%20support">contact us</a></b>.<br>
         <p>
     </div>
 

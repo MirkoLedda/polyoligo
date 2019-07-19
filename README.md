@@ -8,10 +8,10 @@ A Python-based **multicore enabled** set of tools to **design oligonucleotides**
 
 ## Included binaries (click on the command for more information)
 
-* [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_kasp.md): Design primers for genotyping assays using Kompetitive allele specific PCR (KASP).
-* [**`polyoligo-caps`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_caps.md): Design primers for CAPS assays.
-* [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_pcr.md): Design primers for PCR.
-* [**`polyoligo-crispr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_crispr.md): Design gRNAs for CRISPR/Cas9 assays.
+* [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_pcr.md): Standard PCR or Sanger sequencing primers.
+* [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_kasp.md): Genotyping by sequencing using the Kompetitive allele specific PCR (KASP) method.
+* [**`polyoligo-caps`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_caps.md): Genotyping by sequencing using the Cleaved Amplified Polymorphic Sequences (CAPS) method.
+* [**`polyoligo-crispr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_crispr.md): Guide RNAs for CRISPR/Cas9 assays.
 
 ## Getting Started
 
