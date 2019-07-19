@@ -74,6 +74,15 @@ body {
     padding:10px;
 }
 
+#polyoligo {
+    color: black;
+}
+
+#polyoligo:hover {
+  text-decoration: none;
+  color: black;
+}
+
 /* ----Console---- */
 .console {
     background-color: lightgray;
