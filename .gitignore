@@ -17,4 +17,6 @@ webapp/__pycache__/
 webapp/redis-stable/
 webapp/instance/
 webapp/data/
+webapp/trash/
+webapp/log.txt
 footprinting/footprinting_data/
