@@ -2,7 +2,7 @@
 
 BASEDIR="$HOME/polyoligo/webapp/uploads"
 TRASH="$HOME/polyoligo/webapp/trash"
-LOGDIR="$HOME/polyoligo/webapp/log.txt
+LOGDIR="$HOME/polyoligo/webapp/log.txt"
 
 mkdir $TRASH
 find $BASEDIR -mtime +1 | xargs -I {} mv {} $TRASH
