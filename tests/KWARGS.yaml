@@ -1,6 +1,8 @@
 roi: "Fvb2-4:100000-101000"
 roi_pcr: "sample_data/pcr_targets.txt"
+roi_pcr_lim: "sample_data/pcr_targets_lim.txt"
 marker: "sample_data/markers.txt"
+marker_lim: "sample_data/markers_lim.txt"
 out: "out"
 reference: "sample_data/blastdb"
 vcf: "sample_data/vcf.txt.gz"

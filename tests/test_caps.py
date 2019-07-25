@@ -15,14 +15,22 @@ cli_caps.main(strcmd=" ".join([
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
-    "--silent"
+    "--debug"
 ]))
+
+cli_caps.main(strcmd=" ".join([
+    "polyoligo-caps",
+    KWARGS["marker_lim"],
+    KWARGS["out"],
+    KWARGS["reference"],
+    "--debug"
+]))
+
 cli_caps.main(strcmd=" ".join([
     "polyoligo-caps",
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
-    "--fast",
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),

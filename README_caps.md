@@ -85,5 +85,3 @@ In the following example, CAPS primers will be designed by considering both homo
 ```
 polyoligo-caps sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
 ```
-
-For the design of a large number of probes (>1000), for example to design CAPS assays across an entire genome, the use of the option `--fast` is recommended. This mode is faster than the standard mode for designing numerous probes because the entire reference genome in momentarily loaded in memory, which reduces I/O actions but increases RAM consumption substantially.

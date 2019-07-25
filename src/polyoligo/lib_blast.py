@@ -169,9 +169,20 @@ class BlastDB:
         fetched_seqs = {}
 
         for q in queries:
+            left_padding = 0
+            right_padding = 0
+
             start0 = q["start"] - 1
             stop0 = q["stop"]
             qkey = "{}:{}-{}".format(q["chr"], q["start"], q["stop"])
+
+            if start0 < 0:
+                left_padding = np.abs(start0)
+                start0 = 0
+
+            if stop0 < 0:
+                right_padding = np.abs(stop0)
+                stop0 = 0
 
             if "strand" in q.keys():
                 if q["strand"] == "plus":
@@ -182,6 +193,15 @@ class BlastDB:
                     fetched_seqs[qkey] = str(Seq(fetched_seqs[qkey]).reverse_complement())
             else:
                 fetched_seqs[qkey] = self.seqs[q["chr"]][start0:stop0]
+
+            d = np.abs(start0-stop0)
+            if len(fetched_seqs[qkey]) < d:
+                if start0 < stop0:
+                    right_padding = d - len(fetched_seqs[qkey])
+                else:
+                    left_padding = d - len(fetched_seqs[qkey])
+
+            fetched_seqs[qkey] = padding(fetched_seqs[qkey], left=left_padding, right=right_padding)
 
         if fp_out is not None:
             write_fasta(fetched_seqs, fp_out)
@@ -384,6 +404,11 @@ def read_json(fp):
     with open(fp, "r") as f:
         json_dict = json.load(f)
     return json_dict
+
+
+def padding(x, left=0, right=0, char="N"):
+    x = char * left + x + char * right
+    return x
 
 
 if __name__ == "__main__":

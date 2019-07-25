@@ -68,13 +68,6 @@ def parse_args(inputargs):
              "database (see sample_data/blastdb).",
     )
     parser.add_argument(
-        "--fast",
-        action="store_true",
-        # help="Run in fast mode. This mode loads the entire reference genome in memory making the design "
-        #      "of large number of probes (> 1000) faster at the expense of heavy RAM consumption.",
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument(
         "--silent",
         action="store_true",
         help="Silent mode, will not print to STDOUT.",
@@ -245,17 +238,10 @@ def main(strcmd=None):
         blast_db.fasta2db()
 
     # Make a FASTA reference genome if fast mode is activated
-    if args.fast:
-        if not blast_db.has_fasta:
-            logger.info("Converting the input reference genome to FASTA ...")
-            blast_db.db2fasta()
-
-        logger.info("Fast mode On: Loading the input reference genome in memory ...")
+    if not blast_db.has_fasta:
+        logger.info("Converting the input reference genome to FASTA ...")
+        blast_db.db2fasta()
         blast_db.load_fasta()
-
-    else:
-        blast_db.has_fasta = False
-        blast_db.purge()
 
     # Init the MUSCLE aligner
     muscle = lib_blast.Muscle(path_temporary=blast_db.temporary, exe=bin_path)

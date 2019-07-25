@@ -15,7 +15,17 @@ cli_pcr.main(strcmd=" ".join([
     KWARGS["roi_pcr"],
     KWARGS["out"],
     KWARGS["reference"],
+    "--debug",
 ]))
+
+cli_pcr.main(strcmd=" ".join([
+    "polyoligo-pcr",
+    KWARGS["roi_pcr_lim"],
+    KWARGS["out"],
+    KWARGS["reference"],
+    "--debug",
+]))
+
 cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
     KWARGS["roi_pcr"],

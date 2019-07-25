@@ -40,8 +40,19 @@ class Marker:
 
     def upload_fasta_name(self, name):
         self.fasta_name = name
-        self.start = int(self.fasta_name.split(":")[1].split("-")[0])
-        self.stop = int(self.fasta_name.split(":")[1].split("-")[1])
+
+        if name is not None:
+            try:
+                self.start = int(self.fasta_name.split(":")[1].split("-")[0])
+                self.stop = int(self.fasta_name.split(":")[1].split("-")[1])
+            except ValueError:
+                fields = self.fasta_name.split(":")[1]
+                fields = fields.split("-")
+                self.start = int("-{}".format(fields[1]))
+                self.stop = int(fields[2])
+        else:
+            self.start = 0
+            self.stop = 0
 
     def upload_mutations(self, vcf_obj):
         if vcf_obj:
@@ -148,64 +159,68 @@ class Markers:
                     f_out.write(line)
 
         for marker in self.markers:
-            # Parse the BLAST output file and return a pandas.DataFrame
-            fpm = join(self.blast_db.temporary, marker.name) + ".hfa"
-            df = self.blast_db.parse_blastn_output(fpm)
-            os.remove(fpm)
+            try:
+                # Parse the BLAST output file and return a pandas.DataFrame
+                fpm = join(self.blast_db.temporary, marker.name) + ".hfa"
+                df = self.blast_db.parse_blastn_output(fpm)
+                os.remove(fpm)
 
-            # Add snp names and chromosomes to df
-            df["snp"] = df.qname.str.split("_").str[0].tolist()
-            df["qchr"] = df.qname.str.split("_").str[1].tolist()
-            df["qpos"] = pd.to_numeric(df.qname.str.split("_").str[2].tolist())
+                # Add snp names and chromosomes to df
+                df["snp"] = df.qname.str.split("_").str[0].tolist()
+                df["qchr"] = df.qname.str.split("_").str[1].tolist()
+                df["qpos"] = pd.to_numeric(df.qname.str.split("_").str[2].tolist())
 
-            marker_found = False
-            queries = []
-            target = None
+                marker_found = False
+                queries = []
+                target = None
 
-            df_sub = df[(df["qstart"] <= snp_pos) &
-                        (df["qstop"] >= snp_pos)]
+                df_sub = df[(df["qstart"] <= snp_pos) &
+                            (df["qstop"] >= snp_pos)]
 
-            for _, row in df_sub.iterrows():
+                for _, row in df_sub.iterrows():
 
-                # Real position of the SNP in the query accounting for gaps
-                qpos = snp_pos - row["qstart"]
-                for j, nuc in enumerate(row["qseq"]):
-                    if nuc == "-":
-                        qpos += 1
-                    if qpos == j:
+                    # Real position of the SNP in the query accounting for gaps
+                    qpos = snp_pos - row["qstart"]
+                    for j, nuc in enumerate(row["qseq"]):
+                        if nuc == "-":
+                            qpos += 1
+                        if qpos == j:
+                            break
+
+                    # Number of gaps until the SNP in the subject
+                    sgap = row["sseq"][0:qpos].count("-")
+
+                    if row["sstart"] > row["sstop"]:
+                        strand = "minus"
+                        spos = row["sstart"] - (qpos - sgap)
+                    else:
+                        strand = "plus"
+                        spos = row["sstart"] + (qpos - sgap)
+
+                    q = {
+                        "name": marker.name,
+                        "chr": row["schr"],
+                        "start": spos - padding,
+                        "stop": spos + padding,
+                        "strand": strand,
+                    }
+
+                    queries.append(q)
+
+                    # Determine which sequence correspond to the marker
+                    if (spos == row["qpos"]) and (row["schr"] == marker.chrom):
+                        target = "{}:{:d}-{:d}".format(q["chr"], q["start"], q["stop"])
+                        marker_found = True
+
+                    # Limit to 50 homologous sequences as we won't do multialignment for more sequences
+                    if marker_found and (len(queries) >= 51):
                         break
 
-                # Number of gaps until the SNP in the subject
-                sgap = row["sseq"][0:qpos].count("-")
-
-                if row["sstart"] > row["sstop"]:
-                    strand = "minus"
-                    spos = row["sstart"] - (qpos - sgap)
-                else:
-                    strand = "plus"
-                    spos = row["sstart"] + (qpos - sgap)
-
-                q = {
-                    "name": marker.name,
-                    "chr": row["schr"],
-                    "start": max(1, spos - padding),
-                    "stop": spos + padding,
-                    "strand": strand,
-                }
-
-                queries.append(q)
-
-                # Determine which sequence correspond to the marker
-                if (spos == row["qpos"]) and (row["schr"] == marker.chrom):
-                    target = "{}:{:d}-{:d}".format(q["chr"], q["start"], q["stop"])
-                    marker_found = True
-
-                # Limit to 50 homologous sequences as we won't do multialignment for more sequences
-                if marker_found and (len(queries) >= 51):
-                    break
-
-            queries_dict[marker.name] = queries
-            targets[marker.name] = target
+                queries_dict[marker.name] = queries
+                targets[marker.name] = target
+            except FileNotFoundError:
+                queries_dict[marker.name] = []
+                targets[marker.name] = None
 
         return queries_dict, targets
 
@@ -217,7 +232,7 @@ class Markers:
         for marker in self.markers:
             queries[marker.name] = {
                 "chr": marker.chrom,
-                "start": max(1, marker.pos1 - self.MARKER_FLANKING_N),
+                "start": marker.pos1 - self.MARKER_FLANKING_N,
                 "stop": marker.pos1 + self.MARKER_FLANKING_N,
             }
 

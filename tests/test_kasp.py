@@ -15,7 +15,15 @@ cli_kasp.main(strcmd=" ".join([
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
-    # "--debug",
+    "--debug",
+]))
+
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
+    KWARGS["marker_lim"],
+    KWARGS["out"],
+    KWARGS["reference"],
+    "--debug",
 ]))
 
 cli_kasp.main(strcmd=" ".join([
@@ -23,7 +31,6 @@ cli_kasp.main(strcmd=" ".join([
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
-    "--fast",
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),
