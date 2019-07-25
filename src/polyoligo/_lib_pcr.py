@@ -573,6 +573,9 @@ def main(kwarg_dict):
     except FileNotFoundError:
         logger.debug("{} - Not enough sequence flanking the marker to design an assay !".format(roi.name))
         pcr = lib_primer3.PCR(chrom=roi.chrom, name=roi.name)
+    except KeyError:
+        logger.debug("{} - Not enough sequence flanking the marker to design an assay !".format(roi.name))
+        pcr = lib_primer3.PCR(chrom=roi.chrom, name=roi.name)
 
     print_report(pcr, fp_base_out)
 

@@ -8,6 +8,7 @@ import primer3
 import sys
 from os.path import join
 import os
+from Bio.Seq import Seq
 
 from . import lib_blast, lib_utils
 
@@ -159,6 +160,12 @@ class PrimerPair:
 
         # Check each primer individually
         for d in self.primers.keys():
+            if d == "R":
+                self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
+            if (d == "A"):
+                if self.dir == "R":
+                    self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
+
             window = np.arange(self.primers[d].start, self.primers[d].stop + 1)
             seqlist = list(self.primers[d].sequence)
             self.primers[d].sequence_ambiguous = [self.primers[d].sequence]
@@ -177,6 +184,14 @@ class PrimerPair:
                     self.primers[d].mutations.append(mut_txt)
                     self.primers[d].max_aaf = np.max([self.primers[d].max_aaf, m.aaf])
             self.primers[d].sequence_ambiguous = lib_utils.seqs2ambiguous_dna(self.primers[d].sequence_ambiguous)
+
+            if d == "R":
+                self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
+                self.primers[d].sequence_ambiguous = str(Seq(self.primers[d].sequence_ambiguous).reverse_complement())
+            if (d == "A"):
+                if self.dir == "R":
+                    self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
+                    self.primers[d].sequence_ambiguous = str(Seq(self.primers[d].sequence_ambiguous).reverse_complement())
 
         # Check indels in the PCR product
         window = np.arange(self.primers["F"].start, self.primers["R"].stop + 1)

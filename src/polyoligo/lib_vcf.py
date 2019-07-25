@@ -62,6 +62,9 @@ class VCF:
         if "stop" in kwargs.keys():
             stop = kwargs["stop"]
 
+        if start < 0:
+            start = 0
+
         try:
             mutations = self.reader.fetch(chrom, start=start, end=stop)
         except ValueError:
@@ -90,6 +93,9 @@ class VCF:
 
         if "stop" in kwargs.keys():
             stop = kwargs["stop"]
+
+        if start < 0:
+            start = 0
 
         try:
             mutations = self.reader.fetch(chrom, start=start, end=stop)  # Position arguments is expected as 1-based
@@ -152,6 +158,10 @@ class VCF:
 
     def print_alternative_subjects(self, fp, chrom, start, stop):
         if fp != "":
+
+            if start < 1:
+                start = 1
+
             try:
                 mutations = self.reader.fetch(chrom, start=start - 1, end=stop)
             except ValueError:

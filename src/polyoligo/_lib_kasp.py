@@ -756,7 +756,7 @@ def main(kwarg_dict):
             # Make a list of mutation positions based on mutation for exclusion
             mut_ixs = []
 
-            reg_start = int(marker.fasta_name.split(":")[1].split("-")[0])
+            reg_start = marker.start
             for mutation in marker.mutations:
                 mut_ixs.append(mutation.pos - reg_start)
 
