@@ -9,26 +9,26 @@ from src.polyoligo import cli_pcr
 with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
-# STD
 cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
     KWARGS["roi_pcr"],
     KWARGS["out"],
-    KWARGS["reference"],
+    KWARGS["ref_sample"],
+    "--debug",
+]))
+
+cli_pcr.main(strcmd=" ".join([
+    "polyoligo-pcr",
+    KWARGS["roi_pcr_tomato"],
+    KWARGS["out"],
+    KWARGS["ref_tomato"],
+    "--webapp",
     "--debug",
 ]))
 
 cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
     KWARGS["roi_pcr_lim"],
-    KWARGS["out"],
-    KWARGS["reference"],
-    "--debug",
-]))
-
-cli_pcr.main(strcmd=" ".join([
-    "polyoligo-pcr",
-    KWARGS["roi_pcr"],
     KWARGS["out"],
     KWARGS["reference"],
     "-n {}".format(KWARGS["n"]),

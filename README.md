@@ -6,6 +6,8 @@ Design oligos for complex genomes.
 
 A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Can use known **mutations** across populations to refine designs.
 
+A webapp version of this software is coming soon !
+
 ## Included binaries (click on the command for more information)
 
 * [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_pcr.md): Standard PCR or Sanger sequencing primers.
@@ -66,11 +68,6 @@ To make sure the installation ran properly, run:
 polyoligo
 ```
 
-<!--### Instructions-->
-
-<!--See this [wiki](https://github.com/MirkoLedda/polyoligo.git).-->
-
-
 ## Citation
 
 Ledda M., Cobo N., Lorant A., Hardigan M.A. and Knapp S.J., PolyOligo: A Bioinformatic Platform for Identifying Target DNA Sequences for the Development of Sub-Genome Specific DNA Markers in Polyploid/Complex Genomes. Poster presented at: Annual Conference of the American Society of Horticultural Sciences; 2019 July 21-25; Las Vegas, NV, USA
@@ -78,10 +75,6 @@ Ledda M., Cobo N., Lorant A., Hardigan M.A. and Knapp S.J., PolyOligo: A Bioinfo
 ## Reporting bugs and requesting features
 
 This software is actively supported and all changes are listed in the [CHANGELOG](CHANGES.md). To report a bug open a ticket in the [issues tracker](https://github.com/MirkoLedda/polyoligo/issues). Features can be requested by opening a ticket in the [pull request](https://github.com/MirkoLedda/polyoligo/pulls).
-
-<!-- ## Versioning
-
-We use the [SemVer](http://semver.org/) convention for versioning. For the versions available, see the [tags on this repository](TBA/tags). -->
 
 ## Contributors
 

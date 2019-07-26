@@ -25,15 +25,7 @@ def main():
             "\n"
             "Design oligonucleotides for complex genomes. See https://github.com/MirkoLedda/polyoligo for more "
             "information.\n"
-            "Citation available via 'polyoligo cite').\n"
-            # "(Bibtex reference available via 'polyoligo cite').\n"
-            "\n"
-            # "Available tools\n"
-            # "   KASP       : polyoligo-kasp \n"
-            # "   CAPS       : polyoligo-caps\n"
-            # "   PCR/Sanger : polyoligo-pcr\n"
-            # "   CRISPR/Cas9: polyoligo-crispr\n"
-            # "\n"
+            "If you found this tool useful, please support us by citing -> see 'polyoligo cite'.\n"
             "Copyright 2019 to Mirko Ledda, under a BSD-2 License\n".format(_version.__version__)
         )
 

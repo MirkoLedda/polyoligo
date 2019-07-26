@@ -12,12 +12,12 @@ temporary/
 .coverage*
 out*
 profile*
+data/**
 test_data/**
 webapp/uploads/
 webapp/__pycache__/
 webapp/redis-stable/
 webapp/instance/
-webapp/data/
 webapp/trash/
 webapp/log.txt
 footprinting/footprinting_data/

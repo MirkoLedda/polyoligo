@@ -62,10 +62,12 @@ def parse_args(inputargs):
         "refgenome",
         metavar="FASTA/BLASTDB",
         type=str,
-        help="Either a FASTA file or a BLAST database to use as the reference genome.\n"
-             "FASTA: Both raw and compressed files are supported natively (see sample_data/blastdb.fa.gz).\n"
+        help="FASTA file and/or a BLAST database to use as the reference genome.\n"
+             "BOTH: Use the same basename with no extensions.\n"
+             "FASTA: Both raw and GZIP compressed files are supported natively (see sample_data/blastdb.fa.gz).\n"
              "BLASTDB: Extensions (e.g. .nsq/.nin/...) are not required, just enter the basename of the "
-             "database (see sample_data/blastdb).",
+             "database (see sample_data/blastdb).\n"
+             "If either is provided, then a conversion will automatically be made to obtain both file types.",
     )
     parser.add_argument(
         "--silent",

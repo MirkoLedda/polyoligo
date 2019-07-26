@@ -19,7 +19,7 @@ FNULL = open(os.devnull, 'w')
 class BlastDB:
     def __init__(self, path_db, path_temporary, path_bin, job_id="", n_cpu=1):
         self.db = path_db
-        self.has_db = True
+        self.has_db = False
         self.has_fasta = False
         self.fasta = None
         self.temporary = path_temporary
@@ -28,10 +28,24 @@ class BlastDB:
         self.n_cpu = n_cpu
         self.seqs = None
 
-        if exists(self.db) and self.db.endswith((".fa", ".fasta", ".fa.gz", ".fasta.gz")):
+        if exists(self.db + ".nsq"):
+            self.has_db = True
+
+        fasta_name = None
+        for ext in [".fa", ".fasta", ".fa.gz", ".fasta.gz"]:
+            if exists(self.db + ext):
+                fasta_name = self.db + ext
+
+        if exists(self.db):
             self.fasta = self.db
             self.has_fasta = True
-            self.has_db = False
+        elif fasta_name is not None:
+            self.fasta = fasta_name
+            self.has_fasta = True
+
+        if self.has_fasta:
+            if self.fasta.endswith(".gz"):
+                self.uncompress_fasta()
 
     def locked_call(self, cmd):
         task_id = str(time.time()) + str(uuid4())
@@ -48,6 +62,20 @@ class BlastDB:
     def load_fasta(self):
         if self.has_fasta:
             self.seqs = SeqIO.index(self.fasta, "fasta")
+
+    def uncompress_fasta(self):
+
+        newpath = join(self.temporary, "refG.fa")
+        cmd = [
+            "gunzip",
+            "-c",
+            self.fasta,
+            "> {}".format(newpath)
+        ]
+
+        self.fasta = newpath
+        cmd = " ".join(cmd)
+        self.locked_call(cmd)
 
     def fasta2db(self):
         self.db = join(self.temporary, "blastdb")

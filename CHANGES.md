@@ -9,6 +9,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ### Fixed
 ### Removed -->
 
-## [0.1.0] - 2019-04-01
+## [0.1] - 2019-07-26
 ### Added
 - Initial release.

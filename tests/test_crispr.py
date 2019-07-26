@@ -9,29 +9,27 @@ from src.polyoligo import cli_crispr
 with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
-# STD
 cli_crispr.main(strcmd=" ".join([
     "polyoligo-crispr",
     KWARGS["roi"],
     KWARGS["out"],
-    KWARGS["reference"],
-]))
-cli_crispr.main(strcmd=" ".join([
-    "polyoligo-crispr",
-    KWARGS["roi"],
-    KWARGS["out"],
-    KWARGS["reference"],
-    "-nt {}".format(KWARGS["nt"]),
+    KWARGS["ref_sample"],
     "--debug",
 ]))
 
-# WEBAPP
+cli_crispr.main(strcmd=" ".join([
+    "polyoligo-caps",
+    KWARGS["roi_tomato"],
+    KWARGS["out"],
+    KWARGS["ref_tomato"],
+    "--webapp",
+    "--debug",
+]))
+
 cli_crispr.main(strcmd=" ".join([
     "polyoligo-crispr",
     KWARGS["roi"],
     KWARGS["out"],
     KWARGS["reference"],
-    "-nt {}".format(KWARGS["nt"]),
     "--debug",
-    "--webapp",
 ]))

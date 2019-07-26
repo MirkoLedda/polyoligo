@@ -23,7 +23,7 @@ The software requires three mandatory inputs:
 
 **`<OUTPUT>`**: The base name of the output files.
 
-**`<FASTA/BLASTDB>`**: Either a FASTA file or a BLAST database to use as the reference genome.
+**`<FASTA/BLASTDB>`**: A FASTA file and/or a BLAST database to use as the reference genome. Both file types can be provided by using the same basename. If either is provided, then a conversion will automatically be made to obtain both file types.
 
 
 ### Outputs
