@@ -8,7 +8,6 @@ from copy import deepcopy
 import logging
 from os.path import join
 import os
-import sys
 
 from . import lib_blast, lib_utils, lib_primer3
 
@@ -72,13 +71,13 @@ class PrimerPair(lib_primer3.PrimerPair):
             tm_alt = thals_obj.calcHeterodimer(seqs["F"], seqs["A"]).tm - self.tm_delta
 
         # Primer with the reference allele
-        if (tm_ref <= (self.primers["F"].tm-self.tm_delta)) and (tm_ref <= (self.primers["R"].tm-self.tm_delta)):
+        if (tm_ref <= (self.primers["F"].tm - self.tm_delta)) and (tm_ref <= (self.primers["R"].tm - self.tm_delta)):
             self.ref_dimer = False
         else:
             self.ref_dimer = True
 
         # Primer with the alternative allele
-        if (tm_alt <= (self.primers["F"].tm-self.tm_delta)) and (tm_alt <= (self.primers["R"].tm-self.tm_delta)):
+        if (tm_alt <= (self.primers["F"].tm - self.tm_delta)) and (tm_alt <= (self.primers["R"].tm - self.tm_delta)):
             self.alt_dimer = False
         else:
             self.alt_dimer = True
@@ -347,7 +346,8 @@ def get_marker_primers(marker, allowed_end_pos=[0]):
     alt_a_rc = alt_a.reverse_complement()
 
     pps = []
-    for padding in range(lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"], lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"] + 1):
+    for padding in range(lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"],
+                         lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"] + 1):
         for i in allowed_end_pos:
             x2 = marker_pos + i
             x1 = x2 - padding
@@ -729,7 +729,7 @@ def main(kwarg_dict):
         mock_seqs = {
             marker.fasta_name: marker.seq,
             "mock": marker.seq,
-                     }
+        }
         lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
 
     fp_aligned = join(blast_db.temporary, marker.name + ".afa")
@@ -810,6 +810,7 @@ def main(kwarg_dict):
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
     print_report(pcr, join(fp_base_out))
+
 
 if __name__ == "__main__":
     pass

@@ -9,10 +9,12 @@ import gzip
 # noinspection PyPackageRequirements
 from Bio.Seq import Seq
 from uuid import uuid4
+# noinspection PyPackageRequirements
 from Bio import SeqIO
 import os
 
 FNULL = open(os.devnull, 'w')
+
 
 class BlastDB:
     def __init__(self, path_db, path_temporary, path_bin, job_id="", n_cpu=1):
@@ -80,6 +82,7 @@ class BlastDB:
         self.locked_call(cmd)
         self.has_db = True
 
+    # noinspection PyListCreation
     def db2fasta(self):
         if not self.has_fasta:
             self.fasta = join(self.temporary, "refG.fa")
@@ -157,7 +160,7 @@ class BlastDB:
 
         return read_fasta(fp_blast_out)
 
-    def fetch_fasta(self, queries, fp_out=None, **kwargs):
+    def fetch_fasta(self, queries, fp_out=None):
         """Fetch sequences based on a dictionary of queries.
 
         Args:
@@ -206,7 +209,7 @@ class BlastDB:
                 else:
                     fetched_seqs[qkey] = seqs[start0:stop0]
 
-                d = np.abs(start0-stop0)
+                d = np.abs(start0 - stop0)
                 if len(fetched_seqs[qkey]) < d:
                     if start0 < stop0:
                         right_padding = d - len(fetched_seqs[qkey])
@@ -368,7 +371,6 @@ def write_fasta(seqs, fp_out):
 
 
 def read_fasta(fp, filters=None, return_ordering=False):
-
     if fp.endswith(".gz"):
         opener = gzip.open(fp, "rb")
     else:

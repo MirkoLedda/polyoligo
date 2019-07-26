@@ -2,6 +2,7 @@ import re
 # noinspection PyPackageRequirements
 from Bio.Seq import Seq
 from os.path import join
+# noinspection PyUnresolvedReferences
 from primer3.thermoanalysis import ThermoAnalysis
 
 from . import lib_blast, lib_utils

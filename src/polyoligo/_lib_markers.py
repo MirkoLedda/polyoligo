@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import os
 
-from . import lib_blast, lib_utils, _lib_kasp, _lib_caps
+from . import lib_blast, lib_utils, _lib_kasp
 
 logger = logging.getLogger(__name__)  # Initialize the logger
 

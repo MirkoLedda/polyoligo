@@ -6,6 +6,7 @@ import os
 import json
 from copy import deepcopy
 import re
+# noinspection PyPackageRequirements
 from Bio import Seq
 
 IUPAC_DNA_REGEX = "^[atgcrynmkATGCRYNMK]+$"
@@ -66,16 +67,16 @@ def absolute_paths(txt):
 
 def get_os():
     platform = sys.platform
-    k = None
+    cwos = None
 
     if platform == "darwin":  # Mac OSX
-        k = "macosx"
+        cwos = "macosx"
     elif platform.startswith("linux"):  # Linux
-        k = "linux"
+        cwos = "linux"
     elif (platform == "win32") or (platform == "cygwin"):  # Windows
-        k = "win"
+        cwos = "win"
 
-    return k
+    return cwos
 
 
 def read_json(fp):

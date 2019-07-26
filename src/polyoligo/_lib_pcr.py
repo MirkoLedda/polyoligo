@@ -1,14 +1,11 @@
 from __future__ import print_function, division
 # noinspection PyPackageRequirements
-from Bio.Seq import Seq
 import numpy as np
 # noinspection PyUnresolvedReferences
 from primer3.thermoanalysis import ThermoAnalysis
-from copy import deepcopy
 import logging
 from os.path import join
 import os
-import sys
 import pandas as pd
 
 from . import lib_blast, lib_utils, lib_primer3, _lib_markers
@@ -459,7 +456,7 @@ def main(kwarg_dict):
             # Align homologs to the target sequence
             if len(seqs) > 49:
                 # If more than 50 homoloous sequences were found, then do not run multialignment and
-                # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
+                # instead make all nucs not specific (using twice the same marker sequence) for runtime optimization
                 mock_seqs = {
                     roi.pwindows.markers[i].fasta_name: roi.pwindows.markers[i].seq,
                     "mock": roi.pwindows.markers[i].seq,

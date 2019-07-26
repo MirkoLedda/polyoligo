@@ -37,7 +37,8 @@ def cprofile_worker(kwargs):
 def parse_args(inputargs):
     # Define the args parser
     parser = argparse.ArgumentParser(prog="polyoligo-caps",
-                                     description="Design primers for Cleaved Amplified Polymorphic Sequences (CAPS) assays",
+                                     description="Design primers for Cleaved Amplified Polymorphic Sequences (CAPS) "
+                                                 "assays",
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(

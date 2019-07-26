@@ -1,5 +1,6 @@
 import json
 import re
+# noinspection PyPackageRequirements
 from Bio import Seq
 from itertools import product
 
@@ -8,7 +9,8 @@ OUT_JSON = "src/polyoligo/data/type2.json"
 
 
 def extend_ambiguous_dna(seq):
-    """return list of all possible sequences given an ambiguous DNA input (Credit: https://stackoverflow.com/questions/27551921/how-to-extend-ambiguous-dna-sequence)"""
+    """return list of all possible sequences given an ambiguous DNA input
+    (Credit: https://stackoverflow.com/questions/27551921/how-to-extend-ambiguous-dna-sequence)"""
     d = Seq.IUPAC.IUPACData.ambiguous_dna_values
     return list(map("".join, product(*map(d.get, seq))))
 

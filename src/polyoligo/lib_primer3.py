@@ -5,9 +5,9 @@ from copy import deepcopy
 # noinspection PyPackageRequirements
 from Bio import SeqUtils
 import primer3
-import sys
 from os.path import join
 import os
+# noinspection PyPackageRequirements
 from Bio.Seq import Seq
 
 from . import lib_blast, lib_utils
@@ -128,6 +128,9 @@ class PrimerPair:
         self.product_size = None
         self.penalty = None
 
+        # Additional attributes for other packages
+        self.dir = None
+
     def add_primer3_attributes(self, pp3):
         for d in ["F", "R"]:
             self.primers[d].add_primer3_attributes(pp3.primers[d])
@@ -162,7 +165,7 @@ class PrimerPair:
         for d in self.primers.keys():
             if d == "R":
                 self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
-            if (d == "A"):
+            if d == "A":
                 if self.dir == "R":
                     self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
 
@@ -188,10 +191,12 @@ class PrimerPair:
             if d == "R":
                 self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
                 self.primers[d].sequence_ambiguous = str(Seq(self.primers[d].sequence_ambiguous).reverse_complement())
-            if (d == "A"):
+            if d == "A":
                 if self.dir == "R":
                     self.primers[d].sequence = str(Seq(self.primers[d].sequence).reverse_complement())
-                    self.primers[d].sequence_ambiguous = str(Seq(self.primers[d].sequence_ambiguous).reverse_complement())
+                    self.primers[d].sequence_ambiguous = str(
+                        Seq(self.primers[d].sequence_ambiguous).reverse_complement()
+                    )
 
         # Check indels in the PCR product
         window = np.arange(self.primers["F"].start, self.primers["R"].stop + 1)
