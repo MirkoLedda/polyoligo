@@ -4,6 +4,7 @@ from Bio.Seq import Seq
 from os.path import join
 # noinspection PyUnresolvedReferences
 from primer3.thermoanalysis import ThermoAnalysis
+import numpy as np
 
 from . import lib_blast, lib_utils
 
@@ -411,17 +412,20 @@ class Crispr:
             f.write("")
 
     def write_report(self, fp, fp_bed):
-        with open(fp, "a") as f:
+        with open(fp, "a") as f, open(fp_bed, "a") as fbed:
             for grna in self.gRNAs:
                 if grna.strand == "plus":
                     str_strand = "+"
                 else:
                     str_strand = "-"
 
+                start = np.min([grna.start, grna.end])
+                stop = np.max([grna.start, grna.end])
+
                 l = [
                     self.chrom,
-                    grna.start,
-                    grna.end,
+                    start,
+                    stop,
                     str_strand,
                     grna.seq,
                     grna.seq_pam[20:],
@@ -437,13 +441,6 @@ class Crispr:
                 txt = "\t".join(txt)
                 f.write("{}\n".format(txt))
 
-        with open(fp_bed, "a") as f:
-            for grna in self.gRNAs:
-                if grna.strand == "plus":
-                    str_strand = "+"
-                else:
-                    str_strand = "-"
-
                 str_name = "{}_{}_{}_{}_{}_{:.0f}_{}".format(
                     grna.n_perfect_offtargets,
                     grna.n_offtargets_12mer,
@@ -454,10 +451,10 @@ class Crispr:
                     grna.T_runs,
                 )
 
-                f.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(
+                fbed.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(
                     self.chrom,
-                    grna.start,
-                    grna.end,
+                    start,
+                    stop,
                     str_name,
                     0,
                     str_strand,
