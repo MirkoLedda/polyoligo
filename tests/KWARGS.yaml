@@ -4,10 +4,10 @@ roi_pcr_lim: "sample_data/pcr_targets_lim.txt"
 marker: "sample_data/markers.txt"
 marker_lim: "sample_data/markers_lim.txt"
 out: "out"
-reference: "sample_data/blastdb"
-vcf: "sample_data/vcf.txt.gz"
-vcf_include: "sample_data/vcf_include.txt"
-vcf_exclude: "sample_data/vcf_include.txt"
+reference: "test_data/blastdb/Fragaria_x_ananassa.fa"
+vcf: "test_data/VCF/Fragaria_x_ananassa.vcf.gz"
+vcf_include: "test_data/VCF_subsets/F.xananassa_VCFinclude.txt"
+vcf_exclude: "test_data/VCF_subsets/F.xananassa_VCFinclude.txt"
 nt: 4
 tm_delta: 10
 n: 200

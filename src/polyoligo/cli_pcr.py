@@ -241,7 +241,8 @@ def main(strcmd=None):
     if not blast_db.has_fasta:
         logger.info("Converting the input reference genome to FASTA ...")
         blast_db.db2fasta()
-        blast_db.load_fasta()
+
+    blast_db.load_fasta()
 
     # Init the MUSCLE aligner
     muscle = lib_blast.Muscle(path_temporary=blast_db.temporary, exe=bin_path)

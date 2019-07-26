@@ -153,17 +153,12 @@ def main(strcmd=None):
         logger.info("Converting the input reference genome to BlastDB ...")
         blast_db.fasta2db()
 
-    # # Make a FASTA reference genome by default
-    # if not blast_db.has_fasta:
-    #     logger.info("Converting the input reference genome to FASTA ...")
-    #     blast_db.db2fasta()
-    #
-    # logger.info("Loading the input reference genome in memory ...")
-    # blast_db.load_fasta()
-
     # Make a FASTA reference genome if fast mode is activated
-    blast_db.has_fasta = False
-    blast_db.purge()
+    if not blast_db.has_fasta:
+        logger.info("Converting the input reference genome to FASTA ...")
+        blast_db.db2fasta()
+
+    blast_db.load_fasta()
 
     # Check that the PAM site is valid
     if not lib_utils.is_dna(args.pam):

@@ -12,6 +12,7 @@ temporary/
 .coverage*
 out*
 profile*
+test_data/**
 webapp/uploads/
 webapp/__pycache__/
 webapp/redis-stable/
