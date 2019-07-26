@@ -9,7 +9,10 @@ import gzip
 # noinspection PyPackageRequirements
 from Bio.Seq import Seq
 from uuid import uuid4
+from Bio import SeqIO
+import os
 
+FNULL = open(os.devnull, 'w')
 
 class BlastDB:
     def __init__(self, path_db, path_temporary, path_bin, job_id="", n_cpu=1):
@@ -35,14 +38,14 @@ class BlastDB:
         unlock_cmd = "rm {}".format(lock)
 
         lcmd = "{};{};{};".format(lock_cmd, cmd, unlock_cmd)
-        call(lcmd, shell=True)
+        call(lcmd, shell=True, stdout=FNULL, stderr=FNULL)
 
         while exists(lock):
             time.sleep(0.1)
 
     def load_fasta(self):
         if self.has_fasta:
-            self.seqs = read_fasta(self.fasta)
+            self.seqs = SeqIO.index(self.fasta, "fasta")
 
     def fasta2db(self):
         self.db = join(self.temporary, "blastdb")
@@ -168,40 +171,49 @@ class BlastDB:
 
         fetched_seqs = {}
 
+        # Sort the queries such that each chromosome/contig is parsed from fasta only once - overhead avoidance
+        q_cat = {}
         for q in queries:
-            left_padding = 0
-            right_padding = 0
+            if q["chr"] not in q_cat.keys():
+                q_cat[q["chr"]] = []
+            q_cat[q["chr"]].append(q)
 
-            start0 = q["start"] - 1
-            stop0 = q["stop"]
-            qkey = "{}:{}-{}".format(q["chr"], q["start"], q["stop"])
+        for chrom, queries in q_cat.items():
+            seqs = str(self.seqs[chrom].seq)
+            for q in queries:
+                left_padding = 0
+                right_padding = 0
 
-            if start0 < 0:
-                left_padding = np.abs(start0)
-                start0 = 0
+                start0 = q["start"] - 1
+                stop0 = q["stop"]
+                qkey = "{}:{}-{}".format(q["chr"], q["start"], q["stop"])
 
-            if stop0 < 0:
-                right_padding = np.abs(stop0)
-                stop0 = 0
+                if start0 < 0:
+                    left_padding = np.abs(start0)
+                    start0 = 0
 
-            if "strand" in q.keys():
-                if q["strand"] == "plus":
-                    fetched_seqs[qkey] = self.seqs[q["chr"]][start0:stop0]
+                if stop0 < 0:
+                    right_padding = np.abs(stop0)
+                    stop0 = 0
+
+                if "strand" in q.keys():
+                    if q["strand"] == "plus":
+                        fetched_seqs[qkey] = seqs[start0:stop0]
+                    else:
+                        qkey = "{}:c{}-{}".format(q["chr"], q["stop"], q["start"])
+                        fetched_seqs[qkey] = seqs[start0:stop0]
+                        fetched_seqs[qkey] = str(Seq(fetched_seqs[qkey]).reverse_complement())
                 else:
-                    qkey = "{}:c{}-{}".format(q["chr"], q["stop"], q["start"])
-                    fetched_seqs[qkey] = self.seqs[q["chr"]][start0:stop0]
-                    fetched_seqs[qkey] = str(Seq(fetched_seqs[qkey]).reverse_complement())
-            else:
-                fetched_seqs[qkey] = self.seqs[q["chr"]][start0:stop0]
+                    fetched_seqs[qkey] = seqs[start0:stop0]
 
-            d = np.abs(start0-stop0)
-            if len(fetched_seqs[qkey]) < d:
-                if start0 < stop0:
-                    right_padding = d - len(fetched_seqs[qkey])
-                else:
-                    left_padding = d - len(fetched_seqs[qkey])
+                d = np.abs(start0-stop0)
+                if len(fetched_seqs[qkey]) < d:
+                    if start0 < stop0:
+                        right_padding = d - len(fetched_seqs[qkey])
+                    else:
+                        left_padding = d - len(fetched_seqs[qkey])
 
-            fetched_seqs[qkey] = padding(fetched_seqs[qkey], left=left_padding, right=right_padding)
+                fetched_seqs[qkey] = padding(fetched_seqs[qkey], left=left_padding, right=right_padding)
 
         if fp_out is not None:
             write_fasta(fetched_seqs, fp_out)
