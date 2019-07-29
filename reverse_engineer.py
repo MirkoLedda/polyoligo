@@ -9,9 +9,10 @@ from copy import deepcopy
 import tqdm
 import shutil
 import numpy as np
+import yaml
 
 # noinspection PyProtectedMember
-from src.polyoligo import cli_kasp, lib_blast, _lib_kasp, _lib_markers, lib_utils, lib_vcf, _logger_config
+from src.polyoligo import cli_kasp, lib_blast, _lib_kasp, _lib_markers, lib_utils, lib_vcf, _logger_config, lib_primer3
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -20,6 +21,7 @@ BINARIES = {
 }
 
 HOMOLOG_FLANKING_N = cli_kasp.HOMOLOG_FLANKING_N
+PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "src/polyoligo/data/PRIMER3_KASP.yaml")
 
 
 class Marker(_lib_markers.Marker):
@@ -53,10 +55,11 @@ class Marker(_lib_markers.Marker):
         self.pp.dir = pp_dir
         self.pp.product_size = self.stop - self.start + 1
 
-    def score_primers(self, fp_reporters):
+    def score_primers(self, fp_reporters, blast_db):
         pcr = _lib_kasp.PCR(self.name, self.chrom, self.pos, self.ref, self.alt)
         pcr.pps = [self.pp]
 
+        pcr.check_offtargeting(blast_db)
         pcr.add_mutations(self.mutations)
         pcr.add_reporter_dyes(fp_reporters)
         pcr.check_heterodimerization()
@@ -111,7 +114,18 @@ class Markers(_lib_markers.Markers):
 
             starts[df["type"][i]] = df["start"][i]
             stops[df["type"][i]] = df["stop"][i]
-            seqs[df["type"][i]] = df["seq"][i].upper()
+
+            seq = df["seq"][i]
+            seqp = ""
+            flag_get = False
+            for c in seq:
+                if c.islower():
+                    flag_get = True
+
+                if flag_get:
+                    seqp += c
+
+            seqs[df["type"][i]] = seqp.upper()
 
             if len(collected_primers) == 3:
                 # Check for duplicate names in the markers
@@ -165,23 +179,23 @@ def parse_args(inputargs):
              "database (see sample_data/blastdb).",
     )
     parser.add_argument(
-        "--fast",
-        action="store_true",
-        help="Run in fast mode. This mode loads the entire reference genome in memory making the design "
-             "of large number of probes (> 1000) faster at the expense of heavy RAM consumption.",
+        "--dye1",
+        metavar="<TXT>",
+        type=str,
+        default="GAAGGTCGGAGTCAACGGATT",
+        help="DNA sequence of the reporter dye for the reference allele in a 5'-3' orientation. Default: VIC",
+    )
+    parser.add_argument(
+        "--dye2",
+        metavar="<TXT>",
+        type=str,
+        default="GAAGGTGACCAAGTTCATGCT",
+        help="DNA sequence of the reporter dye for the alternative allele in a 5'-3' orientation. Default: FAM",
     )
     parser.add_argument(
         "--silent",
         action="store_true",
         help="Silent mode, will not print to STDOUT.",
-    )
-    parser.add_argument(
-        "-n", "--n_primers",
-        metavar="<INT>",
-        type=int,
-        default=10,
-        # help="Maximum number of KASP primers to return for each marker.",
-        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--vcf",
@@ -206,22 +220,19 @@ def parse_args(inputargs):
              "As priority over '--vcf_include'.",
     )
     parser.add_argument(
-        "--reporters",
-        metavar="<FASTA>",
-        type=str,
-        default="",
-        help="Sequence of two reporter dyes named 'dye1' and 'dye2' in FASTA format and in a 5'-3' orientation",
+        "--seed",
+        metavar="<FLOAT>",
+        type=int,
+        default=12,
+        help="Length of the primer 3'-end seed that will be considered when searching potential offtargets.",
     )
     parser.add_argument(
-        "--multiplier",
-        metavar="<FLOAT>",
-        type=float,
-        default=2.0,
-        # help="This parameter controls the exhaustiveness of the primer pair search, which is given by "
-        #      "'n' * 'multiplier'. By increasing this value, more primer pairs will be considered but the process
-        #      will "
-        #      "be computationally heavier.",
-        help=argparse.SUPPRESS,
+        "--primer3",
+        metavar="<YAML>",
+        type=str,
+        default="",
+        help="Configuration file for PRIMER3 in YAML format. Uses the same convention as PRIMER3. "
+             "See sample_data/PRIMER3.yaml for a list of default values.",
     )
     parser.add_argument(
         "--tm_delta",
@@ -239,6 +250,20 @@ def parse_args(inputargs):
         help="Number of parallel threads. If negative, then all but '-nt' CPUs will be used with a minimum of 1 CPU.",
     )
     parser.add_argument(
+        "--offtarget_min_size",
+        metavar="<INT>",
+        type=int,
+        default=0,
+        help="Minimum size of offtarget PCR products.",
+    )
+    parser.add_argument(
+        "--offtarget_max_size",
+        metavar="<INT>",
+        type=int,
+        default=10000,
+        help="Maximum size of offtarget PCR products.",
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         # help="Debug mode. FOR DEVS ONLY.",
@@ -252,7 +277,7 @@ def parse_args(inputargs):
 
 def score_marker(kwargs_dict):
     marker = kwargs_dict["marker"]
-    pcr = marker.score_primers(kwargs_dict["fp_reporters"])
+    pcr = marker.score_primers(kwargs_dict["fp_reporters"], kwargs_dict["blast_db"])
     _lib_kasp.print_report(pcr, kwargs_dict["fp_out"])
 
 
@@ -306,17 +331,39 @@ def main():
         blast_db.fasta2db()
 
     # Make a FASTA reference genome if fast mode is activated
-    if args.fast:
-        if not blast_db.has_fasta:
-            logger.info("Converting the input reference genome to FASTA ...")
-            blast_db.db2fasta()
+    if not blast_db.has_fasta:
+        logger.info("Converting the input reference genome to FASTA ...")
+        blast_db.db2fasta()
 
-        logger.info("Fast mode On: Loading the input reference genome in memory ...")
-        blast_db.load_fasta()
+    blast_db.load_fasta()
 
-    else:
-        blast_db.has_fasta = False
-        blast_db.purge()
+    # Read primer3 configs
+    primer3_configs = {}
+    if args.primer3 != "":
+        with open(args.primer3, "r") as f:
+            primer3_configs = yaml.safe_load(f)
+
+    # Set primer3 default values for unset values
+    with open(PRIMER3_DEFAULTS, "r") as f:
+        primer3_defaults = yaml.safe_load(f)
+        for k, v in primer3_defaults.items():
+            if k not in primer3_configs.keys():  # overwrite only if not set
+                primer3_configs[k] = v
+
+    # Set primer3 globals
+    if len(primer3_configs) > 0:
+        lib_primer3.set_primer_seed(args.seed)
+    lib_primer3.set_tm_delta(args.tm_delta)
+    lib_primer3.set_globals(**primer3_configs)
+    lib_primer3.set_offtarget_size(args.offtarget_min_size, args.offtarget_max_size)
+
+    # Read reporter dyes
+    reporters = [args.dye1, args.dye2]
+
+    for reporter in reporters:
+        if not lib_utils.is_dna(reporter):
+            logger.error("Reporter dyes DNA sequence incorrect: {}".format(reporter))
+            sys.exit(1)
 
     # Init Markers object
     markers = Markers(
@@ -336,6 +383,9 @@ def main():
 
     markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
 
+    # Purge sequences from BlastDB
+    blast_db.purge()
+
     # Start the search for candidate KASP primers
     logger.info("Scoring KASP candidates using {} parallel processes ...".format(args.n_tasks))
 
@@ -348,8 +398,9 @@ def main():
 
         kwarg_dict = {
             "marker": marker,
-            "fp_out": join(temp_path, marker.name + ".txt"),
-            "fp_reporters": args.reporters,
+            "fp_out": join(temp_path, marker.name),
+            "fp_reporters": reporters,
+            "blast_db": blast_db,
         }
         kwargs_worker.append(deepcopy(kwarg_dict))
 
@@ -360,14 +411,13 @@ def main():
 
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
-    fp_out = join(out_path, args.output + ".txt")
-    markers.write_report(fp_out)
+    markers.write_kasp_reports(join(out_path, args.output))
 
     if not args.debug:
         shutil.rmtree(temp_path)
 
     logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
-    logger.info("Report written to -> {}".format(fp_out))
+    logger.info("Report written to -> {} [{}, {}]".format(join(out_path, args.output) + ".txt", ".bed", ".log"))
 
 
 if __name__ == "__main__":
