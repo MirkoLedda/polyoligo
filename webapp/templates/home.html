@@ -57,7 +57,7 @@
                         {% for blastdb_option in blastdb_options %}
                             <option value= "{{blastdb_option}}" {% if blastdb_option=='Fragaria x ananassa (KnappLab)' %} selected="selected"{% endif %}>{{blastdb_option}}</option>"
                         {% endfor %}
-                    </select> (more can be added upon <b><a href="https://github.com/MirkoLedda/polyoligo/issues">request</a></b>).
+                    </select> (more can be added upon <b><a href="https://github.com/MirkoLedda/polyoligo/issues">request</a></b>). A list of all chromosome/contig names is available <b><a href="{{ url_for('contig_list') }}">HERE</a></b>.
                 </li>
                 <li>The number of concurrent assay designs is capped.</li>
                 <li>The number of threads is limited to 1 per job.</li>

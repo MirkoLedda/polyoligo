@@ -524,5 +524,13 @@ def download(task_id):
 #     return render_template("results.html", content=content)
 
 
+# OTHER ROUTES ------------------------------------------------------------
+@app.route('/contig_list', methods=['GET', 'POST'])
+def contig_list():
+    with open(join(app.config['CONTIG_LIST']), "r") as f:
+        content = f.read()
+    return render_template("results.html", content=content)
+
+
 if __name__ == "__main__":
     app.run()

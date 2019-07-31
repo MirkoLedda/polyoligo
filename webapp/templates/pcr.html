@@ -20,7 +20,7 @@
                 {% for blastdb_option in blastdb_options %}
                     <option value= "{{blastdb_option}}" {% if blastdb_option=='Fragaria x ananassa (KnappLab)' %} selected="selected"{% endif %}>{{blastdb_option}}</option>"
                 {% endfor %}
-            </select>
+            </select> - <i>A list of all chromosome/contig names is available <b><a href="{{ url_for('contig_list') }}">HERE</a></b></i>.
             <!-- or enter a FASTA file <input type="file" name="reference_file" > -->
         </div>
         <div class="optional">

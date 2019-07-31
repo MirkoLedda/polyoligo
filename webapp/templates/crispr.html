@@ -20,9 +20,9 @@
                 {% for blastdb_option in blastdb_options %}
                     <option value= "{{blastdb_option}}" {% if blastdb_option=='Fragaria x ananassa (KnappLab)' %} selected="selected"{% endif %}>{{blastdb_option}}</option>"
                 {% endfor %}
-            </select>
-            <!-- or enter a FASTA file <input type="file" name="reference_file" ><br><br> -->
+            </select> - <i>A list of all chromosome/contig names is available <b><a href="{{ url_for('contig_list') }}">HERE</a></b></i>.<br><br>
             <small>Note that currently only the canonical PAM site (NGG) is supported. This may change in future releases.</small><br>
+            <!-- or enter a FASTA file <input type="file" name="reference_file" ><br><br> -->
         </div>
         <br>
 
