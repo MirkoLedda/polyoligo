@@ -55,7 +55,7 @@
                     Currently supported genomes are
                     <select name="reference">
                         {% for blastdb_option in blastdb_options %}
-                            <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
+                            <option value= "{{blastdb_option}}" {% if blastdb_option=='Fragaria x ananassa (KnappLab)' %} selected="selected"{% endif %}>{{blastdb_option}}</option>"
                         {% endfor %}
                     </select> (more can be added upon <b><a href="https://github.com/MirkoLedda/polyoligo/issues">request</a></b>).
                 </li>

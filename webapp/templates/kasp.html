@@ -18,7 +18,7 @@
             <label>Reference genome</label><br>
             <select name="reference">
                 {% for blastdb_option in blastdb_options %}
-                    <option value= "{{blastdb_option}}" SELECTED>{{blastdb_option}}</option>"
+                    <option value= "{{blastdb_option}}" {% if blastdb_option=='Fragaria x ananassa (KnappLab)' %} selected="selected"{% endif %}>{{blastdb_option}}</option>"
                 {% endfor %}
             </select>
             <!-- or enter a FASTA file <input type="file" name="reference_file" > -->

@@ -131,10 +131,9 @@ def parse_blastdb_kwargs(kwargs, request, dest_folder):
 
     # BlastDB
     reference = request.form.get("reference")
-    reference = reference.replace(" ", "_")
-    if reference == 'Fragaria_x_ananassa':
+    if reference == 'Fragaria x ananassa (KnappLab)':
         kwargs["include_vcf"] = True
-    kwargs["reference"] = join(app.config["BLASTDB_REPO"], reference)
+    kwargs["reference"] = join(app.config["BLASTDB_REPO"], app.config["BLASTDB_FILES"][reference])
 
     # Populations selection
     if kwargs["include_vcf"]:
@@ -156,7 +155,7 @@ def parse_blastdb_kwargs(kwargs, request, dest_folder):
 
     strcmd = []
     if kwargs["include_vcf"]:
-        strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], reference + ".gz"))]
+        strcmd += ["--vcf {}".format(join(app.config["VCF_REPO"], app.config["BLASTDB_FILES"][reference] + ".gz"))]
         strcmd += ["--vcf_include {}".format(join(dest_folder, "vcf_include.txt"))]
 
     return kwargs, strcmd
