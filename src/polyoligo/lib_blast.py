@@ -28,7 +28,7 @@ class BlastDB:
         self.n_cpu = n_cpu
         self.seqs = None
 
-        if exists(self.db + ".nsq"):
+        if exists(self.db + ".nsq") or exists(self.db + ".00.nsq"):
             self.has_db = True
 
         fasta_name = None
