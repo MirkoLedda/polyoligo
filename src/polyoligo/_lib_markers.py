@@ -33,7 +33,7 @@ class Marker:
 
         self.name = name
         if (self.name is None) or (self.name == "."):
-            self.name = self.chrom + "@" + str(self.pos1)
+            self.name = "{}@{}".format(self.chrom, self.pos1)
         self.name = self.name.replace("_", "-")  # Underscores in the marker name will mess with the algorithm
 
         self.blast_name = "{}_{}_{}".format(self.name, self.chrom, self.pos1)
@@ -208,7 +208,7 @@ class Markers:
                     queries.append(q)
 
                     # Determine which sequence correspond to the marker
-                    if (spos == row["qpos"]) and (row["schr"] == marker.chrom):
+                    if (spos == row["qpos"]) and (str(row["schr"]) == str(marker.chrom)):
                         target = "{}:{:d}-{:d}".format(q["chr"], q["start"], q["stop"])
                         marker_found = True
 

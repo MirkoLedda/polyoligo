@@ -259,6 +259,7 @@ def main(strcmd=None):
         logger.info("Converting the input reference genome to FASTA ...")
         blast_db.db2fasta()
 
+    logger.info("Loading and indexing the genome ... this may take a while")
     blast_db.load_fasta()
 
     # Init the MUSCLE aligner

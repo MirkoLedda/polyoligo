@@ -210,6 +210,7 @@ class BlastDB:
             q_cat[q["chr"]].append(q)
 
         for chrom, queries in q_cat.items():
+            chrom = str(chrom)
             seqs = str(self.seqs[chrom].seq)
             for q in queries:
                 left_padding = 0
