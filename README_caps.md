@@ -33,7 +33,7 @@ Optional files include:
 
 **`--vcf_include/--vcf_exclude`**: List of samples in a text file to include/exclude from the VCF. See this [example file](sample_data/vcf_include.txt).
 
-**`--primer3`**: YAML configuration file for Primer3. All Primer3 arguments can be set here. See this [example file](sample_data/primer3_example.yaml.txt).
+**`--primer3`**: YAML configuration file for Primer3. All Primer3 arguments can be set here. See this [example file](sample_data/primer3_example.yaml).
 
 **`--enzymes`**: List of restriction enzymes to consider. Can be useful to restrict the search to in stock enzymes only. See this [example file](sample_data/enzymes.txt).
 
