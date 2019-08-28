@@ -159,6 +159,7 @@ class Markers:
                     f_out.write(line)
 
         for marker in self.markers:
+            marker_found = False
             try:
                 # Parse the BLAST output file and return a pandas.DataFrame
                 fpm = join(self.blast_db.temporary, marker.name) + ".hfa"
@@ -170,7 +171,6 @@ class Markers:
                 df["qchr"] = df.qname.str.split("_").str[1].tolist()
                 df["qpos"] = pd.to_numeric(df.qname.str.split("_").str[2].tolist())
 
-                marker_found = False
                 queries = []
                 target = None
 
@@ -221,6 +221,18 @@ class Markers:
             except FileNotFoundError:
                 queries_dict[marker.name] = []
                 targets[marker.name] = None
+
+            if not marker_found:  # In rare instances BLAST did not return the target sequence
+                q = {
+                    "name": marker.name,
+                    "chr": marker.chrom,
+                    "start": marker.pos1 - padding,
+                    "stop": marker.pos1 + padding,
+                    "strand": "plus",
+                }
+                target = "{}:{:d}-{:d}".format(q["chr"], q["start"], q["stop"])
+                targets[marker.name] = target
+                queries_dict[marker.name].append(q)
 
         return queries_dict, targets
 
@@ -282,7 +294,7 @@ class Markers:
         )
         fp_blast_out2 = join(self.blast_db.temporary, "homologs_blast_out_pruned.txt")
 
-        # Prune to keep only valid hit lengths (max 100 sequences)
+        # Prune to keep only valid hit lengths
         self.blast_db.prune_blastn_output(fp_blast_out,
                                           fp_blast_out2,
                                           min_align_len=self.MIN_ALIGN_LEN)
