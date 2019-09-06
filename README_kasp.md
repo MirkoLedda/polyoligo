@@ -14,7 +14,14 @@ For a list of all available options and their descriptions, type:
 polyoligo-kasp -h
 ```
 
-Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
+> Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
+
+### Example usage
+In the following example, KASP primers will be designed with VIC/FAM reporter dyes included and by considering both homologs and mutations within a selected subset population:
+
+```
+polyoligo-kasp sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
+```
 
 ### Inputs
 The software requires three mandatory inputs:
@@ -74,13 +81,6 @@ Two output files are produced:
 
 ### Optional output files
 Optionally, a list of all subjects containing alternative alleles can be requested using the flag `--report_alts`, if a VCF file if provided. The list will be reported in `<OUTPUT>_altlist.txt`. Each mutation is listed in a pseudo-FASTA format as `>REFPOSALT`, similar to what is reported in the standard output but without allele frequencies. The first and second lines list all hets and homozygotes, respectively. This file can be used to investigate markers where no primers exempt of mutations exists.
-
-### Example usage and tips
-In the following example, KASP primers will be designed with reporter dyes included and by considering both homologs and mutations within a selected subset population:
-
-```
-polyoligo-kasp sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt --reporters sample_data/VIC_FAM_reporters.txt
-```
 
 ## Credits
 This software was inspired by [SNP_Primer_Pipeline](https://github.com/pinbo/SNP_Primer_Pipeline).

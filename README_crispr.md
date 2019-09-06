@@ -5,7 +5,7 @@
 ### General usage and available options
 
 ```
-polyoligo-crispr <CHROM/CONTIG> <START> <END> <OUTPUT> <FASTA/BLASTDB> <OPTIONS>
+polyoligo-crispr <CHROM:START-END> <OUTPUT> <FASTA/BLASTDB> <OPTIONS>
 ```
 
 For a list of all available options and their descriptions, type:
@@ -14,7 +14,14 @@ For a list of all available options and their descriptions, type:
 polyoligo-crispr -h
 ```
 
-Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
+> Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
+
+### Example usage
+In the following example, CRISPR/Cas9 gRNAs will be designed within the region of interest (ROI):
+
+```
+polyoligo-crispr Fvb2-4:4045000-4045200 out sample_data/blastdb
+```
 
 ### Inputs
 The software requires three mandatory inputs:

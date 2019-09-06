@@ -14,7 +14,14 @@ For a list of all available options and their descriptions, type:
 polyoligo-pcr -h
 ```
 
-Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
+> Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
+
+### Example usage
+In the following example, primer pairs will be designed by considering both homologs and mutations within a selected subset population:
+
+```
+polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
+```
 
 ### Inputs
 The software requires three mandatory inputs:
@@ -69,10 +76,3 @@ Two output files are produced:
 
 ### Optional output files
 Optionally, a list of all subjects containing alternative alleles can be requested using the flag `--report_alts`, if a VCF file if provided. The list will be reported in `<OUTPUT>_altlist.txt`. Each mutation is listed in a pseudo-FASTA format as `>REFPOSALT`, similar to what is reported in the standard output but without allele frequencies. The first and second lines list all hets and homozygotes, respectively. This file can be used to investigate markers where no primers exempt of mutations exists.
-
-### Example usage and tips
-In the following example, primer pairs will be designed by considering both homologs and mutations within a selected subset population:
-
-```
-polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
-```
