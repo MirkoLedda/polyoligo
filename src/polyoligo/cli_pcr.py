@@ -119,7 +119,7 @@ def parse_args(inputargs):
     )
     parser.add_argument(
         "--seed",
-        metavar="<FLOAT>",
+        metavar="<INT>",
         type=int,
         default=12,
         help="Length of the primer 3'-end seed that will be considered when searching potential offtargets.",
