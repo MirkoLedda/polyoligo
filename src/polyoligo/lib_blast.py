@@ -61,7 +61,8 @@ class BlastDB:
 
     def load_fasta(self):
         if self.has_fasta:
-            self.seqs = SeqIO.index(self.fasta, "fasta")
+            pass
+            # self.seqs = SeqIO.index(self.fasta, "fasta")
 
     def uncompress_fasta(self):
 

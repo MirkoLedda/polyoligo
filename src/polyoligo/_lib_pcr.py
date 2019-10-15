@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 class ROI:
     def __init__(self, roi, blast_db, name=None, marker=None):
-        self.chrom = roi.strip().split(":")[0]
-
-        try:
-            self.start = int(roi.strip().split(":")[1].split("-")[0])
-            self.end = int(roi.strip().split(":")[1].split("-")[1])
-        except ValueError:
-            fields = roi.strip().split(":")[1]
-            fields = fields.split("-")
-            self.start = int("-{}".format(fields[1]))
-            self.end = int(fields[2])
+        # self.chrom = roi.strip().split(":")[0]
+        #
+        # try:
+        #     self.start = int(roi.strip().split(":")[1].split("-")[0])
+        #     self.end = int(roi.strip().split(":")[1].split("-")[1])
+        # except ValueError:
+        #     fields = roi.strip().split(":")[1]
+        #     fields = fields.split("-")
+        #     self.start = int("-{}".format(fields[1]))
+        #     self.end = int(fields[2])
 
         self.blast_db = blast_db
         if name is not None:

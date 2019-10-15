@@ -14,78 +14,40 @@ logger = logging.getLogger(__name__)  # Initialize the logger
 class Marker:
     """Hold informations for a Marker."""
 
-    def __init__(self, chrom, pos, ref_allele, alt_allele, name=None, fasta_name=None, HOMOLOG_FLANKING_N=None):
-        self.chrom = chrom
-        self.pos = int(pos)  # Position 0-based
-        self.pos1 = int(pos) + 1  # Position 1-based
-        self.ref = ref_allele
-        self.alt = alt_allele
-        self.variant = "[{}/{}]".format(self.ref, self.alt)
-        self.fasta_name = fasta_name
-        self.start = None  # Region start
-        self.stop = None  # Region stop
-        self.G = None  # Genotypes within the region
-        self.mutations = []  # List of vcf_lib.Mutation objects
-        self.altsubjects = None  # List of het/hom subjects (for the alternative alleles)
-        self.seq = None  # Sequence of the region
-        self.n = None  # Length of the region
-        self.HOMOLOG_FLANKING_N = HOMOLOG_FLANKING_N
 
-        self.name = name
-        if (self.name is None) or (self.name == "."):
-            self.name = "{}@{}".format(self.chrom, self.pos1)
-        self.name = self.name.replace("_", "-")  # Underscores in the marker name will mess with the algorithm
+    #
+    # def upload_mutations(self, vcf_obj):
+    #     if vcf_obj:
+    #         self.G, self.mutations = vcf_obj.fetch_genotypes(
+    #             chrom=self.chrom,
+    #             start=self.start,
+    #             stop=self.stop,
+    #         )
+    #         # Pop the mutation corresponding to the target
+    #         i = np.where(np.array(self.G.columns) == self.pos1)[0]
+    #         if len(i) == 1:
+    #             _ = self.G.pop(self.pos1)
+    #             _ = self.mutations.pop(i[0])
+    #         else:
+    #             pass
+    #             # logger.warning("Marker {} ({}:{:d}) is not present in the VCF file.".format(self.name,
+    #             #                                                                             self.chrom,
+    #             #                                                                             self.pos1))
+    #     else:
+    #         self.mutations = []
 
-        self.blast_name = "{}_{}_{}".format(self.name, self.chrom, self.pos1)
+    # def print_alt_subjects(self, vcf_obj, fp):
+    #     if vcf_obj:
+    #         vcf_obj.print_alternative_subjects(
+    #             fp=fp,
+    #             chrom=self.chrom,
+    #             start=self.start,
+    #             stop=self.stop,
+    #         )
 
-    def upload_fasta_name(self, name):
-        self.fasta_name = name
-
-        if name is not None:
-            try:
-                self.start = int(self.fasta_name.split(":")[1].split("-")[0])
-                self.stop = int(self.fasta_name.split(":")[1].split("-")[1])
-            except ValueError:
-                fields = self.fasta_name.split(":")[1]
-                fields = fields.split("-")
-                self.start = int("-{}".format(fields[1]))
-                self.stop = int(fields[2])
-        else:
-            self.start = 0
-            self.stop = 0
-
-    def upload_mutations(self, vcf_obj):
-        if vcf_obj:
-            self.G, self.mutations = vcf_obj.fetch_genotypes(
-                chrom=self.chrom,
-                start=self.start,
-                stop=self.stop,
-            )
-            # Pop the mutation corresponding to the target
-            i = np.where(np.array(self.G.columns) == self.pos1)[0]
-            if len(i) == 1:
-                _ = self.G.pop(self.pos1)
-                _ = self.mutations.pop(i[0])
-            else:
-                pass
-                # logger.warning("Marker {} ({}:{:d}) is not present in the VCF file.".format(self.name,
-                #                                                                             self.chrom,
-                #                                                                             self.pos1))
-        else:
-            self.mutations = []
-
-    def print_alt_subjects(self, vcf_obj, fp):
-        if vcf_obj:
-            vcf_obj.print_alternative_subjects(
-                fp=fp,
-                chrom=self.chrom,
-                start=self.start,
-                stop=self.stop,
-            )
-
-    def upload_sequence(self, seq):
-        self.seq = seq  # Sequence of the region
-        self.n = len(self.seq)
+    # def upload_sequence(self, seq):
+    #     self.seq = seq  # Sequence of the region
+    #     self.n = len(self.seq)
 
 
 class Markers:
@@ -265,13 +227,13 @@ class Markers:
                     seqsr[marker.blast_name] = lib_utils.padding_right(x=seqsr[marker.blast_name],
                                                                        n=exp_seq_len)  # right padding
 
-            # Assert that the REF alleles in the genomic reference matches the ones provided as input
-            if (seqsr[marker.blast_name][self.MARKER_FLANKING_N] != marker.ref) and (marker.ref != "X"):
-                logger.error("REF allele in the marker file does not match the genomic REF allele.\n"
-                             "SNP ID: {} | Marker {} vs Reference {}. "
-                             "Please double check your marker file.".format(marker.name, marker.ref,
-                                                                            seqs[qname][self.MARKER_FLANKING_N]))
-                sys.exit()
+            # # Assert that the REF alleles in the genomic reference matches the ones provided as input
+            # if (seqsr[marker.blast_name][self.MARKER_FLANKING_N] != marker.ref) and (marker.ref != "X"):
+            #     logger.error("REF allele in the marker file does not match the genomic REF allele.\n"
+            #                  "SNP ID: {} | Marker {} vs Reference {}. "
+            #                  "Please double check your marker file.".format(marker.name, marker.ref,
+            #                                                                 seqs[qname][self.MARKER_FLANKING_N]))
+            #     sys.exit()
 
         return seqsr
 

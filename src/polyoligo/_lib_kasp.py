@@ -11,6 +11,12 @@ import os
 
 from . import lib_blast, lib_utils, lib_primer3
 
+# GLOBALS
+INNER_LEN = 100  # Length of the region used to find homologs
+OUTER_LEN = 500  # Length of the region were homologs will be mapped
+MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
+MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
+
 # Initialize the logger
 logger = logging.getLogger(__name__)
 
@@ -318,31 +324,14 @@ class PCR(lib_primer3.PCR):
 
 
 # noinspection PyDefaultArgument
-def get_marker_primers(marker, allowed_end_pos=[0]):
-    mseq = deepcopy(marker.seq)
-
-    # Pad the sequence if needed to ensure the SNP is always in the center
-    exp_seq_len = marker.HOMOLOG_FLANKING_N * 2 + 1
-    act_seq_len = len(mseq)
-    if act_seq_len < exp_seq_len:
-        if int(marker.fasta_name.split(":")[1].split("-")[0]) == 1:
-            # Left side is not full
-            mseq = lib_utils.padding_left(
-                x=mseq,
-                n=exp_seq_len,
-            )
-        else:
-            # Right side is not full
-            mseq = lib_utils.padding_right(
-                x=mseq,
-                n=exp_seq_len,
-            )
-
-    marker_pos = int((len(mseq) - 1) / 2)  # SNP is always in the center as we padded the sequence
+def get_marker_primers(hroi, allowed_end_pos=[0]):
+    mseq = deepcopy(hroi.seq)
+    marker_pos = hroi.marker.pos1 - hroi.start
+    marker_pos_rc = hroi.stop - hroi.marker.pos1
 
     seq = Seq(mseq)
     seq_rc = seq.reverse_complement()
-    alt_a = Seq(marker.alt)
+    alt_a = Seq(hroi.marker.alt)
     alt_a_rc = alt_a.reverse_complement()
 
     pps = []
@@ -377,8 +366,8 @@ def get_marker_primers(marker, allowed_end_pos=[0]):
                 if ref_p.is_valid() and alt_p.is_valid():
                     # Store primers
                     pp = PrimerPair()
-                    pp.chrom = marker.chrom
-                    pp.snp_id = marker.name
+                    pp.chrom = hroi.chrom
+                    pp.snp_id = hroi.name
 
                     pp.primers[direction] = ref_p
                     pp.primers["A"] = alt_p
@@ -602,6 +591,25 @@ def print_report(pcr, fp, delimiter="\t"):
         f.write("\n")
 
 
+def write_final_reports(fp_base_out, rois):
+    print_report_header(fp_base_out + ".txt")
+    with open(fp_base_out + ".txt", "a") as f:
+        for roi in rois:
+            with open(join(roi.blast_hook.temporary, roi.name + ".txt"), "r") as f_marker:
+                for line in f_marker:
+                    f.write(line)
+
+    # BED file
+    line_memory = []
+    with open(fp_base_out + ".bed", "w") as f:
+        for roi in rois:
+            with open(join(roi.blast_hook.temporary, roi.name + ".bed"), "r") as f_marker:
+                for line in f_marker:
+                    if line not in line_memory:
+                        line_memory.append(line)
+                        f.write(line)
+
+
 def merge_primers(mpp, p3_primers):
     pps = []
 
@@ -681,11 +689,8 @@ def design_primers(pps_repo, mpps, target_seq, target_start, ivs, n_primers=10):
 
 def main(kwarg_dict):
     # kwargs to variables
-    fp_fasta = kwarg_dict["fp_fasta"]
-    marker = kwarg_dict["marker"]
+    roi = kwarg_dict["roi"]
     fp_base_out = kwarg_dict["fp_base_out"]
-    blast_db = kwarg_dict["blast_db"]
-    muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]
     p3_search_depth = kwarg_dict["p3_search_depth"]
     primer_seed = kwarg_dict["primer_seed"]
@@ -709,62 +714,45 @@ def main(kwarg_dict):
     lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
 
     # Set a logger message that will be printed at the end (to be threadsafe)
-    header = "Primer search results for {}".format(marker.name)
+    header = "Primer search results for {}".format(roi.name)
     sepline = "=" * (len(header) + 2)
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
-    # Read sequences
-    seqs = lib_blast.read_fasta(fp_fasta)
-    marker.upload_sequence(seqs[marker.fasta_name])
-    del seqs[marker.fasta_name]
+    # Find homologs
+    hroi, hmaps = roi.map_homologs(
+        inner_len=INNER_LEN,
+        outer_len=OUTER_LEN,
+        min_align_id=MIN_ALIGN_ID,
+        min_align_len=MIN_ALIGN_LEN,
+    )
 
-    # Find all marker primers
-    mpps = get_marker_primers(marker=marker)
+    # Find mutations in the region
+    hroi.upload_mutations()
+
+    # Find all possible marker primers
+    mpps = get_marker_primers(hroi=hroi)
     logger_msg += "{:d} possible KASP marker primers found\n".format(len(mpps))
-
-    # Align homologs to the target sequence
-    if len(seqs) > 49:
-        # If more than 50 homoloous sequences were found, then do not run multialignment and
-        # instead make all nucleotides not specific (using twice the same marker sequence) for runtime optimization
-        mock_seqs = {
-            marker.fasta_name: marker.seq,
-            "mock": marker.seq,
-        }
-        lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
-
-    fp_aligned = join(blast_db.temporary, marker.name + ".afa")
-    muscle.align_fasta(fp=fp_fasta, fp_out=fp_aligned)
-
-    # Map mismatches in the homeologs
-    maps = dict()
-    maps["all"] = np.repeat(True, marker.n)
-    maps["partial_mism"], maps["mism"] = map_homologs(fp_aligned, marker.fasta_name, marker.n)
-
-    # Cleanup temporary files
-    if not debug:
-        os.remove(fp_fasta)
-        os.remove(fp_aligned)
 
     # Get valid regions for the design of complementary primers
     ivs = {}
-    for k, mmap in maps.items():
+    for k, mmap in hmaps.items():
         k_mut = k + "_mut"
 
         ivs[k] = lib_primer3.get_exclusion_zone(mmap)  # Mutations not excluded
 
-        if len(marker.mutations) > 0:
+        if len(hroi.mutations) > 0:
             # Make a list of mutation positions based on mutation for exclusion
             mut_ixs = []
 
-            reg_start = marker.start
-            for mutation in marker.mutations:
+            reg_start = hroi.start
+            for mutation in hroi.mutations:
                 mut_ixs.append(mutation.pos - reg_start)
 
             ivs[k_mut] = lib_primer3.get_exclusion_zone(mmap, hard_exclude=mut_ixs)
 
     # Loop across marker primers and design valid complementary primers using PRIMER3
     # PCR assay including multiple primer pairs
-    pcr = PCR(marker.name, marker.chrom, marker.pos1, marker.ref, marker.alt)
+    pcr = PCR(hroi.name, hroi.chrom, hroi.marker.pos1, hroi.marker.ref, hroi.marker.alt)
     map_names = {
         "mism_mut": "Variants excluded | Homologs specific",
         "partial_mism_mut": "Variants excluded | Homologs partial spec",
@@ -775,7 +763,7 @@ def main(kwarg_dict):
     }
 
     # Set the search mask ordering
-    if len(marker.mutations) > 0:
+    if len(hroi.mutations) > 0:
         search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
     else:
         search_types = ["mism", "partial_mism", "all"]
@@ -786,15 +774,15 @@ def main(kwarg_dict):
             pcr.pps = design_primers(
                 pps_repo=pcr.pps,  # Primer pair repository
                 mpps=mpps,  # Marker primer pairs
-                target_seq=marker.seq,
-                target_start=marker.start,
+                target_seq=hroi.seq,
+                target_start=hroi.start,
                 ivs=ivs[search_type],
                 n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
             )
             n_new = len(pcr.pps) - n_before
             logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
 
-    hit_cnts, valid_hit_cnts = pcr.check_offtargeting(blast_db, debug=debug)  # Check for off-targets
+    hit_cnts, valid_hit_cnts = pcr.check_offtargeting(hroi.blast_hook, debug=debug)  # Check for off-targets
     # Report hit counts
     logger_msg += "Offtarget hits across the genome\n"
     logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
@@ -802,7 +790,7 @@ def main(kwarg_dict):
 
     pcr.add_reporter_dyes(reporters)  # Add the reporter dye sequence to the primers
     pcr.check_heterodimerization()  # Check for heterodimerization
-    pcr.add_mutations(marker.mutations)  # List mutations in primers
+    pcr.add_mutations(hroi.mutations)  # List mutations in primers
     pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 

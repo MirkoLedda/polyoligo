@@ -191,6 +191,21 @@ def padding_right(x, n=0, char="N"):
     return x + (n - len(x)) * char
 
 
+def get_n_padding(x, n):
+    lp = 0
+    rp = 0
+
+    if x < n:
+        d = n - x
+        if (d % 2) != 0:
+            lp = int(np.floor(d / 2))
+            rp = int(np.ceil(d / 2))
+        else:
+            lp = int(d / 2)
+            rp = lp
+    return lp, rp
+
+
 def is_dna(x):
     if x == "":
         return True

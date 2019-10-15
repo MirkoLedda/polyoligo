@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_kasp, _lib_markers, _logger_config, lib_utils, lib_vcf, _version, logo
+from . import lib_blast, _lib_kasp, lib_markers, _logger_config, lib_utils, lib_vcf, _version, logo
 
 __version__ = _version.__version__
 
@@ -22,16 +22,12 @@ BINARIES = {
 }
 
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_KASP.yaml")
-MARKER_FLANKING_N = 50  # Number of nucleotides on each sides when retrieving the sequence flanking the marker
-MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
-MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
-HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
 
-def cprofile_worker(kwargs):
-    """Wrapper to cProfile subprocesses."""
-    cProfile.runctx('_lib_kasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["marker"].name))
+# def cprofile_worker(kwargs):
+#     """Wrapper to cProfile subprocesses."""
+#     cProfile.runctx('_lib_kasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["roi"].name))
 
 
 def parse_args(inputargs):
@@ -240,30 +236,35 @@ def main(strcmd=None):
         sys.exit(1)
     bin_path = BINARIES[curr_os]
 
-    # Init the BlastDB
-    blast_db = lib_blast.BlastDB(
+    # Initialize hooks
+    blast_hook = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
         job_id="main",
-        n_cpu=args.n_tasks,
+        n_cpu=1,
     )
 
+    malign_hook = lib_blast.Muscle(path_temporary=blast_hook.temporary, exe=bin_path)
+
+    if args.vcf == "":
+        vcf_hook = None
+    else:
+        logger.info("Loading VCF information ...")
+        vcf_hook = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
+
     # Build the BlastDB if a fasta was provided
-    if not blast_db.has_db:
+    if not blast_hook.has_db:
         logger.info("Converting the input reference genome to BlastDB ...")
-        blast_db.fasta2db()
+        blast_hook.fasta2db()
 
     # Make a FASTA reference genome if fast mode is activated
-    if not blast_db.has_fasta:
+    if not blast_hook.has_fasta:
         logger.info("Converting the input reference genome to FASTA ...")
-        blast_db.db2fasta()
+        blast_hook.db2fasta()
 
     logger.info("Loading and indexing the genome ... this may take a while")
-    blast_db.load_fasta()
-
-    # Init the MUSCLE aligner
-    muscle = lib_blast.Muscle(path_temporary=blast_db.temporary, exe=bin_path)
+    blast_hook.load_fasta()
 
     # Read primer3 configs
     primer3_configs = {}
@@ -286,18 +287,9 @@ def main(strcmd=None):
             logger.error("Reporter dyes DNA sequence incorrect: {}".format(reporter))
             sys.exit(1)
 
-    # Init Markers object
-    markers = _lib_markers.Markers(
-        blast_db=blast_db,
-        MARKER_FLANKING_N=MARKER_FLANKING_N,
-        MIN_ALIGN_LEN=MIN_ALIGN_LEN,
-        MIN_ALIGN_ID=MIN_ALIGN_ID,
-        HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
-    )
-
     # Read markers
     try:
-        markers.read_markers(args.markers)
+        markers = lib_markers.read_markers(args.markers)
     except:
         logger.error("Failed to read input markers. Please double check the format is CHR POS NAME REF ALT")
         sys.exit(1)
@@ -310,37 +302,44 @@ def main(strcmd=None):
 
     logger.info("Number of target markers = {}".format(len(markers)))
 
-    # Init a VCF object if a file is provided
-    if args.vcf == "":
-        vcf_obj = None
-    else:
-        logger.info("Loading VCF information ...")
-        vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
+    # Markers -> ROI
+    rois = []
+    for marker in markers:
+        roi = lib_markers.ROI(
+            chrom=marker.chrom,
+            start=marker.pos1,
+            stop=marker.pos1,
+            blast_hook=blast_hook,
+            malign_hook=malign_hook,
+            vcf_hook=vcf_hook,
+            name=marker.name,
+            marker=marker)
+        rois.append(roi)
 
-    # Get flanking sequences around the markers
-    logger.info("Retrieving flanking sequence around markers ...")
-    seqs = markers.get_marker_flanks()
-
-    # Find homologs for each marker and write them to a unique fasta file per marker
-    logger.info("Finding homeologs/duplications by sequence homology ...")
-    markers.find_homologs(seqs)
-
-    if vcf_obj is not None:
-        logger.info("Uploading the VCF file ...")
-        markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
-
-        # Write subjects containing alternative alleles for each mutations
-        if args.report_alts:
-            args.report_alts = join(out_path, args.output + "_altlist.txt")
-            logger.info("Writing subjects with alternative alleles -> {}".format(args.report_alts))
-
-            if os.path.exists(args.report_alts):
-                os.remove(args.report_alts)
-
-            markers.print_alt_subjects(
-                vcf_obj=vcf_obj,
-                fp=args.report_alts,
-            )
+    # # Get flanking sequences around the markers
+    # logger.info("Retrieving flanking sequence around markers ...")
+    # seqs = markers.get_marker_flanks()
+    #
+    # # Find homologs for each marker and write them to a unique fasta file per marker
+    # logger.info("Finding homeologs/duplications by sequence homology ...")
+    # markers.find_homologs(seqs)
+    #
+    # if vcf_hook is not None:
+    #     logger.info("Uploading the VCF file ...")
+    #     markers.upload_mutations(vcf_hook)  # Upload mutations for each markers from a VCF file (if provided)
+    #
+    #     # Write subjects containing alternative alleles for each mutations
+    #     if args.report_alts:
+    #         args.report_alts = join(out_path, args.output + "_altlist.txt")
+    #         logger.info("Writing subjects with alternative alleles -> {}".format(args.report_alts))
+    #
+    #         if os.path.exists(args.report_alts):
+    #             os.remove(args.report_alts)
+    #
+    #         markers.print_alt_subjects(
+    #             vcf_obj=vcf_hook,
+    #             fp=args.report_alts,
+    #         )
 
     # Start the search for candidate KASP primers
     if not args.webapp:
@@ -348,22 +347,15 @@ def main(strcmd=None):
     else:
         logger.info("Searching for KASP candidates ...")
 
-    # Purge sequences from BlastDB
-    blast_db.purge()
-
     # Initialize a list of kwargs for the worker and a job queue
     kwargs_worker = []
 
-    for marker in markers.markers:
-        blast_db.job_id = marker.name  # To make sure files are not overwritten during multiprocessing
-        blast_db.n_cpu = 1  # Blast should now only use 1 thread as we will be spawning jobs
+    for roi in rois:
+        blast_hook.job_id = roi.name  # To make sure files are not overwritten during multiprocessing
 
         kwarg_dict = {
-            "fp_fasta": join(temp_path, marker.name + ".fa"),
-            "marker": marker,
-            "fp_base_out": join(temp_path, marker.name),
-            "blast_db": blast_db,
-            "muscle": muscle,
+            "roi": roi,
+            "fp_base_out": join(temp_path, roi.name),
             "reporters": reporters,
             "n_primers": args.n_primers,
             "p3_search_depth": args.depth,
@@ -373,6 +365,7 @@ def main(strcmd=None):
             "primer3_configs": primer3_configs,
             "debug": args.debug,
         }
+
         kwargs_worker.append(deepcopy(kwarg_dict))
 
     # Run the job queue
@@ -381,7 +374,7 @@ def main(strcmd=None):
         with mp.Pool(processes=args.n_tasks, maxtasksperchild=1) as p:
             if args.debug:
                 _ = list(tqdm.tqdm(
-                    p.imap_unordered(cprofile_worker, kwargs_worker),
+                    p.imap_unordered(_lib_kasp.main, kwargs_worker),
                     total=n_jobs,
                 ))
             else:
@@ -394,11 +387,11 @@ def main(strcmd=None):
         logger.info("nanobar - {:d}/{:d}".format(0, len(kwargs_worker)))
         for i, kwargs_job in enumerate(kwargs_worker):
             _lib_kasp.main(kwargs_job)
-            logger.info("nanobar - {:d}/{:d}".format(i, len(kwargs_worker)))
+            logger.info("nanobar - {:d}/{:d}".format(i+1, len(kwargs_worker)))
 
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
-    markers.write_kasp_reports(join(out_path, args.output))
+    _lib_kasp.write_final_reports(join(out_path, args.output), rois)
 
     if not args.debug:
         shutil.rmtree(temp_path)
