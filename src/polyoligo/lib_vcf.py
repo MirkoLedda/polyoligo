@@ -8,8 +8,15 @@ from copy import deepcopy
 
 class VCF:
     def __init__(self, fp, fp_inc_samples="", fp_exc_samples=""):
-        self.reader = vcf.Reader(filename=fp)
+        self.reader_fp = fp
+        self.reader = vcf.Reader(filename=self.reader_fp)
         self.samples, self.samples_ix = self._parse_sample_files(fp_inc_samples, fp_exc_samples)
+
+    def start_reader(self):
+        self.reader = vcf.Reader(filename=self.reader_fp)
+
+    def stop_reader(self):
+        self.reader = None
 
     # noinspection PyProtectedMember
     def _parse_sample_files(self, fp_inc_samples, fp_exc_samples):

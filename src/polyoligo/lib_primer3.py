@@ -68,6 +68,7 @@ class Primer:
             self.calc_thermals()
 
         passed_checks = True
+
         # Check for N in the sequence
         if self.nN > 0:
             passed_checks = False
@@ -572,3 +573,26 @@ def get_exclusion_zone(v, hard_exclude=None):
     exc_ivs = lib_utils.list_2_ranges(exc_ixs)
 
     return exc_ivs
+
+
+def include_mut_in_included_maps(hroi):
+    for k, mmap in hroi.p3_sequence_included_maps.items():
+        if len(hroi.mutations) > 0:
+            k_mut = k + "_mut"
+
+            # Make a list of mutation positions based on mutation for exclusion
+            mut_mask = np.repeat(False, len(hroi.p3_sequence_included_maps))
+
+            reg_start = hroi.start
+            for mutation in hroi.mutations:
+                mut_mask[mutation.pos - reg_start] = True
+
+            hroi.p3_sequence_excluded_regions[k_mut] = deepcopy(hroi.p3_sequence_excluded_regions[k])
+            hroi.p3_sequence_excluded_regions[k_mut][mut_mask] = False
+
+
+def get_sequence_excluded_regions(hroi):
+    hroi.p3_sequence_excluded_regions = {}
+
+    for k, mmap in hroi.p3_sequence_included_maps.items():
+        hroi.p3_sequence_excluded_regions[k] = get_exclusion_zone(mmap)  # Mutations not excluded

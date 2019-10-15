@@ -378,6 +378,7 @@ def print_report(pcr, fp, delimiter="\t"):
 
 
 def design_primers(pps_repo, target_seq, target_chrom, target_start, ivs, n_primers=10):
+    # TODO
     primer3_seq_args = {
         'SEQUENCE_TEMPLATE': target_seq,
         'SEQUENCE_EXCLUDED_REGION': ivs,

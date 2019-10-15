@@ -9,7 +9,6 @@ import multiprocessing as mp
 import tqdm
 from copy import deepcopy
 import yaml
-import cProfile
 
 from . import lib_blast, _lib_kasp, lib_markers, _logger_config, lib_utils, lib_vcf, _version, logo
 
@@ -303,6 +302,9 @@ def main(strcmd=None):
     logger.info("Number of target markers = {}".format(len(markers)))
 
     # Markers -> ROI
+    if vcf_hook:
+        vcf_hook.stop_reader()
+
     rois = []
     for marker in markers:
         roi = lib_markers.ROI(

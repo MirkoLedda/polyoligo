@@ -23,6 +23,9 @@ class ROI:
         self.mutations = None  # List of vcf_lib.Mutation objects in the region
         self.has_marker = None  # Does the region contain a marker
         self.marker = None  # Target marker in the region
+        self.p3_sequence_target = None  # For PRIMER3 design
+        self.p3_sequence_included_maps = None  # For PRIMER3 design
+        self.p3_sequence_excluded_regions = None  # For PRIMER3 design
 
         # Initialize attributes
         self.chrom = chrom
@@ -50,9 +53,7 @@ class ROI:
 
         if self.marker is not None:
             self.seq_alt = np.array(list(self.seq))
-            self.seq_alt[
-            (self.marker.pos1 - self.start):(self.marker.pos1 - self.start + len(self.marker.ref))
-            ] = self.marker.alt
+            self.seq_alt[(self.marker.pos1 - self.start):(self.marker.pos1 - self.start + len(self.marker.ref))] = self.marker.alt
             self.seq_alt = "".join(self.seq_alt)
 
     def map_homologs(self, inner_len, outer_len, min_align_id, min_align_len):
@@ -73,6 +74,7 @@ class ROI:
 
         # Pad sequences with N's if needed
         exp_seq_len = query[0]["stop"] - query[0]["start"]
+        # noinspection PyUnboundLocalVariable
         if len(nseq[k]) < exp_seq_len:
             if query[0]["start"] == 1:
                 nseq[k] = lib_utils.padding_left(x=nseq[k],
@@ -102,14 +104,14 @@ class ROI:
                                             fp_blast_out2,
                                             min_align_len=min_align_len)
 
-        # Retrieve the center of the sequence of the homologs
+        # Retrieve the sequences of the homologs
         df = self.blast_hook.parse_blastn_output(fp_blast_out2)
 
         hseqs = []
         for _, row in df.iterrows():
             is_target = False
             if row["schr"] == self.chrom:
-                if (row["sstart"] >= self.start) and (row["sstop"] <= self.stop):
+                if (self.start >= row["sstart"]) and (self.stop <= row["sstop"]):
                     is_target = True
 
             if not is_target:
@@ -131,7 +133,6 @@ class ROI:
         seqs = {}
 
         lp, rp = lib_utils.get_n_padding(x=self.n, n=outer_len)
-
         query = [{
             "chr": self.chrom,
             "start": int(self.start - lp),
@@ -163,6 +164,7 @@ class ROI:
             fetched_seqs = self.blast_hook.fetch(query)
             for k, seq in fetched_seqs.items():
                 seqs[k] = seq
+                break
 
         # Multiple alignment
         fp_malign_in = join(self.blast_hook.temporary, "{}.fa".format(self.name))
@@ -183,31 +185,31 @@ class ROI:
         # Map homologs
         maps = dict()
 
-        mseqs = lib_blast.read_fasta(fp_malign_out)
+        seqs = lib_blast.read_fasta(fp_malign_out)
         tseq = seqs[tname]
-        tlen = len(seqs[tname])
+        tlen = len(seqs[tname].replace("-", ""))
         del seqs[tname]
 
-        n_homeo = len(mseqs)
-        match_arr = np.tile(np.nan, (tlen, n_homeo))
+        n_homeo = len(seqs)
+        match_arr = np.tile(0, (tlen, n_homeo))
 
         # Count mismatches
         homeo_id = 0
-        for chrom, seq in mseqs.items():
+        for _, seq in seqs.items():
             j = 0  # Index in the original sequence without gaps
             for i, nuc in enumerate(tseq):
                 if nuc == "-":
                     continue
                 elif nuc == "N":  # Ns are considered matches
-                    match_arr[j, homeo_id] = 1
+                    match_arr[j, homeo_id] += 1
                     j += 1
                 elif nuc == seq[i]:
-                    match_arr[j, homeo_id] = 1
+                    match_arr[j, homeo_id] += 1
                     j += 1
                 else:
-                    match_arr[j, homeo_id] = 0
                     j += 1
             homeo_id += 1
+            break
 
         # Compile the mismatch counts into maps
         match_cnts = np.sum(match_arr, axis=1)
@@ -230,7 +232,9 @@ class ROI:
             marker=self.marker,
         )
 
-        return hroi, maps
+        hroi.p3_sequence_included_maps = maps
+
+        return hroi
 
     def get_alt_seq(self):
         pass  # TODO

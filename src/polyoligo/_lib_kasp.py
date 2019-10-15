@@ -16,6 +16,35 @@ INNER_LEN = 100  # Length of the region used to find homologs
 OUTER_LEN = 500  # Length of the region were homologs will be mapped
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
+DELIMITER = "\t"  # Delimiter for output files
+# Output header
+HEADER = [
+    "marker",
+    "chr",
+    "pos",
+    "ref",
+    "alt",
+    "start",
+    "end",
+    "direction",
+    "type",
+    "assay_id",
+    "seq_5_3",
+    "seq_5_3_ambiguous",
+    "primer_id",
+    "goodness",
+    "qcode",
+    "length",
+    "prod_size",
+    "tm",
+    "gc_content",
+    "will_dimerize",
+    "n_offtargets",
+    "max_aaf",
+    "indels",
+    "offtargets",
+    "mutations",
+]
 
 # Initialize the logger
 logger = logging.getLogger(__name__)
@@ -136,7 +165,6 @@ class PrimerPair(lib_primer3.PrimerPair):
         self.qcode = qcode
 
 
-# Inherited
 # noinspection PyPep8Naming
 class PCR(lib_primer3.PCR):
     def __init__(self, snp_id, chrom, pos, ref, alt):
@@ -324,7 +352,7 @@ class PCR(lib_primer3.PCR):
 
 
 # noinspection PyDefaultArgument
-def get_marker_primers(hroi, allowed_end_pos=[0]):
+def get_marker_primers(hroi):
     mseq = deepcopy(hroi.seq)
     marker_pos = hroi.marker.pos1 - hroi.start
     marker_pos_rc = hroi.stop - hroi.marker.pos1
@@ -337,116 +365,55 @@ def get_marker_primers(hroi, allowed_end_pos=[0]):
     pps = []
     for padding in range(lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"],
                          lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"] + 1):
-        for i in allowed_end_pos:
-            x2 = marker_pos + i
-            x1 = x2 - padding
+        x2 = marker_pos
+        x1 = x2 - padding
+        y1 = marker_pos_rc
+        y2 = y1 + padding
 
-            for direction in ["F", "R"]:
-                if direction == "F":
-                    pseq = str(seq[x1:(x2 + 1)])
-                    pos_a = len(pseq) - 1 - i  # Position of the allele in the primer
-                    pseq_alt = list(pseq)
-                    pseq_alt[pos_a] = alt_a[0]
-                    pseq_alt = "".join(pseq_alt)
-                else:
-                    pseq = str(seq_rc[x1:(x2 + 1)])
-                    pos_a = len(pseq) - 1 - i  # Position of the allele in the primer
-                    pseq_alt = list(pseq)
-                    pseq_alt[pos_a] = alt_a_rc[0]
-                    pseq_alt = "".join(pseq_alt)
+        for direction in ["F", "R"]:
+            if direction == "F":
+                pseq = str(seq[x1:(x2 + 1)])
+                pos_a = len(pseq) - 1  # Position of the allele in the primer
+                pseq_alt = list(pseq)
+                pseq_alt[pos_a] = alt_a[0]
+                pseq_alt = "".join(pseq_alt)
+            else:
+                pseq = str(seq_rc[y1:(y2 + 1)])
+                pos_a = len(pseq) - 1  # Position of the allele in the primer
+                pseq_alt = list(pseq)
+                pseq_alt[pos_a] = alt_a_rc[0]
+                pseq_alt = "".join(pseq_alt)
 
-                ref_p = lib_primer3.Primer(sequence=pseq)
-                alt_p = lib_primer3.Primer(sequence=pseq_alt)
+            ref_p = lib_primer3.Primer(sequence=pseq)
+            alt_p = lib_primer3.Primer(sequence=pseq_alt)
 
-                # Compute primer properties and thermals
-                ref_p.calc_thermals()
-                alt_p.calc_thermals()
+            # Compute primer properties and thermals
+            ref_p.calc_thermals()
+            alt_p.calc_thermals()
 
-                # Series of checks to determine if the primer and its alternative version are valid
-                if ref_p.is_valid() and alt_p.is_valid():
-                    # Store primers
-                    pp = PrimerPair()
-                    pp.chrom = hroi.chrom
-                    pp.snp_id = hroi.name
+            # Series of checks to determine if the primer and its alternative version are valid
+            if ref_p.is_valid() and alt_p.is_valid():
+                # Store primers
+                pp = PrimerPair()
+                pp.chrom = hroi.chrom
+                pp.snp_id = hroi.name
 
-                    pp.primers[direction] = ref_p
-                    pp.primers["A"] = alt_p
-                    pp.dir = direction
+                pp.primers[direction] = ref_p
+                pp.primers["A"] = alt_p
+                pp.dir = direction
 
-                    pps.append(pp)
-            padding += 1
+                pps.append(pp)
+        padding += 1
 
     return pps
 
 
-def map_homologs(fp_aligned, target_name, target_len):
-    seqs = lib_blast.read_fasta(fp_aligned)
-    target_seq = seqs[target_name]
-    del seqs[target_name]
-
-    n_homeo = len(seqs)
-    match_arr = np.tile(np.nan, (target_len, n_homeo))
-
-    # Count mismatches
-    homeo_id = 0
-    for chrom, seq in seqs.items():
-        j = 0  # Index in the original sequence without gaps
-        for i, nuc in enumerate(target_seq):
-            if nuc == "-":
-                continue
-            elif nuc == "N":  # Ns are considered matches
-                match_arr[j, homeo_id] = 1
-                j += 1
-            elif nuc == seq[i]:
-                match_arr[j, homeo_id] = 1
-                j += 1
-            else:
-                match_arr[j, homeo_id] = 0
-                j += 1
-        homeo_id += 1
-
-    # Compile the mismatch counts into maps
-    match_cnts = np.sum(match_arr, axis=1)
-    partial_mismatch = match_cnts != n_homeo
-    full_mismatch = match_cnts == 0
-
-    return partial_mismatch, full_mismatch
-
-
-def print_report_header(fp, delimiter="\t"):
-    header = delimiter.join([
-        "marker",
-        "chr",
-        "pos",
-        "ref",
-        "alt",
-        "start",
-        "end",
-        "direction",
-        "type",
-        "assay_id",
-        "seq_5_3",
-        "seq_5_3_ambiguous",
-        "primer_id",
-        "goodness",
-        "qcode",
-        "length",
-        "prod_size",
-        "tm",
-        "gc_content",
-        "will_dimerize",
-        "n_offtargets",
-        "max_aaf",
-        "indels",
-        "offtargets",
-        "mutations",
-    ])
-
+def print_report_header(fp):
     with open(fp, "w") as f:
-        f.write("{}\n".format(header))
+        f.write("{}\n".format(DELIMITER.join(HEADER)))
 
 
-def print_report(pcr, fp, delimiter="\t"):
+def print_report(pcr, fp):
     primer_type_ordering = ["REF", "ALT", "COM"]
     sorted_scores = np.sort(np.unique(list(pcr.pps_pruned.keys())))[::-1]
     ppid = 0
@@ -472,8 +439,7 @@ def print_report(pcr, fp, delimiter="\t"):
                     seqs_amb["REF"] = pp.primers["F"].sequence_ambiguous[:-1].lower() + \
                                       pp.primers["F"].sequence_ambiguous[-1]
                     seqs["COM"] = pp.primers["R"].sequence.lower()
-                    seqs_amb["COM"] = pp.primers["R"].sequence_ambiguous[:-1].lower() + \
-                                      pp.primers["R"].sequence_ambiguous[-1]
+                    seqs_amb["COM"] = pp.primers["R"].sequence_ambiguous.lower()
                 else:
                     seqs["COM"] = pp.primers["F"].sequence.lower()
                     seqs_amb["COM"] = pp.primers["F"].sequence_ambiguous.lower()
@@ -555,7 +521,7 @@ def print_report(pcr, fp, delimiter="\t"):
                         offtargets,
                         mutations,
                     ]
-                    f.write("{}\n".format(delimiter.join([str(x) for x in fields])))
+                    f.write("{}\n".format(DELIMITER.join([str(x) for x in fields])))
 
                     # BED file
                     if direction == "F":
@@ -585,7 +551,7 @@ def print_report(pcr, fp, delimiter="\t"):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(delimiter.join(fields + 20 * ["NA"]) + "\n")
+            f.write(DELIMITER.join(fields + len(HEADER) * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
@@ -627,21 +593,26 @@ def merge_primers(mpp, p3_primers):
     return pps
 
 
-def design_primers(pps_repo, mpps, target_seq, target_start, ivs, n_primers=10):
+def design_primers(pps_repo, mpps, roi, sequence_target=None,
+                   sequence_excluded_region=None, n_primers=10):
+    primer3_seq_args = {'SEQUENCE_TEMPLATE': roi.seq}
+
+    if sequence_target is not None:
+        primer3_seq_args['SEQUENCE_TARGET'] = sequence_target
+
+    if sequence_excluded_region is not None:
+        primer3_seq_args['SEQUENCE_EXCLUDED_REGION'] = sequence_excluded_region
+
     p3_repo = {}  # Primer pairs returned by PRIMER3
 
     for pid, mpp in enumerate(mpps):
-        primer3_seq_args = {
-            'SEQUENCE_TEMPLATE': target_seq,
-            'SEQUENCE_EXCLUDED_REGION': ivs,
-        }
-
+        primer3_seq_args_pp = deepcopy(primer3_seq_args)
         if mpp.dir == "F":
-            primer3_seq_args['SEQUENCE_PRIMER'] = mpp.primers[mpp.dir].sequence
+            primer3_seq_args_pp['SEQUENCE_PRIMER'] = mpp.primers[mpp.dir].sequence
         else:
-            primer3_seq_args['SEQUENCE_PRIMER_REVCOMP'] = mpp.primers[mpp.dir].sequence
+            primer3_seq_args_pp['SEQUENCE_PRIMER_REVCOMP'] = mpp.primers[mpp.dir].sequence
 
-        p3_primers = lib_primer3.get_primers(primer3_seq_args, target_start=target_start)
+        p3_primers = lib_primer3.get_primers(primer3_seq_args_pp, target_start=roi.start)
         p3_repo[pid] = merge_primers(mpp=mpp, p3_primers=p3_primers)  # Merge the already designed marker primer
 
     # Find valid primer pairs by checking top hits for each marker primers iteratively
@@ -700,6 +671,9 @@ def main(kwarg_dict):
     reporters = kwarg_dict["reporters"]
     debug = kwarg_dict["debug"]
 
+    if roi.vcf_hook:
+        roi.vcf_hook.start_reader()
+
     # Set primer3 globals
     if len(primer3_configs) > 0:
         lib_primer3.set_globals(**primer3_configs)
@@ -719,7 +693,7 @@ def main(kwarg_dict):
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
     # Find homologs
-    hroi, hmaps = roi.map_homologs(
+    hroi = roi.map_homologs(
         inner_len=INNER_LEN,
         outer_len=OUTER_LEN,
         min_align_id=MIN_ALIGN_ID,
@@ -728,27 +702,18 @@ def main(kwarg_dict):
 
     # Find mutations in the region
     hroi.upload_mutations()
+    lib_primer3.include_mut_in_included_maps(hroi)
+
+    # Make sure the marker region of the primer is made available
+    for mmap in hroi.p3_sequence_included_maps.values():
+        mmap[(hroi.start-lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"]):(hroi.start+lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])] = True
+
+    # Build exclusion maps
+    lib_primer3.get_sequence_excluded_regions(hroi)
 
     # Find all possible marker primers
     mpps = get_marker_primers(hroi=hroi)
     logger_msg += "{:d} possible KASP marker primers found\n".format(len(mpps))
-
-    # Get valid regions for the design of complementary primers
-    ivs = {}
-    for k, mmap in hmaps.items():
-        k_mut = k + "_mut"
-
-        ivs[k] = lib_primer3.get_exclusion_zone(mmap)  # Mutations not excluded
-
-        if len(hroi.mutations) > 0:
-            # Make a list of mutation positions based on mutation for exclusion
-            mut_ixs = []
-
-            reg_start = hroi.start
-            for mutation in hroi.mutations:
-                mut_ixs.append(mutation.pos - reg_start)
-
-            ivs[k_mut] = lib_primer3.get_exclusion_zone(mmap, hard_exclude=mut_ixs)
 
     # Loop across marker primers and design valid complementary primers using PRIMER3
     # PCR assay including multiple primer pairs
@@ -774,9 +739,8 @@ def main(kwarg_dict):
             pcr.pps = design_primers(
                 pps_repo=pcr.pps,  # Primer pair repository
                 mpps=mpps,  # Marker primer pairs
-                target_seq=hroi.seq,
-                target_start=hroi.start,
-                ivs=ivs[search_type],
+                roi=hroi,
+                sequence_excluded_region=hroi.p3_sequence_excluded_regions[search_type],
                 n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
             )
             n_new = len(pcr.pps) - n_before

@@ -162,6 +162,14 @@ class BlastDB:
 
         with open(fp_blast_in, "w") as f:
             for q in queries:
+                if q["start"] < 1:
+                    q["start"] = 1
+
+                if q["start"] > q["stop"]:
+                    stop = q["stop"]
+                    q["stop"] = q["start"]
+                    q["start"] = stop
+
                 if "strand" in q.keys():
                     if q["strand"] == "plus":
                         f.write("{}\t{:d}-{:d}\t{}\n".format(q["chr"], q["start"], q["stop"], q["strand"]))
