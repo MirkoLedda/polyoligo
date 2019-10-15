@@ -576,19 +576,23 @@ def get_exclusion_zone(v, hard_exclude=None):
 
 
 def include_mut_in_included_maps(hroi):
+    mmaps = {}
     for k, mmap in hroi.p3_sequence_included_maps.items():
+        mmaps[k] = deepcopy(mmap)
         if len(hroi.mutations) > 0:
             k_mut = k + "_mut"
 
             # Make a list of mutation positions based on mutation for exclusion
-            mut_mask = np.repeat(False, len(hroi.p3_sequence_included_maps))
+            mut_mask = np.repeat(False, len(mmap))
 
             reg_start = hroi.start
             for mutation in hroi.mutations:
                 mut_mask[mutation.pos - reg_start] = True
 
-            hroi.p3_sequence_excluded_regions[k_mut] = deepcopy(hroi.p3_sequence_excluded_regions[k])
-            hroi.p3_sequence_excluded_regions[k_mut][mut_mask] = False
+            mmaps[k_mut] = deepcopy(mmap)
+            mmaps[k_mut][mut_mask] = False
+
+    hroi.p3_sequence_included_maps = mmaps
 
 
 def get_sequence_excluded_regions(hroi):

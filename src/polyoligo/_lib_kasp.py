@@ -706,7 +706,9 @@ def main(kwarg_dict):
 
     # Make sure the marker region of the primer is made available
     for mmap in hroi.p3_sequence_included_maps.values():
-        mmap[(hroi.start-lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"]):(hroi.start+lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])] = True
+        start = np.min([1, (hroi.start-lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])])
+        stop = np.max([len(mmap), (hroi.start+lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])])
+        mmap[start:stop] = True
 
     # Build exclusion maps
     lib_primer3.get_sequence_excluded_regions(hroi)
