@@ -8,7 +8,7 @@ from . import lib_utils, lib_blast
 
 class ROI:
     def __init__(self, chrom=None, start=None, stop=None, blast_hook=None, malign_hook=None, vcf_hook=None, name=None,
-                 marker=None):
+                 marker=None, do_print_alt_subjects=False):
         self.name = None  # ROI name
         self.chrom = None  # Chromosome
         self.start = None  # Region start (1-based)
@@ -26,6 +26,7 @@ class ROI:
         self.p3_sequence_target = None  # For PRIMER3 design
         self.p3_sequence_included_maps = None  # For PRIMER3 design
         self.p3_sequence_excluded_regions = None  # For PRIMER3 design
+        self.do_print_alt_subjects = do_print_alt_subjects  # Print alternative subjects?
 
         # Initialize attributes
         self.chrom = chrom
@@ -53,7 +54,8 @@ class ROI:
 
         if self.marker is not None:
             self.seq_alt = np.array(list(self.seq))
-            self.seq_alt[(self.marker.pos1 - self.start):(self.marker.pos1 - self.start + len(self.marker.ref))] = self.marker.alt
+            self.seq_alt[
+            (self.marker.pos1 - self.start):(self.marker.pos1 - self.start + len(self.marker.ref))] = self.marker.alt
             self.seq_alt = "".join(self.seq_alt)
 
     def map_homologs(self, inner_len, outer_len, min_align_id, min_align_len):
@@ -105,6 +107,7 @@ class ROI:
                                             min_align_len=min_align_len)
 
         # Retrieve the sequences of the homologs
+        homologs_exceeded = False
         df = self.blast_hook.parse_blastn_output(fp_blast_out2)
 
         hseqs = []
@@ -128,6 +131,9 @@ class ROI:
                 }
                 hseqs.append(hseq)
 
+        if len(hseqs) > 50:
+            homologs_exceeded = True
+
         # Retrieve outer sequences of the target and the homologs
         tname = None
         seqs = {}
@@ -143,35 +149,36 @@ class ROI:
             seqs[k] = seq.upper()
             break
 
-        for hseq in hseqs:
-            n = np.abs(hseq["stop"] - hseq["start"])
-            lp, rp = lib_utils.get_n_padding(x=n, n=outer_len)
+        # For runtime optimization - If more than 50 homoloous sequences were found, then do not run fetching and
+        # multialignment and instead make all nucleotides not specific (using twice the same target sequence)
+        if not homologs_exceeded:
+            for hseq in hseqs:
+                n = np.abs(hseq["stop"] - hseq["start"])
+                lp, rp = lib_utils.get_n_padding(x=n, n=outer_len)
 
-            if hseq["strand"] == "plus":
-                query = [{
-                    "chr": hseq["chrom"],
-                    "start": int(hseq["start"] - lp),
-                    "stop": int(hseq["stop"] + rp),
-                    "strand": hseq["strand"],
-                }]
-            else:
-                query = [{
-                    "chr": hseq["chrom"],
-                    "start": int(hseq["stop"] - rp),
-                    "stop": int(hseq["start"] + lp),
-                    "strand": hseq["strand"],
-                }]
-            fetched_seqs = self.blast_hook.fetch(query)
-            for k, seq in fetched_seqs.items():
-                seqs[k] = seq
-                break
+                if hseq["strand"] == "plus":
+                    query = [{
+                        "chr": hseq["chrom"],
+                        "start": int(hseq["start"] - lp),
+                        "stop": int(hseq["stop"] + rp),
+                        "strand": hseq["strand"],
+                    }]
+                else:
+                    query = [{
+                        "chr": hseq["chrom"],
+                        "start": int(hseq["stop"] - rp),
+                        "stop": int(hseq["start"] + lp),
+                        "strand": hseq["strand"],
+                    }]
+                fetched_seqs = self.blast_hook.fetch(query)
+                for k, seq in fetched_seqs.items():
+                    seqs[k] = seq
+                    break
 
         # Multiple alignment
         fp_malign_in = join(self.blast_hook.temporary, "{}.fa".format(self.name))
         fp_malign_out = join(self.blast_hook.temporary, "{}.afa".format(self.name))
-        if len(seqs) >= 50:
-            # For runtime optimization - If more than 50 homoloous sequences were found, then do not run
-            # multialignment and instead make all nucleotides not specific (using twice the same target sequence)
+        if homologs_exceeded:
             mock_seqs = {
                 tname: seqs[tname],
                 "mock": seqs[tname],
@@ -230,14 +237,21 @@ class ROI:
             vcf_hook=self.vcf_hook,
             name=self.name,
             marker=self.marker,
+            do_print_alt_subjects=self.do_print_alt_subjects,
         )
 
         hroi.p3_sequence_included_maps = maps
 
         return hroi
 
-    def get_alt_seq(self):
-        pass  # TODO
+    def print_alt_subjects(self, fp):
+        if self.do_print_alt_subjects and (self.vcf_hook is not None):
+            self.vcf_hook.print_alternative_subjects(
+                fp=fp,
+                chrom=self.chrom,
+                start=self.start,
+                stop=self.stop,
+            )
 
     def upload_mutations(self):
         if self.vcf_hook:
@@ -264,7 +278,7 @@ class ROI:
 class Marker:
     """Hold a single marker information."""
 
-    def __init__(self, chrom=None, pos=None, ref_allele=None, alt_allele=None, name=None):
+    def __init__(self,  name=None, chrom=None, pos=None, ref_allele=None, alt_allele=None):
         self.name = None  # Marker name
         self.chrom = None  # Chromosome
         self.pos = None  # Position 0-based
@@ -274,6 +288,7 @@ class Marker:
         self.variant = None  # Variant notation
 
         # Initialize attributes
+        self.name = name
         self.chrom = chrom
         self.pos = int(pos)
         self.pos1 = int(pos) + 1
@@ -284,6 +299,26 @@ class Marker:
         if (name is None) or (name == "."):
             self.name = "{}:{}-{}".format(self.chrom, self.pos1, self.pos1)
         self.name = self.name.replace("_", "-")  # Underscores in the marker name will mess with the algorithm
+
+    def assert_marker(self, blast_hook):
+        query = [{
+            "chr": self.chrom,
+            "start": int(self.pos1),
+            "stop": int(self.pos1),
+        }]
+
+        seq = "N"
+        for _, seq in blast_hook.fetch(query).items():
+            seq = seq.upper()
+            break
+
+        err_msg = None
+        if self.ref != seq:
+            err_msg = "REF allele in the marker file does not match the genomic REF allele.\n" \
+                      "        SNP ID: {} | Marker {} vs Reference {}\n" \
+                      "        Please double check your marker file.".format(self.name, self.ref, seq)
+
+        return err_msg
 
 
 def read_markers(fp):

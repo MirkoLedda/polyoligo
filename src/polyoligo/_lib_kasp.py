@@ -713,6 +713,9 @@ def main(kwarg_dict):
     # Build exclusion maps
     lib_primer3.get_sequence_excluded_regions(hroi)
 
+    # Print alternative subjects if required
+    hroi.print_alt_subjects(fp_base_out + "_altlist.txt")
+
     # Find all possible marker primers
     mpps = get_marker_primers(hroi=hroi)
     logger_msg += "{:d} possible KASP marker primers found\n".format(len(mpps))
@@ -763,7 +766,7 @@ def main(kwarg_dict):
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
-    print_report(pcr, join(fp_base_out))
+    print_report(pcr, fp_base_out)
 
 
 if __name__ == "__main__":

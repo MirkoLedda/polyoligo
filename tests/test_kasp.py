@@ -9,31 +9,31 @@ from src.polyoligo import cli_kasp
 with open("tests/KWARGS.yaml", "r") as f:
     KWARGS = yaml.safe_load(f)
 
-# cli_kasp.main(strcmd=" ".join([
-#     "polyoligo-kasp",
-#     KWARGS["marker"],
-#     KWARGS["out"],
-#     KWARGS["ref_sample"],
-#     "--webapp",
-#     "--debug",
-# ]))
-#
-# cli_kasp.main(strcmd=" ".join([
-#     "polyoligo-kasp",
-#     KWARGS["marker_tomato"],
-#     KWARGS["out"],
-#     KWARGS["ref_tomato"],
-#     "--webapp",
-#     "--debug",
-# ]))
-#
-# cli_kasp.main(strcmd=" ".join([
-#     "polyoligo-kasp",
-#     KWARGS["marker_cotton"],
-#     KWARGS["out"],
-#     KWARGS["ref_cotton"],
-#     "--debug",
-# ]))
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
+    KWARGS["marker"],
+    KWARGS["out"],
+    KWARGS["ref_sample"],
+    "--report_alts",
+    "--debug",
+]))
+
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
+    KWARGS["marker_tomato"],
+    KWARGS["out"],
+    KWARGS["ref_tomato"],
+    "--webapp",
+    "--debug",
+]))
+
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
+    KWARGS["marker_cotton"],
+    KWARGS["out"],
+    KWARGS["ref_cotton"],
+    "--debug",
+]))
 
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",

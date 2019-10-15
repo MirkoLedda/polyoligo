@@ -23,12 +23,6 @@ BINARIES = {
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_KASP.yaml")
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
-
-# def cprofile_worker(kwargs):
-#     """Wrapper to cProfile subprocesses."""
-#     cProfile.runctx('_lib_kasp.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["roi"].name))
-
-
 def parse_args(inputargs):
     # Define the args parser
     parser = argparse.ArgumentParser(prog="polyoligo-kasp",
@@ -257,14 +251,6 @@ def main(strcmd=None):
         logger.info("Converting the input reference genome to BlastDB ...")
         blast_hook.fasta2db()
 
-    # Make a FASTA reference genome if fast mode is activated
-    if not blast_hook.has_fasta:
-        logger.info("Converting the input reference genome to FASTA ...")
-        blast_hook.db2fasta()
-
-    logger.info("Loading and indexing the genome ... this may take a while")
-    blast_hook.load_fasta()
-
     # Read primer3 configs
     primer3_configs = {}
     if args.primer3 != "":
@@ -293,6 +279,13 @@ def main(strcmd=None):
         logger.error("Failed to read input markers. Please double check the format is CHR POS NAME REF ALT")
         sys.exit(1)
 
+    # Assert markers
+    for marker in markers:
+        err_msg = marker.assert_marker(blast_hook)
+        if err_msg is not None:
+            logger.error(err_msg)
+            sys.exit(1)
+
     if args.webapp:
         if len(markers) > WEBAPP_MAX_N:
             markers.markers = markers.markers[0:WEBAPP_MAX_N]
@@ -315,7 +308,9 @@ def main(strcmd=None):
             malign_hook=malign_hook,
             vcf_hook=vcf_hook,
             name=marker.name,
-            marker=marker)
+            marker=marker,
+            do_print_alt_subjects=args.report_alts,
+        )
         rois.append(roi)
 
     # # Get flanking sequences around the markers
@@ -393,6 +388,14 @@ def main(strcmd=None):
 
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
+    if args.report_alts and (vcf_hook is not None):
+        with open(join(out_path, args.output) + "_altlist.txt", "w") as f:
+            for roi in rois:
+                fp = join(temp_path, roi.name) + "_altlist.txt"
+                with open(fp, "r") as f_in:
+                    for line in f_in:
+                        f.write(line)
+
     _lib_kasp.write_final_reports(join(out_path, args.output), rois)
 
     if not args.debug:
