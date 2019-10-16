@@ -199,7 +199,7 @@ def print_report(pcr, fp):
 
 
 def design_primers(pps_repo, roi, sequence_target=None,
-                   sequence_excluded_region=None, n_primers=10):
+                   sequence_excluded_region=None, n_primers=10, max_unique=2):
     primer3_seq_args = {'SEQUENCE_TEMPLATE': roi.seq}
 
     if sequence_target is not None:
@@ -210,28 +210,40 @@ def design_primers(pps_repo, roi, sequence_target=None,
 
     p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.start)
 
+    # List primer sequences that we already have in the repo to make sure we have some diversity
+    p_counts = {}
+    for pp in pps_repo:
+        for d in ["F", "R"]:
+            seq = pp.primers[d].sequence
+            if seq not in p_counts.keys():
+                p_counts[seq] = 1
+            else:
+                p_counts[seq] += 1
+
     # Find valid primer pairs by checking top hits for each marker primers iteratively
-    flag_continue = True
-    while flag_continue:
+    for pp in p3_repo:
 
-        if len(p3_repo) == 0:
-            flag_continue = False
+        if len(pps_repo) == n_primers:  # We have enough primers
+            break
 
-        for pp in p3_repo:
+        pp.chrom = roi.chrom
+        is_pp_valid = True
+        for d in pp.primers.keys():
+            is_valid = pp.primers[d].is_valid()
+            if not is_valid:
+                is_pp_valid = False
 
-            if len(pps_repo) == n_primers:  # We have enough primers
-                flag_continue = False
-                break
-
-            pp.chrom = roi.chrom
-            is_pp_valid = True
-            for d in pp.primers.keys():
-                is_valid = pp.primers[d].is_valid()
-                if not is_valid:
+            seq = pp.primers[d].sequence
+            if seq in p_counts.keys():
+                if p_counts[seq] >= max_unique:
                     is_pp_valid = False
+                else:
+                    p_counts[seq] += 1
+            else:
+                p_counts[seq] = 1
 
-            if is_pp_valid:
-                pps_repo.append(pp)
+        if is_pp_valid:
+            pps_repo.append(pp)
 
     return pps_repo
 
