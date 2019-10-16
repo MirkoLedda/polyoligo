@@ -397,4 +397,3 @@ def read_regions(fp):
         ))
 
     return regions
-
