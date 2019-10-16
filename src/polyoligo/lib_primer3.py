@@ -123,6 +123,8 @@ class PrimerPair:
         self.goodness = None  # Heuristic goodness score
         self.qcode = None  # Heuristic quality code, gives context to the goodness score
         self.enzymes = None  # For CAPS assays
+        self.hrm = None  # For HRM
+
 
         # Attributes from PRIMER3
         self.compl_any_th = None
@@ -474,9 +476,9 @@ class PCR:
 def get_primers(primer3_seq_args, target_start=1):
     pps = {}
 
-    # Append SEQUENCE globals from PRIMER3_GLOBALS
+    # Append SEQUENCE globals from PRIMER3_GLOBALS with no overwrite
     for k in PRIMER3_GLOBALS.keys():
-        if k.startswith("SEQUENCE"):
+        if (k.startswith("SEQUENCE")) and (k not in primer3_seq_args.keys()):
             primer3_seq_args[k] = PRIMER3_GLOBALS[k]
 
     p3_primers = primer3.bindings.designPrimers(primer3_seq_args)

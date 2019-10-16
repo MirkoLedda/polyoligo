@@ -1,22 +1,29 @@
 from __future__ import print_function, division
-# noinspection PyPackageRequirements
 import numpy as np
 # noinspection PyUnresolvedReferences
 from primer3.thermoanalysis import ThermoAnalysis
 import logging
 from os.path import join
+import os
 
-from . import lib_blast, lib_utils, lib_primer3, lib_markers
+from . import lib_utils, lib_primer3, lib_markers, _lib_pcr
 
 # GLOBALS
+ENZYME_FILENAME = join(os.path.dirname(__file__), "data/type2.json")
 INNER_LEN = 100  # Length of the region used to find homologs
-OUTER_LEN = 250  # Length of the region were homologs will be mapped
+OUTER_LEN = 1000  # Length of the region were homologs will be mapped
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 DELIMITER = "\t"  # Delimiter for output files
 HEADER = [
-    "target",
+    "marker",
     "chr",
+    "pos",
+    "ref",
+    "alt",
+    "delta_Tm",
+    "ref_Tm",
+    "alt_Tm",
     "start",
     "end",
     "direction",
@@ -41,57 +48,14 @@ HEADER = [
 logger = logging.getLogger(__name__)
 
 
-def write_final_reports(fp_base_out, rois):
-    print_report_header(fp_base_out + ".txt")
-    with open(fp_base_out + ".txt", "a") as f:
-        for roi in rois:
-            with open(join(roi.blast_hook.temporary, roi.name + ".txt"), "r") as f_marker:
-                for line in f_marker:
-                    f.write(line)
-
-    # BED file
-    line_memory = []
-    with open(fp_base_out + ".bed", "w") as f:
-        for roi in rois:
-            with open(join(roi.blast_hook.temporary, roi.name + ".bed"), "r") as f_marker:
-                for line in f_marker:
-                    if line not in line_memory:
-                        line_memory.append(line)
-                        f.write(line)
-
-
-def map_homologs(fp_aligned, target_name, target_len):
-    seqs = lib_blast.read_fasta(fp_aligned)
-    target_seq = seqs[target_name]
-    del seqs[target_name]
-
-    n_homeo = len(seqs)
-    match_arr = np.tile(np.nan, (target_len, n_homeo))
-
-    # Count mismatches
-    homeo_id = 0
-    for chrom, seq in seqs.items():
-        j = 0  # Index in the original sequence without gaps
-        for i, nuc in enumerate(target_seq):
-            if nuc == "-":
-                continue
-            elif nuc == "N":  # Ns are considered matches
-                match_arr[j, homeo_id] = 1
-                j += 1
-            elif nuc == seq[i]:
-                match_arr[j, homeo_id] = 1
-                j += 1
-            else:
-                match_arr[j, homeo_id] = 0
-                j += 1
-        homeo_id += 1
-
-    # Compile the mismatch counts into maps
-    match_cnts = np.sum(match_arr, axis=1)
-    partial_mismatch = match_cnts != n_homeo
-    full_mismatch = match_cnts == 0
-
-    return partial_mismatch, full_mismatch
+class PCR(lib_primer3.PCR):
+    def __init__(self, snp_id, chrom, pos, ref, alt):
+        super().__init__(chrom=chrom)
+        self.snp_id = snp_id
+        self.ref = ref
+        self.alt = alt
+        self.chrom = chrom
+        self.pos = pos
 
 
 def print_report_header(fp):
@@ -144,8 +108,14 @@ def print_report(pcr, fp):
                         pp.qcode = "."
 
                     fields = [
-                        pcr.name,
+                        pcr.snp_id,
                         pcr.chrom,
+                        int(pcr.pos),
+                        pcr.ref,
+                        pcr.alt,
+                        pp.hrm["delta"],
+                        pp.hrm["ref"],
+                        pp.hrm["alt"],
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
                         d,
@@ -177,7 +147,7 @@ def print_report(pcr, fp):
                         pcr.chrom,
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
-                        "{}_{}-{}".format(pcr.name, curr_seq_ids[d], pp.goodness),
+                        "{}_{}-{}".format(pcr.snp_id, curr_seq_ids[d], pp.goodness),
                         "0",
                         direction,
                     ]
@@ -188,71 +158,42 @@ def print_report(pcr, fp):
 
         if ppid == 0:
             fields = [
-                pcr.name,
+                pcr.snp_id,
                 pcr.chrom,
+                int(pcr.pos),
+                pcr.ref,
+                pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(DELIMITER.join(fields + (len(HEADER)-2) * ["NA"]) + "\n")
+            f.write(DELIMITER.join(fields + 22 * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
 
 
-def design_primers(pps_repo, roi, sequence_target=None,
-                   sequence_excluded_region=None, n_primers=10, max_unique=np.inf):
-    primer3_seq_args = {'SEQUENCE_TEMPLATE': roi.seq}
+def write_final_reports(fp_base_out, rois):
+    print_report_header(fp_base_out + ".txt")
+    with open(fp_base_out + ".txt", "a") as f:
+        for roi in rois:
+            with open(join(roi.blast_hook.temporary, roi.marker.name + ".txt"), "r") as f_marker:
+                for line in f_marker:
+                    f.write(line)
 
-    if sequence_target is not None:
-        primer3_seq_args['SEQUENCE_TARGET'] = sequence_target
-
-    if sequence_excluded_region is not None:
-        primer3_seq_args['SEQUENCE_EXCLUDED_REGION'] = sequence_excluded_region
-
-    p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.start)
-
-    # # List primer sequences that we already have in the repo to make sure we have some diversity
-    p_counts = {}
-    if not np.isinf(max_unique):
-        for pp in pps_repo:
-            for d in ["F", "R"]:
-                seq = pp.primers[d].sequence
-                if seq not in p_counts.keys():
-                    p_counts[seq] = 1
-                else:
-                    p_counts[seq] += 1
-
-    # Find valid primer pairs by checking top hits for each marker primers iteratively
-    for pp in p3_repo:
-
-        if len(pps_repo) == n_primers:  # We have enough primers
-            break
-
-        pp.chrom = roi.chrom
-        is_pp_valid = True
-        for d in pp.primers.keys():
-            is_valid = pp.primers[d].is_valid()
-            if not is_valid:
-                is_pp_valid = False
-
-            if not np.isinf(max_unique):
-                seq = pp.primers[d].sequence
-                if seq in p_counts.keys():
-                    if p_counts[seq] >= max_unique:
-                        is_pp_valid = False
-                    else:
-                        p_counts[seq] += 1
-                else:
-                    p_counts[seq] = 1
-
-        if is_pp_valid:
-            pps_repo.append(pp)
-
-    return pps_repo
+    # BED file
+    line_memory = []
+    with open(fp_base_out + ".bed", "w") as f:
+        for roi in rois:
+            with open(join(roi.blast_hook.temporary, roi.marker.name + ".bed"), "r") as f_marker:
+                for line in f_marker:
+                    if line not in line_memory:
+                        line_memory.append(line)
+                        f.write(line)
 
 
 def main(kwarg_dict):
     # kwargs to variables
     region = kwarg_dict["region"]
+    fp_base_out = kwarg_dict["fp_base_out"]
     n_primers = kwarg_dict["n_primers"]
     p3_search_depth = kwarg_dict["p3_search_depth"]
     primer_seed = kwarg_dict["primer_seed"]
@@ -260,7 +201,6 @@ def main(kwarg_dict):
     offtarget_size = kwarg_dict["offtarget_size"]
     primer3_configs = kwarg_dict["primer3_configs"]
     debug = kwarg_dict["debug"]
-    fp_base_out = kwarg_dict["fp_base_out"]
 
     if region.vcf_hook:
         region.vcf_hook.start_reader()
@@ -279,15 +219,15 @@ def main(kwarg_dict):
     lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
 
     # Set a logger message that will be printed at the end (to be threadsafe)
-    header = "Primer search results"
+    header = "Primer search results for {}".format(region.name)
     sepline = "=" * (len(header) + 2)
     logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
     # Define two rois around the target where the primers will be built
     region.left_roi = lib_markers.ROI(
         chrom=region.chrom,
-        start=region.start,
-        stop=region.start,
+        start=int(region.start - (OUTER_LEN / 2)),
+        stop=int(region.start - (OUTER_LEN / 2)),
         blast_hook=region.blast_hook,
         malign_hook=region.malign_hook,
         vcf_hook=region.vcf_hook,
@@ -297,8 +237,8 @@ def main(kwarg_dict):
     )
     region.right_roi = lib_markers.ROI(
         chrom=region.chrom,
-        start=region.stop,
-        stop=region.stop,
+        start=int(region.start + (OUTER_LEN / 2)),
+        stop=int(region.start + (OUTER_LEN / 2)),
         blast_hook=region.blast_hook,
         malign_hook=region.malign_hook,
         vcf_hook=region.vcf_hook,
@@ -336,7 +276,13 @@ def main(kwarg_dict):
     # Print alternative subjects if required TODO
 
     # Design primers
-    pcr = lib_primer3.PCR(chrom=region.chrom, name=region.name)
+    pcr = PCR(
+        snp_id=region.marker.name,
+        chrom=region.marker.chrom,
+        pos=region.marker.pos1,
+        ref=region.marker.ref,
+        alt=region.marker.alt,
+    )
     map_names = {
         "mism_mut": "Variants excluded | Homologs specific",
         "partial_mism_mut": "Variants excluded | Homologs partial spec",
@@ -355,9 +301,10 @@ def main(kwarg_dict):
     for search_type in search_types:
         if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
             n_before = len(pcr.pps)
-            pcr.pps = design_primers(
+            pcr.pps = _lib_pcr.design_primers(
                 pps_repo=pcr.pps,  # Primer pair repository
                 roi=region,
+                sequence_target=region.p3_sequence_target,
                 sequence_excluded_region=region.p3_sequence_excluded_regions[search_type],
                 n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
             )
@@ -373,6 +320,17 @@ def main(kwarg_dict):
 
     pcr.check_heterodimerization()  # Check for heterodimerization
     pcr.add_mutations(region.mutations)  # List mutations in primers
+
+    # Get HRM temps
+    pruned_pps = []
+    for pp in pcr.pps:
+        pcr_product = lib_markers.PCRproduct(roi=region, pp=pp)
+        pcr_product.get_hrm_temps()
+        pp.hrm = pcr_product.hrm
+        pruned_pps.append(pp)
+
+    pcr.pps = pruned_pps
+    # TODO USE AN UPDATED SCORING FUNCTION - SEE BELOW
     pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 
@@ -380,8 +338,62 @@ def main(kwarg_dict):
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
     logger.debug(logger_msg)
 
-    print_report(pcr, fp_base_out)
+    print_report(
+        pcr=pcr,
+        fp=fp_base_out,
+    )
 
+    # def score(self):
+    #     score = 0
+    #     qcode = ""
+    #
+    #     if self.hrm["delta"] >= 1:
+    #         score += 3
+    #     else:
+    #         qcode += "H"
+    #
+    #     tms = np.array([self.primers[d].tm for d in self.primers.keys()])
+    #     tms_l1_norm = np.sum(np.abs(tms - np.mean(tms)))
+    #     if tms_l1_norm <= 5:
+    #         score += 1
+    #     else:
+    #         qcode += "t"
+    #
+    #     if len(self.offtargets) == 0:
+    #         score += 1
+    #     else:
+    #         qcode += "O"
+    #
+    #     if not self.dimer:
+    #         score += 1
+    #     else:
+    #         qcode += "d"
+    #
+    #     max_aafs = np.array([self.primers[d].max_aaf for d in self.primers.keys()])
+    #     if np.all(max_aafs < 0.1):
+    #         score += 1
+    #
+    #         if np.all(max_aafs == 0):
+    #             score += 1
+    #         else:
+    #             qcode += "m"
+    #
+    #     else:
+    #         qcode += "M"
+    #
+    #     if self.max_indel_size < 50:
+    #         score += 1
+    #
+    #         if self.max_indel_size == 0:
+    #             score += 1
+    #         else:
+    #             qcode += "i"
+    #
+    #     else:
+    #         qcode += "I"
+    #
+    #     self.goodness = score
+    #     self.qcode = qcode
 
 if __name__ == "__main__":
     pass

@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import re
 from copy import deepcopy
+# noinspection PyPackageRequirements,PyPep8Naming
+from Bio.SeqUtils import MeltingTemp as mt
 
 from . import lib_utils, lib_blast
 
@@ -336,11 +338,11 @@ class Region(ROI):
 
     def merge_with_primers(self):
         if self.marker is not None:
-            self.p3_sequence_target = [self.marker.pos1-self.left_roi.start, self.marker.n]
+            self.p3_sequence_target = [[self.marker.pos1-self.left_roi.start, self.marker.n]]
 
         ix_left = np.arange(self.left_roi.start, self.left_roi.stop+1)
         ix_center = np.arange(self.start, self.stop+1)
-        ix_right = np.arange(self.left_roi.start, self.left_roi.stop+1)
+        ix_right = np.arange(self.right_roi.start, self.right_roi.stop+1)
         ixs = np.unique(np.concatenate([ix_left, ix_center, ix_right]))
         ix_left = np.intersect1d(ixs, ix_left, return_indices=True)[1]
         ix_center = np.intersect1d(ixs, ix_center, return_indices=True)[1]
@@ -356,11 +358,18 @@ class Region(ROI):
 
             self.p3_sequence_included_maps[k] = mmap == 0
 
-        self.seq = self.left_roi.seq + self.seq + self.right_roi.seq
+        # Get the consensus sequence
+        seq = np.repeat("N", len(ixs))
+        seq[ix_left] = np.array(list(self.left_roi.seq))
+        seq[ix_right] = np.array(list(self.right_roi.seq))
+        seq[ix_center] = np.array(list(self.seq))
+        self.seq = "".join(seq)
         self.n = len(self.seq)
 
+        # TODO make this compatible with indels
         if self.marker is not None:
-            self.seq_alt = self.left_roi.seq + self.seq_alt + self.right_roi.seq
+            seq[ix_center] = np.array(list(self.seq_alt))
+            self.seq_alt = "".join(seq)
 
         if self.left_roi.mutations is not None:
             self.mutations = self.left_roi.mutations + self.right_roi.mutations
@@ -380,7 +389,9 @@ class PCRproduct:
             do_print_alt_subjects=roi.do_print_alt_subjects,
         )
         self.pp = pp
-        self.enzymes = None
+
+        self.enzymes = None  # For CAPS
+        self.hrm = None  # For HRM
 
     def will_it_cut(self, enzymes, min_fragment_size):
         self.enzymes = []
@@ -429,6 +440,15 @@ class PCRproduct:
                 enzyme["allele"] = all_cut
                 self.enzymes.append(enzyme)
 
+    def get_hrm_temps(self):
+        # TODO THERE IS A BUG HERE AS PRIMERS DO NOT FLANK THE MARKER
+        print(self.roi.start, self.roi.stop, self.roi.marker.pos1)
+        self.hrm = {
+            "ref": lib_utils.round_tidy(get_tm(self.roi.seq), 3),
+            "alt": lib_utils.round_tidy(get_tm(self.roi.seq_alt), 3),
+        }
+        self.hrm["delta"] = lib_utils.round_tidy(np.abs(self.hrm["ref"] - self.hrm["alt"]), 3)
+
 
 def read_markers(fp):
     """Reads a text file of input markers and returns a list of Marker objects.
@@ -472,3 +492,7 @@ def read_regions(fp):
         ))
 
     return regions
+
+
+def get_tm(seq, **kwargs):
+    return mt.Tm_NN(seq, strict=False, **kwargs)

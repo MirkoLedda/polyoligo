@@ -28,6 +28,7 @@ offtarget_max_size: 1000
 primer3_pcr: "src/polyoligo/data/PRIMER3_PCR.yaml"
 primer3_caps: "src/polyoligo/data/PRIMER3_CAPS.yaml"
 primer3_kasp: "src/polyoligo/data/PRIMER3_KASP.yaml"
+primer3_hrm: "src/polyoligo/data/PRIMER3_HRM.yaml"
 dye1: "GAAGGTCGGAGTCAACGGATT"
 dye2: "GAAGGTGACCAAGTTCATGCT"
 enzymes: "sample_data/enzymes.txt"
