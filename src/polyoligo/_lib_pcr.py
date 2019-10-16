@@ -10,7 +10,7 @@ from . import lib_blast, lib_utils, lib_primer3, lib_markers
 
 # GLOBALS
 INNER_LEN = 100  # Length of the region used to find homologs
-OUTER_LEN = 500  # Length of the region were homologs will be mapped
+OUTER_LEN = 250  # Length of the region were homologs will be mapped
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 DELIMITER = "\t"  # Delimiter for output files
@@ -199,7 +199,7 @@ def print_report(pcr, fp):
 
 
 def design_primers(pps_repo, roi, sequence_target=None,
-                   sequence_excluded_region=None, n_primers=10, max_unique=2):
+                   sequence_excluded_region=None, n_primers=10, max_unique=np.inf):
     primer3_seq_args = {'SEQUENCE_TEMPLATE': roi.seq}
 
     if sequence_target is not None:
@@ -210,15 +210,16 @@ def design_primers(pps_repo, roi, sequence_target=None,
 
     p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.start)
 
-    # List primer sequences that we already have in the repo to make sure we have some diversity
-    p_counts = {}
-    for pp in pps_repo:
-        for d in ["F", "R"]:
-            seq = pp.primers[d].sequence
-            if seq not in p_counts.keys():
-                p_counts[seq] = 1
-            else:
-                p_counts[seq] += 1
+    # # List primer sequences that we already have in the repo to make sure we have some diversity
+    if not np.isinf(max_unique):
+        p_counts = {}
+        for pp in pps_repo:
+            for d in ["F", "R"]:
+                seq = pp.primers[d].sequence
+                if seq not in p_counts.keys():
+                    p_counts[seq] = 1
+                else:
+                    p_counts[seq] += 1
 
     # Find valid primer pairs by checking top hits for each marker primers iteratively
     for pp in p3_repo:
@@ -233,14 +234,15 @@ def design_primers(pps_repo, roi, sequence_target=None,
             if not is_valid:
                 is_pp_valid = False
 
-            seq = pp.primers[d].sequence
-            if seq in p_counts.keys():
-                if p_counts[seq] >= max_unique:
-                    is_pp_valid = False
+            if not np.isinf(max_unique):
+                seq = pp.primers[d].sequence
+                if seq in p_counts.keys():
+                    if p_counts[seq] >= max_unique:
+                        is_pp_valid = False
+                    else:
+                        p_counts[seq] += 1
                 else:
-                    p_counts[seq] += 1
-            else:
-                p_counts[seq] = 1
+                    p_counts[seq] = 1
 
         if is_pp_valid:
             pps_repo.append(pp)

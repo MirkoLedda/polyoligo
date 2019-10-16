@@ -163,6 +163,8 @@ class BlastDB:
             for q in queries:
                 if q["start"] < 1:
                     q["start"] = 1
+                if q["stop"] < 1:
+                    q["stop"] = 1
 
                 if q["start"] > q["stop"]:
                     stop = q["stop"]
@@ -194,7 +196,17 @@ class BlastDB:
 
         self.locked_call(cmd)
 
-        return read_fasta(fp_blast_out)
+        seqs = read_fasta(fp_blast_out)
+        pruned_seqs = {}
+        for k, seq in seqs.items():
+            if len(k.split(":")) == 2:
+                pruned_seqs[k] = seq
+            else:  # Handle ranges that go beyond the selected chromosome
+                n = len(seq)
+                new_k = "{}:{}-{}".format(k, n, n)
+                pruned_seqs[new_k] = seq[-1]
+
+        return pruned_seqs
 
     def fetch_fasta(self, queries, fp_out=None):
         """Fetch sequences based on a dictionary of queries.

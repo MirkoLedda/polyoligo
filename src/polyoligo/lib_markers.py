@@ -2,6 +2,8 @@ from __future__ import print_function, division
 from os.path import join
 import numpy as np
 import pandas as pd
+import re
+from copy import deepcopy
 
 from . import lib_utils, lib_blast
 
@@ -256,12 +258,14 @@ class ROI:
             )
 
     def upload_mutations(self):
+        self.mutations = []
         if self.vcf_hook:
             self.G, self.mutations = self.vcf_hook.fetch_genotypes(
                 chrom=self.chrom,
                 start=self.start,
                 stop=self.stop,
             )
+
             # If a marker is present, pop it from the list of mutations
             if self.marker is not None:
                 i = np.where(np.array(self.G.columns) == self.marker.pos1)[0]
@@ -270,11 +274,6 @@ class ROI:
                     _ = self.mutations.pop(i[0])
                 else:
                     pass
-                    # logger.warning("Marker {} ({}:{:d}) is not present in the VCF file.".format(self.name,
-                    #                                                                             self.chrom,
-                    #                                                                             self.pos1))
-        else:
-            self.mutations = []
 
 
 class Marker:
@@ -288,6 +287,7 @@ class Marker:
         self.ref = None  # Reference allele
         self.alt = None  # Alternative allele
         self.variant = None  # Variant notation
+        self.n = None  # Maximum length of the mutation
 
         # Initialize attributes
         self.name = name
@@ -297,6 +297,7 @@ class Marker:
         self.ref = ref_allele
         self.alt = alt_allele
         self.variant = "[{}/{}]".format(self.ref, self.alt)
+        self.n = int(np.max([len(self.ref), len(self.alt)]))
 
         if (name is None) or (name == "."):
             self.name = "{}:{}-{}".format(self.chrom, self.pos1, self.pos1)
@@ -334,16 +335,26 @@ class Region(ROI):
         self.right_roi = right_roi
 
     def merge_with_primers(self):
-        # self.p3_sequence_target = [self.start-self.left_roi.start, self.n]
+        if self.marker is not None:
+            self.p3_sequence_target = [self.marker.pos1-self.left_roi.start, self.marker.n]
+
+        ix_left = np.arange(self.left_roi.start, self.left_roi.stop+1)
+        ix_center = np.arange(self.start, self.stop+1)
+        ix_right = np.arange(self.left_roi.start, self.left_roi.stop+1)
+        ixs = np.unique(np.concatenate([ix_left, ix_center, ix_right]))
+        ix_left = np.intersect1d(ixs, ix_left, return_indices=True)[1]
+        ix_center = np.intersect1d(ixs, ix_center, return_indices=True)[1]
+        ix_right = np.intersect1d(ixs, ix_right, return_indices=True)[1]
+        base_map = np.repeat(0, len(ixs))
 
         self.p3_sequence_included_maps = {}
         for k in self.left_roi.p3_sequence_included_maps.keys():
-            self.p3_sequence_included_maps[k] = np.concatenate([
-                self.left_roi.p3_sequence_included_maps[k],
-                # np.repeat(True, self.n),
-                np.repeat(False, self.n),
-                self.right_roi.p3_sequence_included_maps[k],
-            ])
+            mmap = deepcopy(base_map)
+            mmap[ix_left] += ~self.left_roi.p3_sequence_included_maps[k]
+            mmap[ix_center] += 1
+            mmap[ix_right] += ~self.right_roi.p3_sequence_included_maps[k]
+
+            self.p3_sequence_included_maps[k] = mmap == 0
 
         self.seq = self.left_roi.seq + self.seq + self.right_roi.seq
         self.n = len(self.seq)
@@ -353,6 +364,70 @@ class Region(ROI):
 
         if self.left_roi.mutations is not None:
             self.mutations = self.left_roi.mutations + self.right_roi.mutations
+
+
+class PCRproduct:
+    def __init__(self, roi, pp):
+        self.roi = Region(
+            chrom=roi.chrom,
+            start=pp.primers["F"].start,
+            stop=pp.primers["R"].stop,
+            blast_hook=roi.blast_hook,
+            malign_hook=roi.malign_hook,
+            vcf_hook=roi.vcf_hook,
+            name=roi.marker.name,
+            marker=roi.marker,
+            do_print_alt_subjects=roi.do_print_alt_subjects,
+        )
+        self.pp = pp
+        self.enzymes = None
+
+    def will_it_cut(self, enzymes, min_fragment_size):
+        self.enzymes = []
+
+        for enzyme in enzymes:
+            m = re.findall(re.compile(enzyme["regex"]["F"]), self.roi.seq)
+            mi = re.findall(re.compile(enzyme["regex"]["R"]), self.roi.seq)
+            n_cut = len(m) + len(mi)
+
+            ma = re.findall(re.compile(enzyme["regex"]["F"]), self.roi.seq_alt)
+            mai = re.findall(re.compile(enzyme["regex"]["R"]), self.roi.seq_alt)
+            n_cut_alt = len(ma) + len(mai)
+
+            fragl = 0
+            fragr = 0
+            all_cut = ""
+            if (n_cut == 1) and (n_cut_alt == 0):
+                for m in re.finditer(re.compile(enzyme["regex"]["F"]), self.roi.seq):
+                    cut_pos = int(np.ceil((m.span()[1]-m.span()[0]))/2)
+                    fragl = cut_pos
+                    fragr = self.roi.n - cut_pos
+                    all_cut = "REF"
+
+                for m in re.finditer(re.compile(enzyme["regex"]["R"]), self.roi.seq):
+                    cut_pos = int(np.ceil((m.span()[1]-m.span()[0]))/2)
+                    fragl = cut_pos
+                    fragr = self.roi.n - cut_pos
+                    all_cut = "REF"
+
+            if (n_cut == 0) and (n_cut_alt == 1):
+                for m in re.finditer(re.compile(enzyme["regex"]["F"]), self.roi.seq_alt):
+                    cut_pos = m.span()[0] + int(np.ceil((m.span()[1] - m.span()[0])/2))
+                    fragl = cut_pos
+                    fragr = self.roi.n - cut_pos
+                    all_cut = "ALT"
+
+                for m in re.finditer(re.compile(enzyme["regex"]["R"]), self.roi.seq_alt):
+                    cut_pos = int(np.ceil((m.span()[1] - m.span()[0])) / 2)
+                    fragl = cut_pos
+                    fragr = self.roi.n - cut_pos
+                    all_cut = "ALT"
+
+            if (fragl >= min_fragment_size) and (fragr >= min_fragment_size):
+                enzyme["fragl"] = fragl
+                enzyme["fragr"] = fragr
+                enzyme["allele"] = all_cut
+                self.enzymes.append(enzyme)
 
 
 def read_markers(fp):

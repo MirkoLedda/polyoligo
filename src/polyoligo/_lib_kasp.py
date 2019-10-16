@@ -732,7 +732,7 @@ def main(kwarg_dict):
     }
 
     # Set the search mask ordering
-    if "mism_mut" in roi.p3_sequence_included_maps.keys():
+    if "mism_mut" in hroi.p3_sequence_included_maps.keys():
         search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
     else:
         search_types = ["mism", "partial_mism", "all"]

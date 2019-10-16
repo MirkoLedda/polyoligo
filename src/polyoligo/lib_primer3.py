@@ -122,6 +122,7 @@ class PrimerPair:
         self.dimer = None  # Will it form a heterodimer
         self.goodness = None  # Heuristic goodness score
         self.qcode = None  # Heuristic quality code, gives context to the goodness score
+        self.enzymes = None  # For CAPS assays
 
         # Attributes from PRIMER3
         self.compl_any_th = None
@@ -579,7 +580,7 @@ def include_mut_in_included_maps(hroi):
     mmaps = {}
     for k, mmap in hroi.p3_sequence_included_maps.items():
         mmaps[k] = deepcopy(mmap)
-        if len(hroi.mutations) > 0:
+        if hroi.vcf_hook:
             k_mut = k + "_mut"
 
             # Make a list of mutation positions based on mutation for exclusion

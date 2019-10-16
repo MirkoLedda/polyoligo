@@ -2,126 +2,69 @@ from __future__ import print_function, division
 import numpy as np
 # noinspection PyUnresolvedReferences
 from primer3.thermoanalysis import ThermoAnalysis
-from copy import deepcopy
 import logging
 from os.path import join
 import os
 import json
-import re
 
-from . import lib_blast, lib_utils, lib_primer3, _lib_pcr
+from . import lib_utils, lib_primer3, lib_markers, _lib_pcr
 
+# GLOBALS
 ENZYME_FILENAME = join(os.path.dirname(__file__), "data/type2.json")
+INNER_LEN = 100  # Length of the region used to find homologs
+OUTER_LEN = 1000  # Length of the region were homologs will be mapped
+MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
+MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
+DELIMITER = "\t"  # Delimiter for output files
+HEADER = [
+    "marker",
+    "chr",
+    "pos",
+    "ref",
+    "alt",
+    "enzymes",
+    "enzyme_suppliers",
+    "start",
+    "end",
+    "direction",
+    "assay_id",
+    "seq_5_3",
+    "seq_5_3_ambiguous",
+    "primer_id",
+    "goodness",
+    "qcode",
+    "length",
+    "prod_size",
+    "allele_cut",
+    "fragment_left",
+    "fragment_right",
+    "tm",
+    "gc_content",
+    "n_offtargets",
+    "max_aaf",
+    "indels",
+    "offtargets",
+    "mutations",
+]
 
 # Initialize the logger
 logger = logging.getLogger(__name__)
 
 
-class CAPS:
-    def __init__(self, marker, included_enzymes=None):
+def get_enzymes(included_enzymes):
+    # Load restriction enzymes
+    with open(ENZYME_FILENAME, "r") as f:
+        enzymes = json.load(f)
 
-        self.marker = marker
-        self.marker_pos = None
-        self.seqs = None
-        self.substrings = None
-        self.enzymes = []
-        self.valid_enzymes = None
-        self.valid_enzymes_list = None
-        self.valid_enzymes_suppliers = None
-
-        enzymes = self.load_enzymes()
-
-        if included_enzymes is not None:
-            for enzyme in enzymes:
-                if enzyme["name"] in included_enzymes:
-                    self.enzymes.append(enzyme)
-        else:
-            self.enzymes = enzymes
-
-        self._get_substrings()
-
-    @staticmethod
-    def load_enzymes():
-        # Load restriction enzymes
-        with open(ENZYME_FILENAME, "r") as f:
-            enzymes = json.load(f)
-
-        return enzymes
-
-    def _get_recognition_site_max_length(self):
-        max_n = 0
-        for enzyme in self.enzymes:
-            max_n = max([max_n, enzyme["n"]])
-        return max_n
-
-    def _get_substrings(self):
-        # Adjust the sequence to make sure the marker is in the center
-        mseq = deepcopy(self.marker.seq)
-
-        # Pad the sequence if needed to ensure the SNP is always in the center
-        exp_seq_len = self.marker.HOMOLOG_FLANKING_N * 2 + 1
-        act_seq_len = len(mseq)
-        if act_seq_len < exp_seq_len:
-            if int(self.marker.fasta_name.split(":")[1].split("-")[0]) == 1:
-                # Left side is not full
-                mseq = lib_utils.padding_left(
-                    x=mseq,
-                    n=exp_seq_len,
-                )
-            else:
-                # Right side is not full
-                mseq = lib_utils.padding_right(
-                    x=mseq,
-                    n=exp_seq_len,
-                )
-
-        self.marker_pos = int((len(mseq) - 1) / 2)  # SNP is now always in the center as we padded the sequence
-
-        mseql = list(mseq)
-        mseql[self.marker_pos] = self.marker.alt
-        self.seqs = {
-            "REF": mseq,
-            "ALT": "".join(mseql),
-        }
-
-        self.substrings = {"REF": {}, "ALT": {}}
-        for i in np.flip(range(1, self._get_recognition_site_max_length() + 1)):
-            self.substrings["REF"][i] = self.seqs["REF"][(self.marker_pos - (i - 1)):(self.marker_pos + (i + 1) + 1)]
-            self.substrings["ALT"][i] = self.seqs["ALT"][(self.marker_pos - (i - 1)):(self.marker_pos + (i + 1) + 1)]
-
-    def find_valid_enzymes(self):
-        self.valid_enzymes = []
-        self.valid_enzymes_list = []
-        self.valid_enzymes_suppliers = []
-
-        for enzyme in self.enzymes:
-            flag_ref = self.will_it_single_cut(self.substrings["REF"][enzyme["n"]], enzyme)
-            flag_alt = self.will_it_cut(self.substrings["ALT"][enzyme["n"]], enzyme)
-
-            if flag_ref and flag_alt:
-                self.valid_enzymes.append(enzyme)
-                self.valid_enzymes_list.append(enzyme["name"])
-                self.valid_enzymes_suppliers.append(enzyme["supplier"])
-
-    @staticmethod
-    def will_it_cut(seq, enzyme):
-        m = re.findall(re.compile(enzyme["regex"]["F"]), seq)
-        mi = re.findall(re.compile(enzyme["regex"]["R"]), seq)
-
-        if (len(m) > 0) or (len(mi) > 0):
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def will_it_single_cut(seq, enzyme):
-        m = re.findall(re.compile(enzyme["regex"]["F"]), seq)
-        mi = re.findall(re.compile(enzyme["regex"]["R"]), seq)
-
-        if (len(m) == 1) or (len(mi) == 1):
-            return True
-        else:
-            return False
+    # Filter enzymes
+    valid_enzymes = []
+    if included_enzymes is not None:
+        for enzyme in enzymes:
+            if enzyme["name"] in included_enzymes:
+                valid_enzymes.append(enzyme)
+    else:
+        valid_enzymes = enzymes
+    return valid_enzymes
 
 
 class PCR(lib_primer3.PCR):
@@ -134,42 +77,14 @@ class PCR(lib_primer3.PCR):
         self.pos = pos
 
 
-def print_report_header(fp, delimiter="\t"):
-    header = delimiter.join([
-        "marker",
-        "chr",
-        "pos",
-        "ref",
-        "alt",
-        "enzymes",
-        "enzyme_suppliers",
-        "start",
-        "end",
-        "direction",
-        "assay_id",
-        "seq_5_3",
-        "seq_5_3_ambiguous",
-        "primer_id",
-        "goodness",
-        "qcode",
-        "length",
-        "prod_size",
-        "fragment_left",
-        "fragment_right",
-        "tm",
-        "gc_content",
-        "n_offtargets",
-        "max_aaf",
-        "indels",
-        "offtargets",
-        "mutations",
-    ])
+def print_report_header(fp):
+    header = DELIMITER.join(HEADER)
 
     with open(fp, "w") as f:
         f.write("{}\n".format(header))
 
 
-def print_report(pcr, caps, fp, delimiter="\t"):
+def print_report(pcr, fp):
     primer_type_ordering = ["F", "R"]
     sorted_scores = np.sort(np.unique(list(pcr.pps_pruned.keys())))[::-1]
     ppid = 0
@@ -177,14 +92,6 @@ def print_report(pcr, caps, fp, delimiter="\t"):
     seq_ids = {}
     for pt in primer_type_ordering:
         seq_ids[pt] = []
-
-    enzyme_str = ",".join(caps.valid_enzymes_list)
-    if enzyme_str == "":
-        enzyme_str = "NA"
-
-    enzyme_suppliers = ",".join(caps.valid_enzymes_suppliers)
-    if enzyme_suppliers == "":
-        enzyme_suppliers = "NA"
 
     with open(fp + ".txt", "w") as f, open(fp + ".bed", "w") as f_bed:
         for i in sorted_scores:
@@ -210,64 +117,68 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                 if offtargets == "":
                     offtargets = "NA"
 
-                # Write primers parameters
-                for d in primer_type_ordering:
-                    mutations = ",".join([x for x in pp.primers[d].mutations])
+                # Loop across restriction enzymes
+                for enzyme in pp.enzymes:
 
-                    if mutations == "":
-                        mutations = "NA"
-                    if pp.qcode == "":
-                        pp.qcode = "."
+                    # Write primers parameters
+                    for d in primer_type_ordering:
+                        mutations = ",".join([x for x in pp.primers[d].mutations])
 
-                    fields = [
-                        pcr.snp_id,
-                        pcr.chrom,
-                        int(pcr.pos),
-                        pcr.ref,
-                        pcr.alt,
-                        enzyme_str,
-                        enzyme_suppliers,
-                        int(pp.primers[d].start),
-                        int(pp.primers[d].stop),
-                        d,
-                        pp.id,
-                        seqs[d],
-                        pp.primers[d].sequence_ambiguous,
-                        curr_seq_ids[d],
-                        pp.goodness,
-                        pp.qcode,
-                        pp.primers[d].length,
-                        pp.product_size,
-                        int(pcr.pos) - int(pp.primers["F"].start),
-                        int(pp.primers["R"].stop) - int(pcr.pos),
-                        lib_utils.round_tidy(pp.primers[d].tm, 3),
-                        lib_utils.round_tidy(pp.primers[d].gc_content, 3),
-                        len(pp.offtargets),
-                        lib_utils.round_tidy(pp.primers[d].max_aaf, 2),
-                        pp.max_indel_size,
-                        offtargets,
-                        mutations,
-                    ]
-                    f.write("{}\n".format(delimiter.join([str(x) for x in fields])))
+                        if mutations == "":
+                            mutations = "NA"
+                        if pp.qcode == "":
+                            pp.qcode = "."
 
-                    # BED file
-                    if d == "F":
-                        direction = "+"
-                    else:
-                        direction = "-"
+                        fields = [
+                            pcr.snp_id,
+                            pcr.chrom,
+                            int(pcr.pos),
+                            pcr.ref,
+                            pcr.alt,
+                            enzyme["name"],
+                            enzyme["supplier"],
+                            int(pp.primers[d].start),
+                            int(pp.primers[d].stop),
+                            d,
+                            pp.id,
+                            seqs[d],
+                            pp.primers[d].sequence_ambiguous,
+                            curr_seq_ids[d],
+                            pp.goodness,
+                            pp.qcode,
+                            pp.primers[d].length,
+                            pp.product_size,
+                            enzyme["allele"],
+                            enzyme["fragl"],
+                            enzyme["fragr"],
+                            lib_utils.round_tidy(pp.primers[d].tm, 3),
+                            lib_utils.round_tidy(pp.primers[d].gc_content, 3),
+                            len(pp.offtargets),
+                            lib_utils.round_tidy(pp.primers[d].max_aaf, 2),
+                            pp.max_indel_size,
+                            offtargets,
+                            mutations,
+                        ]
+                        f.write("{}\n".format(DELIMITER.join([str(x) for x in fields])))
 
-                    fields = [
-                        pcr.chrom,
-                        int(pp.primers[d].start),
-                        int(pp.primers[d].stop),
-                        "{}_{}-{}".format(pcr.snp_id, curr_seq_ids[d], pp.goodness),
-                        "0",
-                        direction,
-                    ]
-                    f_bed.write("{}\n".format("\t".join([str(x) for x in fields])))
+                        # BED file
+                        if d == "F":
+                            direction = "+"
+                        else:
+                            direction = "-"
 
-                f.write("\n")
-                ppid += 1
+                        fields = [
+                            pcr.chrom,
+                            int(pp.primers[d].start),
+                            int(pp.primers[d].stop),
+                            "{}_{}-{}".format(pcr.snp_id, curr_seq_ids[d], pp.goodness),
+                            "0",
+                            direction,
+                        ]
+                        f_bed.write("{}\n".format("\t".join([str(x) for x in fields])))
+
+                    f.write("\n")
+                    ppid += 1
 
         if ppid == 0:
             fields = [
@@ -278,18 +189,35 @@ def print_report(pcr, caps, fp, delimiter="\t"):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(delimiter.join(fields + 22 * ["NA"]) + "\n")
+            f.write(DELIMITER.join(fields + 22 * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
 
 
+def write_final_reports(fp_base_out, rois):
+    print_report_header(fp_base_out + ".txt")
+    with open(fp_base_out + ".txt", "a") as f:
+        for roi in rois:
+            with open(join(roi.blast_hook.temporary, roi.marker.name + ".txt"), "r") as f_marker:
+                for line in f_marker:
+                    f.write(line)
+
+    # BED file
+    line_memory = []
+    with open(fp_base_out + ".bed", "w") as f:
+        for roi in rois:
+            with open(join(roi.blast_hook.temporary, roi.marker.name + ".bed"), "r") as f_marker:
+                for line in f_marker:
+                    if line not in line_memory:
+                        line_memory.append(line)
+                        f.write(line)
+
+
 def main(kwarg_dict):
     # kwargs to variables
-    roi = kwarg_dict["roi"]
+    region = kwarg_dict["region"]
     fp_base_out = kwarg_dict["fp_base_out"]
-    blast_db = kwarg_dict["blast_db"]
-    muscle = kwarg_dict["muscle"]
     n_primers = kwarg_dict["n_primers"]
     p3_search_depth = kwarg_dict["p3_search_depth"]
     primer_seed = kwarg_dict["primer_seed"]
@@ -298,183 +226,150 @@ def main(kwarg_dict):
     primer3_configs = kwarg_dict["primer3_configs"]
     included_enzymes = kwarg_dict["included_enzymes"]
     debug = kwarg_dict["debug"]
+    fragment_min_size = kwarg_dict["fragment_min_size"]
 
-    try:
-        # Set primer3 globals
-        if len(primer3_configs) > 0:
-            lib_primer3.set_globals(**primer3_configs)
+    if region.vcf_hook:
+        region.vcf_hook.start_reader()
 
-        lib_primer3.set_globals(
-            PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_depth)),
-        )
-        lib_primer3.set_tm_delta(tm_delta)
-        lib_primer3.set_primer_seed(primer_seed)
+    # Set primer3 globals
+    if len(primer3_configs) > 0:
+        lib_primer3.set_globals(**primer3_configs)
 
-        # Set lib_primer offtarget sizes
-        lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
+    lib_primer3.set_globals(
+        PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_depth)),
+    )
+    lib_primer3.set_tm_delta(tm_delta)
+    lib_primer3.set_primer_seed(primer_seed)
 
-        # Set a logger message that will be printed at the end (to be threadsafe)
-        header = "Primer search results for {}".format(roi.name)
-        sepline = "=" * (len(header) + 2)
-        logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
+    # Set lib_primer offtarget sizes
+    lib_primer3.set_offtarget_size(offtarget_size[0], offtarget_size[1])
 
-        # Find all restriction enzymes that may work for the marker
-        caps = CAPS(
-            marker=roi.marker,
-            included_enzymes=included_enzymes,
-        )
-        caps.find_valid_enzymes()
-        logger_msg += "Possible restriction enzymes: {}\n".format(",".join(caps.valid_enzymes_list))
+    # Set a logger message that will be printed at the end (to be threadsafe)
+    header = "Primer search results for {}".format(region.name)
+    sepline = "=" * (len(header) + 2)
+    logger_msg = "\n{}\n{}\n{}\n".format(sepline, header, sepline)
 
-        # Read and align sequences for both the left and right window
-        fa_suffixes = ["left", "right"]
-        for i in range(2):
-            fp_fasta = join(blast_db.temporary, "{}-{}".format(roi.name.replace("_", "-"), fa_suffixes[i]) + ".fa")
-            seqs = lib_blast.read_fasta(fp_fasta)
+    # List all considered restriction enzymes
+    enzymes = get_enzymes(included_enzymes=included_enzymes)
+    logger_msg += "Number of considered restriction enzymes: {}\n".format(len(enzymes))
 
-            roi.pwindows.markers[i].seq = seqs[roi.pwindows.markers[i].fasta_name]
-            del seqs[roi.pwindows.markers[i].fasta_name]
+    # Define two rois around the target where the primers will be built
+    region.left_roi = lib_markers.ROI(
+        chrom=region.chrom,
+        start=int(region.start-(OUTER_LEN/2)),
+        stop=int(region.start-(OUTER_LEN/2)),
+        blast_hook=region.blast_hook,
+        malign_hook=region.malign_hook,
+        vcf_hook=region.vcf_hook,
+        name=region.name,
+        marker=region.marker,
+        do_print_alt_subjects=region.do_print_alt_subjects,
+    )
+    region.right_roi = lib_markers.ROI(
+        chrom=region.chrom,
+        start=int(region.start+(OUTER_LEN/2)),
+        stop=int(region.start+(OUTER_LEN/2)),
+        blast_hook=region.blast_hook,
+        malign_hook=region.malign_hook,
+        vcf_hook=region.vcf_hook,
+        name=region.name,
+        marker=region.marker,
+        do_print_alt_subjects=region.do_print_alt_subjects,
+    )
 
-            # Align homologs to the target sequence
-            if len(seqs) > 49:
-                # If more than 50 homoloous sequences were found, then do not run multialignment and
-                # instead make all nucs not specific (using twice the same marker sequence) for runtime optimization
-                mock_seqs = {
-                    roi.pwindows.markers[i].fasta_name: roi.pwindows.markers[i].seq,
-                    "mock": roi.pwindows.markers[i].seq,
-                }
-                lib_blast.write_fasta(mock_seqs, fp_out=fp_fasta)
+    # Find homologs
+    region.left_roi = region.left_roi.map_homologs(
+        inner_len=INNER_LEN,
+        outer_len=OUTER_LEN,
+        min_align_id=MIN_ALIGN_ID,
+        min_align_len=MIN_ALIGN_LEN,
+    )
+    region.right_roi = region.right_roi.map_homologs(
+        inner_len=INNER_LEN,
+        outer_len=OUTER_LEN,
+        min_align_id=MIN_ALIGN_ID,
+        min_align_len=MIN_ALIGN_LEN,
+    )
 
-            fp_aligned = join(blast_db.temporary, roi.name + str(i) + "_malign.afa")
-            muscle.fast_align_fasta(fp=fp_fasta, fp_out=fp_aligned)
+    # Find mutations in the region
+    region.left_roi.upload_mutations()
+    lib_primer3.include_mut_in_included_maps(region.left_roi)
+    region.right_roi.upload_mutations()
+    lib_primer3.include_mut_in_included_maps(region.right_roi)
 
-            # Map mismatches in the homeologs
-            roi.pwindows.markers[i].maps = dict()
-            roi.pwindows.markers[i].maps["all"] = np.repeat(True, len(roi.pwindows.markers[i].seq))
-            roi.pwindows.markers[i].maps["partial_mism"], roi.pwindows.markers[i].maps["mism"] = _lib_pcr.map_homologs(
-                fp_aligned,
-                roi.pwindows.markers[i].fasta_name,
-                len(roi.pwindows.markers[i].seq),
+    # Combine the maps with the target region
+    region.merge_with_primers()
+
+    # Build exclusion maps
+    lib_primer3.get_sequence_excluded_regions(region)
+
+    # Print alternative subjects if required TODO
+
+    # Design primers
+    pcr = PCR(
+        snp_id=region.marker.name,
+        chrom=region.marker.chrom,
+        pos=region.marker.pos1,
+        ref=region.marker.ref,
+        alt=region.marker.alt,
+    )
+    map_names = {
+        "mism_mut": "Variants excluded | Homologs specific",
+        "partial_mism_mut": "Variants excluded | Homologs partial spec",
+        "all_mut": "Variants excluded | Unspecific",
+        "mism": "Variants included | Homologs specific",
+        "partial_mism": "Variants included | Homologs partial spec",
+        "all": "Variants included | Unspecific",
+    }
+
+    # Set the search mask ordering
+    if "mism_mut" in region.p3_sequence_included_maps.keys():
+        search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
+    else:
+        search_types = ["mism", "partial_mism", "all"]
+
+    for search_type in search_types:
+        if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
+            n_before = len(pcr.pps)
+            pcr.pps = _lib_pcr.design_primers(
+                pps_repo=pcr.pps,  # Primer pair repository
+                roi=region,
+                sequence_target=region.p3_sequence_target,
+                sequence_excluded_region=region.p3_sequence_excluded_regions[search_type],
+                n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
             )
+            n_new = len(pcr.pps) - n_before
+            logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
 
-            # Cleanup temporary files
-            if not debug:
-                os.remove(fp_fasta)
-                os.remove(fp_aligned)
+    hit_cnts, valid_hit_cnts = pcr.check_offtargeting(region.blast_hook, debug=debug)  # Check for off-targets
 
-        # Merge all maps
-        maps = dict()
-        maps["all"] = np.concatenate([
-            roi.pwindows.markers[0].maps["all"][:-1],
-            np.repeat(False, roi.n),
-            roi.pwindows.markers[1].maps["all"][1:],
-        ])
-        maps["partial_mism"] = np.concatenate([
-            roi.pwindows.markers[0].maps["partial_mism"][:-1],
-            np.repeat(False, roi.n),
-            roi.pwindows.markers[1].maps["partial_mism"][1:],
-        ])
-        maps["mism"] = np.concatenate([
-            roi.pwindows.markers[0].maps["mism"][:-1],
-            np.repeat(False, roi.n),
-            roi.pwindows.markers[1].maps["mism"][1:],
-        ])
+    # Report hit counts
+    logger_msg += "Offtarget hits across the genome\n"
+    logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
+    logger_msg += "      Reverse : {:d}\n".format(valid_hit_cnts["R"])
 
-        # Get valid regions for the design of the primers
-        ivs = {}
-        roi.start = int(roi.pwindows.markers[0].fasta_name.split(":")[1].split("-")[0])
-        roi.end = int(roi.pwindows.markers[1].fasta_name.split(":")[1].split("-")[1])
-        for k, mmap in maps.items():
-            ivs[k] = {}
-            k_mut = k + "_mut"
-            ivs[k] = lib_primer3.get_exclusion_zone(mmap)  # Mutations not excluded
+    pcr.check_heterodimerization()  # Check for heterodimerization
+    pcr.add_mutations(region.mutations)  # List mutations in primers
 
-            if len(roi.mutations) > 0:
-                # Make a list of mutation positions based on mutation for exclusion
-                mut_ixs = []
-                for mutation in roi.mutations:
-                    mut_ixs.append(mutation.pos - roi.start)
-                ivs[k_mut] = lib_primer3.get_exclusion_zone(mmap, hard_exclude=mut_ixs)
+    # Prune only valid pcr_products
+    pruned_pps = []
+    for pp in pcr.pps:
+        pcr_product = lib_markers.PCRproduct(roi=region, pp=pp)
+        pcr_product.will_it_cut(enzymes=enzymes, min_fragment_size=fragment_min_size)
 
-        # Set the product size range
-        lib_primer3.set_globals(
-            PRIMER_PRODUCT_SIZE_RANGE=[roi.n, len(maps["all"])]
-        )
+        if len(pcr_product.enzymes) > 0:
+            pp.enzymes = pcr_product.enzymes
+            pruned_pps.append(pp)
+    pcr.pps = pruned_pps
+    pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
+    n = pcr.prune(n_primers)  # Retain only the top n primers
 
-        # Update roi to be the entire sequence including the side windows
-        roi.fetch_roi()
-
-        # Design primers
-        pcr = PCR(
-            snp_id=roi.marker.name,
-            chrom=roi.marker.chrom,
-            pos=roi.marker.pos,
-            ref=roi.marker.ref,
-            alt=roi.marker.alt
-        )
-        map_names = {
-            "mism_mut": "Variants excluded | Homologs specific",
-            "partial_mism_mut": "Variants excluded | Homologs partial spec",
-            "all_mut": "Variants excluded | Unspecific",
-            "mism": "Variants included | Homologs specific",
-            "partial_mism": "Variants included | Homologs partial spec",
-            "all": "Variants included | Unspecific",
-        }
-        # Set the search mask ordering
-        if len(roi.mutations) > 0:
-            search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
-        else:
-            search_types = ["mism", "partial_mism", "all"]
-
-        if len(caps.valid_enzymes) > 0:
-            for search_type in search_types:
-                if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
-                    n_before = len(pcr.pps)
-                    pcr.pps = _lib_pcr.design_primers(
-                        pps_repo=pcr.pps,  # Primer pair repository
-                        target_seq=roi.seq,
-                        target_chrom=roi.chrom,
-                        target_start=roi.start,
-                        ivs=ivs[search_type],
-                        n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
-                    )
-                    n_new = len(pcr.pps) - n_before
-                    logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
-
-            hit_cnts, valid_hit_cnts = pcr.check_offtargeting(blast_db, debug=debug)  # Check for off-targets
-
-            # Report hit counts
-            logger_msg += "Offtarget hits across the genome\n"
-            logger_msg += "      Forward : {:d}\n".format(valid_hit_cnts["F"])
-            logger_msg += "      Reverse : {:d}\n".format(valid_hit_cnts["R"])
-
-        pcr.check_heterodimerization()  # Check for heterodimerization
-        pcr.add_mutations(roi.mutations)  # List mutations in primers
-        pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
-        n = pcr.prune(n_primers)  # Retain only the top n primers
-
-        # Print to logger
-        logger_msg += "Returned top {:d} primer pairs\n".format(n)
-        logger.debug(logger_msg)
-
-    except FileNotFoundError:
-        logger.debug("{} - Not enough sequence flanking the marker to design an assay !".format(roi.marker.name))
-        pcr = PCR(
-            snp_id=roi.marker.name,
-            chrom=roi.marker.chrom,
-            pos=roi.marker.pos,
-            ref=roi.marker.ref,
-            alt=roi.marker.alt
-        )
-        caps = CAPS(
-            marker=roi.marker,
-            included_enzymes=included_enzymes,
-        )
-        caps.find_valid_enzymes()
+    # Print to logger
+    logger_msg += "Returned top {:d} primer pairs\n".format(n)
+    logger.debug(logger_msg)
 
     print_report(
         pcr=pcr,
-        caps=caps,
         fp=fp_base_out,
     )
 
