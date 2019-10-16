@@ -17,7 +17,6 @@ OUTER_LEN = 500  # Length of the region were homologs will be mapped
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 DELIMITER = "\t"  # Delimiter for output files
-# Output header
 HEADER = [
     "marker",
     "chr",
@@ -551,7 +550,7 @@ def print_report(pcr, fp):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(DELIMITER.join(fields + len(HEADER) * ["NA"]) + "\n")
+            f.write(DELIMITER.join(fields + (len(HEADER)-5) * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
@@ -733,7 +732,7 @@ def main(kwarg_dict):
     }
 
     # Set the search mask ordering
-    if len(hroi.mutations) > 0:
+    if "mism_mut" in roi.p3_sequence_included_maps.keys():
         search_types = ["mism_mut", "mism", "partial_mism_mut", "partial_mism", "all_mut", "all"]
     else:
         search_types = ["mism", "partial_mism", "all"]

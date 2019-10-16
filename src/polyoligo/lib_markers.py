@@ -42,15 +42,16 @@ class ROI:
         else:
             self.name = "{}:{}-{}".format(self.chrom, self.start, self.stop)
 
-        query = [{
-            "chr": self.chrom,
-            "start": self.start,
-            "stop": self.stop,
-        }]
+        if blast_hook is not None:
+            query = [{
+                "chr": self.chrom,
+                "start": self.start,
+                "stop": self.stop,
+            }]
 
-        seqs = self.blast_hook.fetch(query)
-        self.seq = list(seqs.values())[0].upper()
-        self.n = len(self.seq)
+            seqs = self.blast_hook.fetch(query)
+            self.seq = list(seqs.values())[0].upper()
+            self.n = len(self.seq)
 
         if self.marker is not None:
             self.seq_alt = np.array(list(self.seq))
@@ -111,25 +112,26 @@ class ROI:
         df = self.blast_hook.parse_blastn_output(fp_blast_out2)
 
         hseqs = []
-        for _, row in df.iterrows():
-            is_target = False
-            if row["schr"] == self.chrom:
-                if (self.start >= row["sstart"]) and (self.stop <= row["sstop"]):
-                    is_target = True
+        if df is not None:  # Can happen if the query is all N's
+            for _, row in df.iterrows():
+                is_target = False
+                if row["schr"] == self.chrom:
+                    if (self.start >= row["sstart"]) and (self.stop <= row["sstop"]):
+                        is_target = True
 
-            if not is_target:
-                if row["sstart"] > row["sstop"]:
-                    strand = "minus"
-                else:
-                    strand = "plus"
+                if not is_target:
+                    if row["sstart"] > row["sstop"]:
+                        strand = "minus"
+                    else:
+                        strand = "plus"
 
-                hseq = {
-                    "chrom": row["schr"],
-                    "start": np.min([row["sstart"], row["sstop"]]),
-                    "stop": np.max([row["sstart"], row["sstop"]]),
-                    "strand": strand
-                }
-                hseqs.append(hseq)
+                    hseq = {
+                        "chrom": row["schr"],
+                        "start": np.min([row["sstart"], row["sstop"]]),
+                        "stop": np.max([row["sstart"], row["sstop"]]),
+                        "strand": strand
+                    }
+                    hseqs.append(hseq)
 
         if len(hseqs) > 50:
             homologs_exceeded = True
@@ -321,6 +323,38 @@ class Marker:
         return err_msg
 
 
+class Region(ROI):
+    def __init__(self, left_roi=None, right_roi=None, **kwargs):
+        super().__init__(**kwargs)
+        self.left_roi = None
+        self.right_roi = None
+
+        # Initialize attributes
+        self.left_roi = left_roi
+        self.right_roi = right_roi
+
+    def merge_with_primers(self):
+        # self.p3_sequence_target = [self.start-self.left_roi.start, self.n]
+
+        self.p3_sequence_included_maps = {}
+        for k in self.left_roi.p3_sequence_included_maps.keys():
+            self.p3_sequence_included_maps[k] = np.concatenate([
+                self.left_roi.p3_sequence_included_maps[k],
+                # np.repeat(True, self.n),
+                np.repeat(False, self.n),
+                self.right_roi.p3_sequence_included_maps[k],
+            ])
+
+        self.seq = self.left_roi.seq + self.seq + self.right_roi.seq
+        self.n = len(self.seq)
+
+        if self.marker is not None:
+            self.seq_alt = self.left_roi.seq + self.seq_alt + self.right_roi.seq
+
+        if self.left_roi.mutations is not None:
+            self.mutations = self.left_roi.mutations + self.right_roi.mutations
+
+
 def read_markers(fp):
     """Reads a text file of input markers and returns a list of Marker objects.
 
@@ -343,3 +377,24 @@ def read_markers(fp):
         ))
 
     return markers
+
+
+def read_regions(fp):
+    df = pd.read_csv(fp, delim_whitespace=True, header=None)
+    df.columns = ["region", "name"]
+
+    regions = []
+    for _, row in df.iterrows():
+        chrom = row["region"].strip().split(":")[0]
+        start = row["region"].strip().split(":")[1].split("-")[0]
+        stop = row["region"].strip().split(":")[1].split("-")[1]
+
+        regions.append(Region(
+            name=row["name"],
+            chrom=chrom,
+            start=start,
+            stop=stop,
+        ))
+
+    return regions
+

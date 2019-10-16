@@ -23,6 +23,7 @@ BINARIES = {
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_KASP.yaml")
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
 
+
 def parse_args(inputargs):
     # Define the args parser
     parser = argparse.ArgumentParser(prog="polyoligo-kasp",
@@ -184,7 +185,6 @@ def parse_args(inputargs):
 
 
 def main(strcmd=None):
-
     main_time = lib_utils.timer_start()  # Set main timer
 
     # Input arguments handling
@@ -312,31 +312,6 @@ def main(strcmd=None):
             do_print_alt_subjects=args.report_alts,
         )
         rois.append(roi)
-
-    # # Get flanking sequences around the markers
-    # logger.info("Retrieving flanking sequence around markers ...")
-    # seqs = markers.get_marker_flanks()
-    #
-    # # Find homologs for each marker and write them to a unique fasta file per marker
-    # logger.info("Finding homeologs/duplications by sequence homology ...")
-    # markers.find_homologs(seqs)
-    #
-    # if vcf_hook is not None:
-    #     logger.info("Uploading the VCF file ...")
-    #     markers.upload_mutations(vcf_hook)  # Upload mutations for each markers from a VCF file (if provided)
-    #
-    #     # Write subjects containing alternative alleles for each mutations
-    #     if args.report_alts:
-    #         args.report_alts = join(out_path, args.output + "_altlist.txt")
-    #         logger.info("Writing subjects with alternative alleles -> {}".format(args.report_alts))
-    #
-    #         if os.path.exists(args.report_alts):
-    #             os.remove(args.report_alts)
-    #
-    #         markers.print_alt_subjects(
-    #             vcf_obj=vcf_hook,
-    #             fp=args.report_alts,
-    #         )
 
     # Start the search for candidate KASP primers
     if not args.webapp:

@@ -9,8 +9,6 @@ import gzip
 # noinspection PyPackageRequirements
 from Bio.Seq import Seq
 from uuid import uuid4
-# noinspection PyPackageRequirements
-from Bio import SeqIO
 import os
 
 FNULL = open(os.devnull, 'w')
@@ -45,7 +43,8 @@ class BlastDB:
 
         if self.has_fasta:
             if self.fasta.endswith(".gz"):
-                self.uncompress_fasta()
+                pass
+                # self.uncompress_fasta()
 
     def locked_call(self, cmd):
         task_id = str(time.time()) + str(uuid4())
@@ -307,9 +306,12 @@ class BlastDB:
     @staticmethod
     def parse_blastn_output(fp):
 
-        df = pd.read_csv(fp, delim_whitespace=True, header=None)
-        df.columns = ["qname", "schr", "pct_id", "alen", "amis", "agap", "qstart", "qstop", "sstart", "sstop",
-                      "evalue", "bitscore", "qseq", "sseq", "slen"]
+        try:
+            df = pd.read_csv(fp, delim_whitespace=True, header=None)
+            df.columns = ["qname", "schr", "pct_id", "alen", "amis", "agap", "qstart", "qstop", "sstart", "sstop",
+                          "evalue", "bitscore", "qseq", "sseq", "slen"]
+        except pd.errors.EmptyDataError:
+            df = None
 
         return df
 

@@ -15,6 +15,7 @@ cli_kasp.main(strcmd=" ".join([
     KWARGS["out"],
     KWARGS["ref_sample"],
     "--report_alts",
+    "--webapp",
     "--debug",
 ]))
 
@@ -23,7 +24,6 @@ cli_kasp.main(strcmd=" ".join([
     KWARGS["marker_tomato"],
     KWARGS["out"],
     KWARGS["ref_tomato"],
-    "--webapp",
     "--debug",
 ]))
 

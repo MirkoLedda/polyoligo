@@ -11,7 +11,7 @@ from copy import deepcopy
 import yaml
 import cProfile
 
-from . import lib_blast, _lib_pcr, _logger_config, lib_utils, lib_vcf, _version, logo
+from . import lib_blast, lib_markers, _lib_pcr, _logger_config, lib_utils, lib_vcf, _version, logo
 
 __version__ = _version.__version__
 
@@ -22,16 +22,7 @@ BINARIES = {
 }
 
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "data/PRIMER3_PCR.yaml")
-MARKER_FLANKING_N = 50  # Number of nucleotides on each sides when retrieving the sequence flanking the marker
-MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
-MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
-HOMOLOG_FLANKING_N = 250  # Number of nucleotides on each sides of the SNP when retrieving homolog sequences
 WEBAPP_MAX_N = 100  # Limit for the number of markers to be designed when using the webapp mode
-
-
-def cprofile_worker(kwargs):
-    """Wrapper to cProfile subprocesses."""
-    cProfile.runctx('_lib_pcr.main(kwargs)', globals(), locals(), 'profile_{}.out'.format(kwargs["roi"].name))
 
 
 def parse_args(inputargs):
@@ -225,30 +216,27 @@ def main(strcmd=None):
         sys.exit(1)
     bin_path = BINARIES[curr_os]
 
-    # Init the BlastDB
-    blast_db = lib_blast.BlastDB(
+    # Initialize hooks
+    blast_hook = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
         job_id="main",
-        n_cpu=args.n_tasks,
+        n_cpu=1,
     )
 
+    malign_hook = lib_blast.Muscle(path_temporary=blast_hook.temporary, exe=bin_path)
+
+    if args.vcf == "":
+        vcf_hook = None
+    else:
+        logger.info("Loading VCF information ...")
+        vcf_hook = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
+
     # Build the BlastDB if a fasta was provided
-    if not blast_db.has_db:
+    if not blast_hook.has_db:
         logger.info("Converting the input reference genome to BlastDB ...")
-        blast_db.fasta2db()
-
-    # Make a FASTA reference genome if fast mode is activated
-    if not blast_db.has_fasta:
-        logger.info("Converting the input reference genome to FASTA ...")
-        blast_db.db2fasta()
-
-    logger.info("Loading and indexing the genome ... this may take a while")
-    blast_db.load_fasta()
-
-    # Init the MUSCLE aligner
-    muscle = lib_blast.Muscle(path_temporary=blast_db.temporary, exe=bin_path)
+        blast_hook.fasta2db()
 
     # Read primer3 configs
     primer3_configs = {}
@@ -263,52 +251,27 @@ def main(strcmd=None):
             if k not in primer3_configs.keys():  # overwrite only if not set
                 primer3_configs[k] = v
 
-    # Init a VCF object if a file is provided
-    if args.vcf == "":
-        vcf_obj = None
-    else:
-        logger.info("Loading VCF information ...")
-        vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
-
     # Get target sequence
     logger.info("Retrieving target sequence ...")
-    rois = _lib_pcr.ROIs(blast_db=blast_db)
-    rois.upload_file(args.roi)
-    rois.fetch_roi()
+    regions = lib_markers.read_regions(args.roi)
+    iregions = []
 
-    logger.info("Number of targets = {}".format(len(rois.rois)))
+    for region in regions:
+        iregion = lib_markers.Region(
+            chrom=region.chrom,
+            start=region.start,
+            stop=region.stop,
+            blast_hook=blast_hook,
+            malign_hook=malign_hook,
+            vcf_hook=vcf_hook,
+            name=region.name,
+            marker=region.marker,
+            do_print_alt_subjects=args.report_alts,
+        )
+        iregions.append(iregion)
+    regions = iregions
 
-    # Find homologs
-    logger.info("Finding homeologs/duplications by sequence homology ...")
-    rois.find_homologs(
-        MARKER_FLANKING_N=MARKER_FLANKING_N,
-        MIN_ALIGN_LEN=MIN_ALIGN_LEN,
-        MIN_ALIGN_ID=MIN_ALIGN_ID,
-        HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
-    )
-
-    # Upload VCF information
-    if vcf_obj is not None:
-        logger.info("Uploading the VCF file ...")
-        rois.upload_windows_mutations(vcf_obj)  # Upload mutations in the primer regions
-
-        # Write subjects containing alternative alleles for each mutations
-        if args.report_alts:
-            args.report_alts = join(out_path, args.output + "_altlist.txt")
-            logger.info("Writing subjects with alternative alleles -> {}".format(args.report_alts))
-
-            if os.path.exists(args.report_alts):
-                os.remove(args.report_alts)
-
-            rois.print_alt_subjects(
-                vcf_obj=vcf_obj,
-                fp=args.report_alts,
-            )
-
-    # Upload mutations
-    rois.upload_mutations(vcf_obj,
-                          HOMOLOG_FLANKING_N=HOMOLOG_FLANKING_N,
-                          )
+    logger.info("Number of targets = {}".format(len(regions)))
 
     # Start the search for candidate primers
     if not args.webapp:
@@ -316,21 +279,18 @@ def main(strcmd=None):
     else:
         logger.info("Searching for primers ...")
 
-    # Purge sequences from BlastDB
-    blast_db.purge()
-
     # Initialize a list of kwargs for the worker and a job queue
+    if vcf_hook:
+        vcf_hook.stop_reader()
+
     kwargs_worker = []
 
-    for roi in rois.rois:
-        blast_db.job_id = roi.name  # To make sure files are not overwritten during multiprocessing
-        blast_db.n_cpu = 1  # Blast should now only use 1 thread as we will be spawning jobs
+    for region in regions:
+        blast_hook.job_id = region.name  # To make sure files are not overwritten during multiprocessing
 
         kwarg_dict = {
-            "roi": roi,
-            "fp_base_out": join(temp_path, roi.name),
-            "blast_db": blast_db,
-            "muscle": muscle,
+            "region": region,
+            "fp_base_out": join(temp_path, region.name),
             "n_primers": args.n_primers,
             "p3_search_depth": args.depth,
             "tm_delta": args.tm_delta,
@@ -339,6 +299,7 @@ def main(strcmd=None):
             "primer3_configs": primer3_configs,
             "debug": args.debug,
         }
+
         kwargs_worker.append(deepcopy(kwarg_dict))
 
     # Run the job queue
@@ -347,7 +308,7 @@ def main(strcmd=None):
         with mp.Pool(processes=args.n_tasks, maxtasksperchild=1) as p:
             if args.debug:
                 _ = list(tqdm.tqdm(
-                    p.imap_unordered(cprofile_worker, kwargs_worker),
+                    p.imap_unordered(_lib_pcr.main, kwargs_worker),
                     total=n_jobs,
                 ))
             else:
@@ -360,11 +321,11 @@ def main(strcmd=None):
         logger.info("nanobar - {:d}/{:d}".format(0, len(kwargs_worker)))
         for i, kwargs_job in enumerate(kwargs_worker):
             _lib_pcr.main(kwargs_job)
-            logger.info("nanobar - {:d}/{:d}".format(i, len(kwargs_worker)))
+            logger.info("nanobar - {:d}/{:d}".format(i+1, len(kwargs_worker)))
 
     # Concatenate all primers for all markers into a single report
     logger.info("Preparing report ...")
-    rois.write_reports(join(out_path, args.output))
+    _lib_pcr.write_final_reports(join(out_path, args.output), regions)
 
     if not args.debug:
         shutil.rmtree(temp_path)
