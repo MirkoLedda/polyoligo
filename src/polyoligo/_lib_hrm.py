@@ -268,7 +268,7 @@ def main(kwarg_dict):
     lib_primer3.include_mut_in_included_maps(region.right_roi)
 
     # Combine the maps with the target region
-    region.merge_with_primers()
+    region = region.merge_with_primers()
 
     # Build exclusion maps
     lib_primer3.get_sequence_excluded_regions(region)

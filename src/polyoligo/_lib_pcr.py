@@ -208,7 +208,7 @@ def design_primers(pps_repo, roi, sequence_target=None,
     if sequence_excluded_region is not None:
         primer3_seq_args['SEQUENCE_EXCLUDED_REGION'] = sequence_excluded_region
 
-    p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.start)
+    p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.left_roi.start)
 
     # # List primer sequences that we already have in the repo to make sure we have some diversity
     p_counts = {}
@@ -328,7 +328,7 @@ def main(kwarg_dict):
     lib_primer3.include_mut_in_included_maps(region.right_roi)
 
     # Combine the maps with the target region
-    region.merge_with_primers()
+    region = region.merge_with_primers()
 
     # Build exclusion maps
     lib_primer3.get_sequence_excluded_regions(region)
@@ -358,6 +358,7 @@ def main(kwarg_dict):
             pcr.pps = design_primers(
                 pps_repo=pcr.pps,  # Primer pair repository
                 roi=region,
+                sequence_target=region.p3_sequence_target,
                 sequence_excluded_region=region.p3_sequence_excluded_regions[search_type],
                 n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
             )

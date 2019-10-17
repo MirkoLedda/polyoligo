@@ -58,10 +58,18 @@ class ROI:
             self.n = len(self.seq)
 
         if self.marker is not None:
-            self.seq_alt = np.array(list(self.seq))
-            self.seq_alt[
-            (self.marker.pos1 - self.start):(self.marker.pos1 - self.start + len(self.marker.ref))] = self.marker.alt
-            self.seq_alt = "".join(self.seq_alt)
+            if (self.marker.pos1 >= self.start) and (self.marker.pos1 <= self.stop):
+                self.seq_alt = list(self.seq)
+                astart = self.marker.pos1 - self.start
+                astop = self.marker.pos1 - self.start + self.marker.n
+                lseq = self.seq_alt[:astart]
+                rseq = self.seq_alt[astop:]
+                self.seq_alt = lseq + list(self.marker.alt) + rseq
+                self.seq_alt = "".join(self.seq_alt)
+            else:
+                self.seq_alt = self.seq
+            print(self.seq)
+            print(self.seq_alt)
 
     def map_homologs(self, inner_len, outer_len, min_align_id, min_align_len):
 
@@ -299,7 +307,7 @@ class Marker:
         self.ref = ref_allele
         self.alt = alt_allele
         self.variant = "[{}/{}]".format(self.ref, self.alt)
-        self.n = int(np.max([len(self.ref), len(self.alt)]))
+        self.n = len(self.ref)
 
         if (name is None) or (name == "."):
             self.name = "{}:{}-{}".format(self.chrom, self.pos1, self.pos1)
@@ -337,42 +345,55 @@ class Region(ROI):
         self.right_roi = right_roi
 
     def merge_with_primers(self):
-        if self.marker is not None:
-            self.p3_sequence_target = [[self.marker.pos1-self.left_roi.start, self.marker.n]]
 
-        ix_left = np.arange(self.left_roi.start, self.left_roi.stop+1)
+        # Spawn a new combined region
+        region = Region(
+            chrom=self.chrom,
+            start=self.left_roi.start,
+            stop=self.right_roi.stop,
+            blast_hook=self.blast_hook,
+            malign_hook=self.malign_hook,
+            vcf_hook=self.vcf_hook,
+            name=self.name,
+            marker=self.marker,
+            do_print_alt_subjects=self.do_print_alt_subjects,
+            left_roi=self.left_roi,
+            right_roi=self.right_roi,
+        )
+
+        if region.marker is not None:
+            region.p3_sequence_target = [[region.marker.pos1-region.left_roi.start, region.marker.n]]
+        else:
+            region.p3_sequence_target = [[region.start, region.n]]
+
+        # Combine the inclusion maps
+        ixs = np.arange(region.start, region.stop+1)
+        ix_left = np.arange(region.left_roi.start, region.left_roi.stop+1)
         ix_center = np.arange(self.start, self.stop+1)
-        ix_right = np.arange(self.right_roi.start, self.right_roi.stop+1)
-        ixs = np.unique(np.concatenate([ix_left, ix_center, ix_right]))
+        ix_right = np.arange(region.right_roi.start, region.right_roi.stop+1)
         ix_left = np.intersect1d(ixs, ix_left, return_indices=True)[1]
         ix_center = np.intersect1d(ixs, ix_center, return_indices=True)[1]
         ix_right = np.intersect1d(ixs, ix_right, return_indices=True)[1]
-        base_map = np.repeat(0, len(ixs))
+        base_map = np.repeat(0, region.n)
 
-        self.p3_sequence_included_maps = {}
-        for k in self.left_roi.p3_sequence_included_maps.keys():
+        region.p3_sequence_included_maps = {}
+        for k in region.left_roi.p3_sequence_included_maps.keys():
             mmap = deepcopy(base_map)
-            mmap[ix_left] += ~self.left_roi.p3_sequence_included_maps[k]
+            imap = deepcopy(base_map)
+            mmap[ix_left] += ~region.left_roi.p3_sequence_included_maps[k]
+            imap[ix_left] += 1
             mmap[ix_center] += 1
-            mmap[ix_right] += ~self.right_roi.p3_sequence_included_maps[k]
+            imap[ix_center] += 1
+            mmap[ix_right] += ~region.right_roi.p3_sequence_included_maps[k]
+            imap[ix_right] += 1
+            mmap[imap == 0] += 1  # Exclude unmapped areas
 
-            self.p3_sequence_included_maps[k] = mmap == 0
-
-        # Get the consensus sequence
-        seq = np.repeat("N", len(ixs))
-        seq[ix_left] = np.array(list(self.left_roi.seq))
-        seq[ix_right] = np.array(list(self.right_roi.seq))
-        seq[ix_center] = np.array(list(self.seq))
-        self.seq = "".join(seq)
-        self.n = len(self.seq)
-
-        # TODO make this compatible with indels
-        if self.marker is not None:
-            seq[ix_center] = np.array(list(self.seq_alt))
-            self.seq_alt = "".join(seq)
+            region.p3_sequence_included_maps[k] = mmap == 0
 
         if self.left_roi.mutations is not None:
-            self.mutations = self.left_roi.mutations + self.right_roi.mutations
+            region.mutations = region.left_roi.mutations + region.right_roi.mutations
+
+        return region
 
 
 class PCRproduct:
@@ -441,13 +462,17 @@ class PCRproduct:
                 self.enzymes.append(enzyme)
 
     def get_hrm_temps(self):
-        # TODO THERE IS A BUG HERE AS PRIMERS DO NOT FLANK THE MARKER
-        print(self.roi.start, self.roi.stop, self.roi.marker.pos1)
-        self.hrm = {
-            "ref": lib_utils.round_tidy(get_tm(self.roi.seq), 3),
-            "alt": lib_utils.round_tidy(get_tm(self.roi.seq_alt), 3),
-        }
-        self.hrm["delta"] = lib_utils.round_tidy(np.abs(self.hrm["ref"] - self.hrm["alt"]), 3)
+        # noinspection PyDictCreation
+        self.hrm = {}
+        self.hrm["ref"] = get_tm(self.roi.seq)
+        self.hrm["alt"] = get_tm(self.roi.seq_alt)
+        self.hrm["delta"] = np.abs(self.hrm["ref"] - self.hrm["alt"])
+
+        for k, v in self.hrm.items():
+            if k == "delta":
+                self.hrm[k] = lib_utils.round_tidy(v, 2)
+            else:
+                self.hrm[k] = lib_utils.round_tidy(v, 4)
 
 
 def read_markers(fp):
