@@ -124,7 +124,7 @@ class PrimerPair:
         self.qcode = None  # Heuristic quality code, gives context to the goodness score
         self.enzymes = None  # For CAPS assays
         self.hrm = None  # For HRM
-
+        self.seq_x = None  # Sequence with REF highlighted
 
         # Attributes from PRIMER3
         self.compl_any_th = None

@@ -42,6 +42,7 @@ HEADER = [
     "indels",
     "offtargets",
     "mutations",
+    "PCR_product",
 ]
 
 # Initialize the logger
@@ -322,6 +323,7 @@ def main(kwarg_dict):
         pcr_product = lib_markers.PCRproduct(roi=region, pp=pp)
         pcr_product.get_hrm_temps()
         pp.hrm = pcr_product.hrm
+        pp.seq_x = pcr_product.roi.seq_x
         pruned_pps.append(pp)
 
     pcr.pps = pruned_pps

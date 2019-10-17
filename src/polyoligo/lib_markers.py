@@ -22,6 +22,7 @@ class ROI:
         self.vcf_hook = None  # VCF hook
         self.seq = None  # Sequence of the region
         self.seq_alt = None  # Sequence of the region with the alternative allele if a marker is present
+        self.seq_x = None  # Sequence with 'x' indicating the REF allele location
         self.n = None  # Length of the region
         self.G = None  # Possible genotypes within this region
         self.mutations = None  # List of vcf_lib.Mutation objects in the region
@@ -66,8 +67,10 @@ class ROI:
                 rseq = self.seq_alt[astop:]
                 self.seq_alt = lseq + list(self.marker.alt) + rseq
                 self.seq_alt = "".join(self.seq_alt)
+                self.seq_x = lseq + "x" * self.n + rseq
             else:
                 self.seq_alt = self.seq
+                self.seq_x = self.seq
 
     def map_homologs(self, inner_len, outer_len, min_align_id, min_align_len):
 
