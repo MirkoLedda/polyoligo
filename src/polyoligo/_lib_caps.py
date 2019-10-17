@@ -36,8 +36,8 @@ HEADER = [
     "length",
     "prod_size",
     "allele_cut",
-    "fragment_left",
-    "fragment_right",
+    "fragment_1",
+    "fragment_2",
     "tm",
     "gc_content",
     "n_offtargets",
@@ -294,13 +294,26 @@ def main(kwarg_dict):
     region.right_roi.upload_mutations()
     lib_primer3.include_mut_in_included_maps(region.right_roi)
 
+    # Ensure we have room around the marker
+    region = lib_markers.Region(
+        chrom=region.chrom,
+        start=region.marker.pos1-fragment_min_size,
+        stop=region.marker.pos1+fragment_min_size,
+        blast_hook=region.blast_hook,
+        malign_hook=region.malign_hook,
+        vcf_hook=region.vcf_hook,
+        name=region.name,
+        marker=region.marker,
+        do_print_alt_subjects=region.do_print_alt_subjects,
+        left_roi=region.left_roi,
+        right_roi=region.right_roi,
+    )
+
     # Combine the maps with the target region
     region = region.merge_with_primers()
 
     # Build exclusion maps
     lib_primer3.get_sequence_excluded_regions(region)
-
-    # Print alternative subjects if required TODO
 
     # Design primers
     pcr = PCR(
@@ -334,6 +347,7 @@ def main(kwarg_dict):
                 sequence_target=region.p3_sequence_target,
                 sequence_excluded_region=region.p3_sequence_excluded_regions[search_type],
                 n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
+                max_unique=2,  # This ensure diversity in the output
             )
             n_new = len(pcr.pps) - n_before
             logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)

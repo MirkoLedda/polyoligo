@@ -372,10 +372,7 @@ class Region(ROI):
             right_roi=self.right_roi,
         )
 
-        if region.marker is not None:
-            region.p3_sequence_target = [[region.marker.pos1-region.left_roi.start, region.marker.n]]
-        else:
-            region.p3_sequence_target = [[region.start, region.n]]
+        region.p3_sequence_target = [[self.start - region.left_roi.start, self.n]]
 
         # Combine the inclusion maps
         ixs = np.arange(region.start, region.stop+1)
@@ -431,24 +428,25 @@ class PCRproduct:
         for enzyme in enzymes:
             m = re.findall(re.compile(enzyme["regex"]["F"]), self.roi.seq)
             mi = re.findall(re.compile(enzyme["regex"]["R"]), self.roi.seq)
-            n_cut = len(m) + len(mi)
+            n_cut = np.max([len(m), len(mi)])
 
             ma = re.findall(re.compile(enzyme["regex"]["F"]), self.roi.seq_alt)
             mai = re.findall(re.compile(enzyme["regex"]["R"]), self.roi.seq_alt)
-            n_cut_alt = len(ma) + len(mai)
+            n_cut_alt = np.max([len(ma), len(mai)])
 
             fragl = 0
             fragr = 0
             all_cut = ""
+
             if (n_cut == 1) and (n_cut_alt == 0):
                 for m in re.finditer(re.compile(enzyme["regex"]["F"]), self.roi.seq):
-                    cut_pos = int(np.ceil((m.span()[1]-m.span()[0]))/2)
+                    cut_pos = m.span()[0] + int(np.ceil((m.span()[1]-m.span()[0]))/2)
                     fragl = cut_pos
                     fragr = self.roi.n - cut_pos
                     all_cut = "REF"
 
                 for m in re.finditer(re.compile(enzyme["regex"]["R"]), self.roi.seq):
-                    cut_pos = int(np.ceil((m.span()[1]-m.span()[0]))/2)
+                    cut_pos = m.span()[0] + int(np.ceil((m.span()[1]-m.span()[0]))/2)
                     fragl = cut_pos
                     fragr = self.roi.n - cut_pos
                     all_cut = "REF"
@@ -461,7 +459,7 @@ class PCRproduct:
                     all_cut = "ALT"
 
                 for m in re.finditer(re.compile(enzyme["regex"]["R"]), self.roi.seq_alt):
-                    cut_pos = int(np.ceil((m.span()[1] - m.span()[0])) / 2)
+                    cut_pos = m.span()[0] + int(np.ceil((m.span()[1] - m.span()[0])) / 2)
                     fragl = cut_pos
                     fragr = self.roi.n - cut_pos
                     all_cut = "ALT"

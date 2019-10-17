@@ -270,8 +270,6 @@ def main(kwarg_dict):
     # Build exclusion maps
     lib_primer3.get_sequence_excluded_regions(region)
 
-    # Print alternative subjects if required TODO
-
     # Design primers
     pcr = PCR(
         snp_id=region.marker.name,
@@ -304,6 +302,7 @@ def main(kwarg_dict):
                 sequence_target=region.p3_sequence_target,
                 sequence_excluded_region=region.p3_sequence_excluded_regions[search_type],
                 n_primers=lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN'],
+                max_unique=2,  # This ensure diversity in the output
             )
             n_new = len(pcr.pps) - n_before
             logger_msg += "{:42}: {:3d} pairs\n".format(map_names[search_type], n_new)
