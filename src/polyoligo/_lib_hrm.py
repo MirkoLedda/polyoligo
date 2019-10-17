@@ -49,13 +49,8 @@ logger = logging.getLogger(__name__)
 
 
 class PCR(lib_primer3.PCR):
-    def __init__(self, snp_id, chrom, pos, ref, alt):
-        super().__init__(chrom=chrom)
-        self.snp_id = snp_id
-        self.ref = ref
-        self.alt = alt
-        self.chrom = chrom
-        self.pos = pos
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 def print_report_header(fp):

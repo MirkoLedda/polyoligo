@@ -258,15 +258,24 @@ class PrimerPair:
 
 
 class PCR:
-    def __init__(self, chrom=None, primer_pairs=None, name=None):
+    def __init__(self, chrom=None, primer_pairs=None, name=None, snp_id=None, pos=None, ref=None, alt=None):
         self.chrom = chrom
         self.pps = primer_pairs
         self.pps_classified = {}
         self.pps_pruned = {}
         self.name = name
+        self.snp_id = snp_id
+        self.ref = ref
+        self.alt = alt
+        self.pos = pos
 
         if self.pps is None:
             self.pps = []
+
+        if self.ref == "":
+            self.ref = "*"
+        if self.alt == "":
+            self.alt = "*"
 
     def get_seeds(self):
         for pp in self.pps:

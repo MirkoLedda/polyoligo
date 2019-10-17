@@ -304,6 +304,14 @@ class Marker:
         self.pos1 = int(pos) + 1
         self.ref = ref_allele
         self.alt = alt_allele
+
+        # Handle indel '*' notation
+        if self.ref == "*":
+            self.ref = ""
+
+        if self.alt == "*":
+            self.alt = ""
+
         self.variant = "[{}/{}]".format(self.ref, self.alt)
         self.n = len(self.ref)
 
@@ -312,24 +320,25 @@ class Marker:
         self.name = self.name.replace("_", "-")  # Underscores in the marker name will mess with the algorithm
 
     def assert_marker(self, blast_hook):
-        query = [{
-            "chr": self.chrom,
-            "start": int(self.pos1),
-            "stop": int(self.pos1),
-        }]
+        if self.ref != "":
+            query = [{
+                "chr": self.chrom,
+                "start": int(self.pos1),
+                "stop": int(self.pos1 + self.n - 1),
+            }]
 
-        seq = "N"
-        for _, seq in blast_hook.fetch(query).items():
-            seq = seq.upper()
-            break
+            seq = "N"
+            for _, seq in blast_hook.fetch(query).items():
+                seq = seq.upper()
+                break
 
-        err_msg = None
-        if self.ref != seq:
-            err_msg = "REF allele in the marker file does not match the genomic REF allele.\n" \
-                      "        SNP ID: {} | Marker {} vs Reference {}\n" \
-                      "        Please double check your marker file.".format(self.name, self.ref, seq)
+            err_msg = None
+            if self.ref != seq:
+                err_msg = "REF allele in the marker file does not match the genomic REF allele.\n" \
+                          "        SNP ID: {} | Marker {} vs Reference {}\n" \
+                          "        Please double check your marker file.".format(self.name, self.ref, seq)
 
-        return err_msg
+            return err_msg
 
 
 class Region(ROI):

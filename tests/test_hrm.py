@@ -11,6 +11,15 @@ with open("tests/KWARGS.yaml", "r") as f:
 
 cli_hrm.main(strcmd=" ".join([
     "polyoligo-hrm",
+    KWARGS["marker_indels"],
+    KWARGS["out"],
+    KWARGS["ref_sample"],
+    "--webapp",
+    "--debug",
+]))
+
+cli_hrm.main(strcmd=" ".join([
+    "polyoligo-hrm",
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["ref_sample"],
