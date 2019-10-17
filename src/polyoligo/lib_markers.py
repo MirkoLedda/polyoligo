@@ -68,8 +68,6 @@ class ROI:
                 self.seq_alt = "".join(self.seq_alt)
             else:
                 self.seq_alt = self.seq
-            print(self.seq)
-            print(self.seq_alt)
 
     def map_homologs(self, inner_len, outer_len, min_align_id, min_align_len):
 
