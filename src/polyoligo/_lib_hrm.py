@@ -130,6 +130,7 @@ def print_report(pcr, fp):
                         pp.max_indel_size,
                         offtargets,
                         mutations,
+                        pp.seq_x,
                     ]
                     f.write("{}\n".format(DELIMITER.join([str(x) for x in fields])))
 

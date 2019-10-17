@@ -45,6 +45,7 @@ HEADER = [
     "indels",
     "offtargets",
     "mutations",
+    "PCR_product",
 ]
 
 # Initialize the logger
@@ -153,6 +154,7 @@ def print_report(pcr, fp):
                             pp.max_indel_size,
                             offtargets,
                             mutations,
+                            pp.seq_x,
                         ]
                         f.write("{}\n".format(DELIMITER.join([str(x) for x in fields])))
 
@@ -354,6 +356,7 @@ def main(kwarg_dict):
 
         if len(pcr_product.enzymes) > 0:
             pp.enzymes = pcr_product.enzymes
+            pp.seq_x = pcr_product.roi.seq_x
             pruned_pps.append(pp)
     pcr.pps = pruned_pps
     pcr.classify()  # Classify primers by scores using a heuristic "goodness" score

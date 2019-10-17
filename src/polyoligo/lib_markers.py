@@ -67,7 +67,8 @@ class ROI:
                 rseq = self.seq_alt[astop:]
                 self.seq_alt = lseq + list(self.marker.alt) + rseq
                 self.seq_alt = "".join(self.seq_alt)
-                self.seq_x = lseq + "x" * self.n + rseq
+                self.seq_x = lseq + ["x"] * self.marker.n + rseq
+                self.seq_x = "".join(self.seq_x)
             else:
                 self.seq_alt = self.seq
                 self.seq_x = self.seq
