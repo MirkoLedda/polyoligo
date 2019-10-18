@@ -10,7 +10,7 @@ import os
 # noinspection PyPackageRequirements
 from Bio.Seq import Seq
 
-from . import lib_blast, lib_utils
+from . import lib_blast, lib_utils, scoring
 
 # Default Primer3 globals
 PRIMER3_GLOBALS = {}
@@ -209,52 +209,9 @@ class PrimerPair:
             if m.pos in window:
                 self.max_indel_size = np.max([self.max_indel_size, m.indel_size])
 
-    def score(self):
-        score = 0
-        qcode = ""
-
-        tms = np.array([self.primers[d].tm for d in self.primers.keys()])
-        tms_l1_norm = np.sum(np.abs(tms - np.mean(tms)))
-        if tms_l1_norm <= 5:
-            score += 1
-        else:
-            qcode += "t"
-
-        if len(self.offtargets) == 0:
-            score += 3
-        else:
-            qcode += "O"
-
-        if not self.dimer:
-            score += 1
-        else:
-            qcode += "d"
-
-        max_aafs = np.array([self.primers[d].max_aaf for d in self.primers.keys()])
-        if np.all(max_aafs < 0.1):
-            score += 2
-
-            if np.all(max_aafs == 0):
-                score += 1
-            else:
-                qcode += "m"
-
-        else:
-            qcode += "M"
-
-        if self.max_indel_size < 50:
-            score += 1
-
-            if self.max_indel_size == 0:
-                score += 1
-            else:
-                qcode += "i"
-
-        else:
-            qcode += "I"
-
-        self.goodness = score
-        self.qcode = qcode
+    def score(self, assay_name):
+        score_fnc = scoring.get_score_fnc(assay_name)
+        self.goodness, self.qcode = score_fnc(self)
 
 
 class PCR:
@@ -458,9 +415,9 @@ class PCR:
         for pp in self.pps:
             pp.add_mutations(mutations)
 
-    def classify(self):
+    def classify(self, assay_name):
         for pp in self.pps:
-            pp.score()
+            pp.score(assay_name)
             if pp.goodness not in self.pps_classified.keys():
                 self.pps_classified[pp.goodness] = []
 

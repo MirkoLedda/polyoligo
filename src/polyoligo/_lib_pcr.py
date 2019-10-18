@@ -373,7 +373,7 @@ def main(kwarg_dict):
 
     pcr.check_heterodimerization()  # Check for heterodimerization
     pcr.add_mutations(region.mutations)  # List mutations in primers
-    pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
+    pcr.classify(assay_name="PCR")  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 
     # Print to logger

@@ -327,8 +327,7 @@ def main(kwarg_dict):
         pruned_pps.append(pp)
 
     pcr.pps = pruned_pps
-    # TODO USE AN UPDATED SCORING FUNCTION - SEE BELOW
-    pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
+    pcr.classify(assay_name="HRM")  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 
     # Print to logger
@@ -340,57 +339,6 @@ def main(kwarg_dict):
         fp=fp_base_out,
     )
 
-    # def score(self):
-    #     score = 0
-    #     qcode = ""
-    #
-    #     if self.hrm["delta"] >= 1:
-    #         score += 3
-    #     else:
-    #         qcode += "H"
-    #
-    #     tms = np.array([self.primers[d].tm for d in self.primers.keys()])
-    #     tms_l1_norm = np.sum(np.abs(tms - np.mean(tms)))
-    #     if tms_l1_norm <= 5:
-    #         score += 1
-    #     else:
-    #         qcode += "t"
-    #
-    #     if len(self.offtargets) == 0:
-    #         score += 1
-    #     else:
-    #         qcode += "O"
-    #
-    #     if not self.dimer:
-    #         score += 1
-    #     else:
-    #         qcode += "d"
-    #
-    #     max_aafs = np.array([self.primers[d].max_aaf for d in self.primers.keys()])
-    #     if np.all(max_aafs < 0.1):
-    #         score += 1
-    #
-    #         if np.all(max_aafs == 0):
-    #             score += 1
-    #         else:
-    #             qcode += "m"
-    #
-    #     else:
-    #         qcode += "M"
-    #
-    #     if self.max_indel_size < 50:
-    #         score += 1
-    #
-    #         if self.max_indel_size == 0:
-    #             score += 1
-    #         else:
-    #             qcode += "i"
-    #
-    #     else:
-    #         qcode += "I"
-    #
-    #     self.goodness = score
-    #     self.qcode = qcode
 
 if __name__ == "__main__":
     pass

@@ -116,53 +116,6 @@ class PrimerPair(lib_primer3.PrimerPair):
         else:
             self.alt_dimer = True
 
-    def score(self):
-        score = 0
-        qcode = ""
-
-        tms = np.array([self.primers[d].tm for d in self.primers.keys()])
-        tms_l1_norm = np.sum(np.abs(tms - np.mean(tms)))
-        if tms_l1_norm <= 5:
-            score += 1
-        else:
-            qcode += "t"
-
-        if len(self.offtargets) == 0:
-            score += 3
-        else:
-            qcode += "O"
-
-        if (not self.ref_dimer) and (not self.alt_dimer):
-            score += 1
-        else:
-            qcode += "d"
-
-        max_aafs = np.array([self.primers[d].max_aaf for d in self.primers.keys()])
-        if np.all(max_aafs < 0.1):
-            score += 2
-
-            if np.all(max_aafs == 0):
-                score += 1
-            else:
-                qcode += "m"
-
-        else:
-            qcode += "M"
-
-        if self.max_indel_size < 50:
-            score += 1
-
-            if self.max_indel_size == 0:
-                score += 1
-            else:
-                qcode += "i"
-
-        else:
-            qcode += "I"
-
-        self.goodness = score
-        self.qcode = qcode
-
 
 # noinspection PyPep8Naming
 class PCR(lib_primer3.PCR):
@@ -320,14 +273,6 @@ class PCR(lib_primer3.PCR):
     def add_mutations(self, mutations):
         for pp in self.pps:
             pp.add_mutations(mutations)
-
-    def classify(self):
-        for pp in self.pps:
-            pp.score()
-            if pp.goodness not in self.pps_classified.keys():
-                self.pps_classified[pp.goodness] = []
-
-            self.pps_classified[pp.goodness].append(pp)
 
     def prune(self, n):
         nprim = 0
@@ -545,7 +490,7 @@ def print_report(pcr, fp):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(DELIMITER.join(fields + (len(HEADER)-5) * ["NA"]) + "\n")
+            f.write(DELIMITER.join(fields + (len(HEADER) - 5) * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
@@ -700,8 +645,8 @@ def main(kwarg_dict):
 
     # Make sure the marker region of the primer is made available
     for mmap in hroi.p3_sequence_included_maps.values():
-        start = np.min([1, (hroi.start-lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])])
-        stop = np.max([len(mmap), (hroi.start+lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])])
+        start = np.min([1, (hroi.start - lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])])
+        stop = np.max([len(mmap), (hroi.start + lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"])])
         mmap[start:stop] = True
 
     # Build exclusion maps
@@ -716,7 +661,13 @@ def main(kwarg_dict):
 
     # Loop across marker primers and design valid complementary primers using PRIMER3
     # PCR assay including multiple primer pairs
-    pcr = PCR(hroi.name, hroi.chrom, hroi.marker.pos1, hroi.marker.ref, hroi.marker.alt)
+    pcr = PCR(
+        snp_id=hroi.marker.name,
+        chrom=hroi.chrom,
+        pos=hroi.marker.pos1,
+        ref=hroi.marker.ref,
+        alt=hroi.marker.alt,
+    )
     map_names = {
         "mism_mut": "Variants excluded | Homologs specific",
         "partial_mism_mut": "Variants excluded | Homologs partial spec",
@@ -754,7 +705,7 @@ def main(kwarg_dict):
     pcr.add_reporter_dyes(reporters)  # Add the reporter dye sequence to the primers
     pcr.check_heterodimerization()  # Check for heterodimerization
     pcr.add_mutations(hroi.mutations)  # List mutations in primers
-    pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
+    pcr.classify(assay_name="KASP")  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 
     # Print to logger

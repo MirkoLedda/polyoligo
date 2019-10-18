@@ -373,7 +373,7 @@ def main(kwarg_dict):
             pp.seq_x = pcr_product.roi.seq_x
             pruned_pps.append(pp)
     pcr.pps = pruned_pps
-    pcr.classify()  # Classify primers by scores using a heuristic "goodness" score
+    pcr.classify(assay_name="CAPS")  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
 
     # Print to logger
