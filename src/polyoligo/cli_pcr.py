@@ -94,11 +94,6 @@ def parse_args(inputargs):
              "As priority over '--vcf_include'.",
     )
     parser.add_argument(
-        "--report_alts",
-        action="store_true",
-        help="Report alternative subjects for each mutations in the VCF file? (a VCF file is needed for that option).",
-    )
-    parser.add_argument(
         "--depth",
         metavar="<FLOAT>",
         type=float,
@@ -265,7 +260,6 @@ def main(strcmd=None):
             vcf_hook=vcf_hook,
             name=region.name,
             marker=region.marker,
-            do_print_alt_subjects=args.report_alts,
         )
         iregions.append(iregion)
     regions = iregions

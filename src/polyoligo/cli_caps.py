@@ -95,11 +95,6 @@ def parse_args(inputargs):
              "As priority over '--vcf_include'.",
     )
     parser.add_argument(
-        "--report_alts",
-        action="store_true",
-        help="Report alternative subjects for each mutations in the VCF file? (a VCF file is needed for that option).",
-    )
-    parser.add_argument(
         "--enzymes",
         metavar="<TXT>",
         type=str,
@@ -302,7 +297,6 @@ def main(strcmd=None):
             vcf_hook=vcf_hook,
             name=marker.name,
             marker=marker,
-            do_print_alt_subjects=args.report_alts,
         )
         regions.append(region)
 
