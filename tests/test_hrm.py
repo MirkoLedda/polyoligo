@@ -11,7 +11,7 @@ with open("tests/KWARGS.yaml", "r") as f:
 
 cli_hrm.main(strcmd=" ".join([
     "polyoligo-hrm",
-    KWARGS["marker_indels"],
+    KWARGS["marker"],
     KWARGS["out"],
     KWARGS["ref_sample"],
     "--webapp",
@@ -20,7 +20,7 @@ cli_hrm.main(strcmd=" ".join([
 
 cli_hrm.main(strcmd=" ".join([
     "polyoligo-hrm",
-    KWARGS["marker"],
+    KWARGS["marker_indels"],
     KWARGS["out"],
     KWARGS["ref_sample"],
     "--webapp",
@@ -44,7 +44,6 @@ cli_hrm.main(strcmd=" ".join([
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),
-    "--report_alts",
     "--depth {}".format(KWARGS["depth"]),
     "--tm_delta {}".format(KWARGS["tm_delta"]),
     "--seed {}".format(KWARGS["seed"]),

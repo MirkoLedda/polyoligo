@@ -37,7 +37,6 @@ cli_pcr.main(strcmd=" ".join([
     "-n {}".format(KWARGS["n"]),
     "--vcf {}".format(KWARGS["vcf"]),
     "--vcf_include {}".format(KWARGS["vcf_include"]),
-    "--report_alts",
     "--depth {}".format(KWARGS["depth"]),
     "--tm_delta {}".format(KWARGS["tm_delta"]),
     "--seed {}".format(KWARGS["seed"]),

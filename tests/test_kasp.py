@@ -45,7 +45,6 @@ cli_kasp.main(strcmd=" ".join([
     "--vcf_include {}".format(KWARGS["vcf_include"]),
     "--dye1 {}".format(KWARGS["dye1"]),
     "--dye2 {}".format(KWARGS["dye2"]),
-    "--report_alts",
     "--depth {}".format(KWARGS["depth"]),
     "--tm_delta {}".format(KWARGS["tm_delta"]),
     "--seed {}".format(KWARGS["seed"]),
