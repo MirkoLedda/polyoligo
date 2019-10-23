@@ -15,7 +15,7 @@ cli_pcr.main(strcmd=" ".join([
     KWARGS["out"],
     KWARGS["ref_sample"],
     "--depth 100",
-    "--seed 18",
+    "--seed 14",
     "--webapp",
     "--debug",
 ]))

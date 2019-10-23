@@ -235,10 +235,15 @@ class ROI:
             break
 
         # Compile the mismatch counts into maps
-        match_cnts = np.sum(match_arr, axis=1)
-        maps["all"] = np.repeat(True, tlen)
-        maps["partial_mism"] = match_cnts != n_homeo
-        maps["mism"] = match_cnts == 0
+        if n_homeo == 0:
+            maps["all"] = np.repeat(True, tlen)
+            maps["partial_mism"] = np.repeat(True, tlen)
+            maps["mism"] = np.repeat(True, tlen)
+        else:
+            match_cnts = np.sum(match_arr, axis=1)
+            maps["all"] = np.repeat(True, tlen)
+            maps["partial_mism"] = match_cnts != n_homeo
+            maps["mism"] = match_cnts == 0
 
         chrom = tname.strip().split(":")[0]
         start = int(tname.strip().split(":")[1].split("-")[0])
