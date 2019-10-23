@@ -50,7 +50,7 @@ class gRNA:
 
 # noinspection PyPep8Naming
 class Crispr:
-    def __init__(self, roi, pam, blast_db):
+    def __init__(self, roi, pam, blast_hook):
         self.chrom = roi.strip().split(":")[0]
         self.start = int(roi.strip().split(":")[1].split("-")[0])
         self.end = int(roi.strip().split(":")[1].split("-")[1])
@@ -58,7 +58,7 @@ class Crispr:
         self.pam_len = len(pam)
         self.pam_regex = pam
         self.pam_regex = re.compile(self.pam_regex.replace("N", "[ATGCN]"))
-        self.blast_db = blast_db
+        self.blast_hook = blast_hook
 
         self.seq = None
         self.gRNAs = None
@@ -73,7 +73,7 @@ class Crispr:
             "stop": self.end,
         }]
 
-        seqs = self.blast_db.fetch(query)
+        seqs = self.blast_hook.fetch(query)
         self.seq = list(seqs.values())[0]
         self.seq = self.seq.upper()
 
@@ -154,11 +154,11 @@ class Crispr:
             queries[grna.name] = grna.seq + self.pam
 
         # Forward guide lookup
-        fp_query = join(self.blast_db.temporary, "{}_blast.fa".format(self.blast_db.job_id))
-        fp_out = join(self.blast_db.temporary, "{}_blast.json".format(self.blast_db.job_id))
+        fp_query = join(self.blast_hook.temporary, "{}_blast.fa".format(self.blast_hook.job_id))
+        fp_out = join(self.blast_hook.temporary, "{}_blast.json".format(self.blast_hook.job_id))
         lib_blast.write_fasta(queries, fp_query)
 
-        self.blast_db.blastn(
+        self.blast_hook.blastn(
             fp_query=fp_query,
             fp_out=fp_out,
             word_size=8,
@@ -170,7 +170,7 @@ class Crispr:
             outfmt='"15"',
         )
 
-        hits = self.blast_db.parse_blastn_json(fp_out, min_identity=20)
+        hits = self.blast_hook.parse_blastn_json(fp_out, min_identity=20)
 
         # Remove target site
         offtargets_8mer = {}
@@ -270,11 +270,11 @@ class Crispr:
                     queries[grna.name] = grna.seq[12:] + self.pam
 
             # Forward strand lookup
-            fp_query = join(self.blast_db.temporary, "{}_blast.fa".format(self.blast_db.job_id))
-            fp_out = join(self.blast_db.temporary, "{}_blast.json".format(self.blast_db.job_id))
+            fp_query = join(self.blast_hook.temporary, "{}_blast.fa".format(self.blast_hook.job_id))
+            fp_out = join(self.blast_hook.temporary, "{}_blast.json".format(self.blast_hook.job_id))
             lib_blast.write_fasta(queries, fp_query)
 
-            self.blast_db.blastn(
+            self.blast_hook.blastn(
                 fp_query=fp_query,
                 fp_out=fp_out,
                 word_size=8,
@@ -286,7 +286,7 @@ class Crispr:
                 outfmt='"15"',
             )
 
-            hits = self.blast_db.parse_blastn_json(fp_out, min_identity=10)
+            hits = self.blast_hook.parse_blastn_json(fp_out, min_identity=10)
 
             # Remove target site
             n_8mers = {}
@@ -311,11 +311,11 @@ class Crispr:
                     queries[grna.name] = grna.seq[8:] + self.pam
 
             # Forward strand lookup
-            fp_query = join(self.blast_db.temporary, "{}_blast.fa".format(self.blast_db.job_id))
-            fp_out = join(self.blast_db.temporary, "{}_blast.json".format(self.blast_db.job_id))
+            fp_query = join(self.blast_hook.temporary, "{}_blast.fa".format(self.blast_hook.job_id))
+            fp_out = join(self.blast_hook.temporary, "{}_blast.json".format(self.blast_hook.job_id))
             lib_blast.write_fasta(queries, fp_query)
 
-            self.blast_db.blastn(
+            self.blast_hook.blastn(
                 fp_query=fp_query,
                 fp_out=fp_out,
                 word_size=12,
@@ -327,7 +327,7 @@ class Crispr:
                 outfmt='"15"',
             )
 
-            hits = self.blast_db.parse_blastn_json(fp_out, min_identity=14)
+            hits = self.blast_hook.parse_blastn_json(fp_out, min_identity=14)
 
             # Remove target site
             n_12mers = {}

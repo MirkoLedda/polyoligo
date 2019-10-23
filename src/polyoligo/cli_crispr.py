@@ -141,27 +141,21 @@ def main(strcmd=None):
         sys.exit(1)
     bin_path = BINARIES[curr_os]
 
-    # Init the BlastDB
-    blast_db = lib_blast.BlastDB(
+    # Initialize hooks
+    blast_hook = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
         job_id="main",
-        n_cpu=args.n_tasks,
+        n_cpu=1,
     )
 
+    malign_hook = lib_blast.Muscle(path_temporary=blast_hook.temporary, exe=bin_path)
+
     # Build the BlastDB if a fasta was provided
-    if not blast_db.has_db:
+    if not blast_hook.has_db:
         logger.info("Converting the input reference genome to BlastDB ...")
-        blast_db.fasta2db()
-
-    # Make a FASTA reference genome if fast mode is activated
-    if not blast_db.has_fasta:
-        logger.info("Converting the input reference genome to FASTA ...")
-        blast_db.db2fasta()
-
-    logger.info("Loading and indexing the genome ... this may take a while")
-    blast_db.load_fasta()
+        blast_hook.fasta2db()
 
     # Check that the PAM site is valid
     if not lib_utils.is_dna(args.pam):
@@ -172,7 +166,7 @@ def main(strcmd=None):
     crispr = _lib_crispr.Crispr(
         roi=args.roi,
         pam=args.pam,
-        blast_db=blast_db)
+        blast_hook=blast_hook)
     crispr.fetch_roi()
 
     if args.webapp:
@@ -211,7 +205,7 @@ def main(strcmd=None):
 
     if not args.webapp:
         logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
-        logger.info("Report written to -> {}".format(fp_report))
+        logger.info("Report written to -> {} [{}, {}]".format(join(out_path, args.output) + ".txt", ".bed", ".log"))
     else:
         logger.info("Report ready !")
 
