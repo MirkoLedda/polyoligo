@@ -454,6 +454,66 @@ def caps():
         return render_template('caps.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
 
 
+@app.route('/hrm', methods=['GET', 'POST'])
+def hrm():
+    exe = "polyoligo-hrm"
+    if request.method == 'POST':
+        kwargs_names = ["markers", "reference", "vcf", "vcf_include", "vcf_exclude", "n", "depth", "enzymes",
+                        "fragment_min_size"]
+        kwargs = {}
+        for kwargs_name in kwargs_names:
+            kwargs[kwargs_name] = None
+
+        task_id, dest_folder = create_task_dest()
+        os.makedirs(dest_folder)
+
+        # Marker file
+        kwargs["markers"] = join(dest_folder, "markers.txt")
+        markers = request.form.get("markers")
+        with open(kwargs["markers"], "w") as f:
+            f.write(markers)
+
+        # Genome kwargs
+        kwargs, nstrcmd = parse_blastdb_kwargs(kwargs=kwargs, request=request, dest_folder=dest_folder)
+
+        # Other kwargs
+        kwargs["n"] = int(request.form.get("n"))
+        kwargs["depth"] = request.form.get("depth")
+        kwargs["depth"] = DEPTH_MAP[kwargs["depth"]]
+        kwargs["seed"] = int(request.form.get("seed"))
+
+        offtarget_size = parse_range(request.form.get("offtarget_size"))
+        kwargs["offtarget_min_size"] = offtarget_size[0]
+        kwargs["offtarget_max_size"] = offtarget_size[1]
+
+        strcmd = [
+            exe,
+            kwargs["markers"],
+            join(dest_folder, "output"),
+            kwargs["reference"],
+            "-n {}".format(kwargs["n"]),
+            "--depth {}".format(kwargs["depth"]),
+            "--seed {}".format(kwargs["seed"]),
+            "--offtarget_min_size {}".format(kwargs["offtarget_min_size"]),
+            "--offtarget_max_size {}".format(kwargs["offtarget_max_size"]),
+            "-nt 1",
+            "--webapp",
+        ]
+
+        strcmd += nstrcmd
+        strcmd = " ".join(strcmd)
+        log = Log(dest_folder)
+        log.message("File(s) successfully uploaded ...")
+        log.message("Job started ...")
+        log.write()
+
+        run_task.delay(strcmd, dest_folder)
+
+        return redirect(url_for('processing', task_id=task_id))
+    else:
+        return render_template('hrm.html', blastdb_options=app.config["BLASTDB_OPTIONS"])
+
+
 @app.route('/crispr', methods=['GET', 'POST'])
 def crispr():
     exe = "polyoligo-crispr"
