@@ -70,6 +70,7 @@ setup(
             'polyoligo-crispr = polyoligo.cli_crispr:main',
             'polyoligo-pcr = polyoligo.cli_pcr:main',
             'polyoligo-caps = polyoligo.cli_caps:main',
+            'polyoligo-hrm = polyoligo.cli_hrm:main',
         ]
     },
 
