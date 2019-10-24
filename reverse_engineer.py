@@ -12,7 +12,7 @@ import numpy as np
 import yaml
 
 # noinspection PyProtectedMember
-from src.polyoligo import cli_kasp, lib_blast, _lib_kasp, _lib_markers, lib_utils, lib_vcf, _logger_config, lib_primer3
+from src.polyoligo import cli_kasp, lib_blast, _lib_kasp, lib_markers, lib_utils, lib_vcf, _logger_config, lib_primer3
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -20,11 +20,10 @@ BINARIES = {
     "win": join(os.path.dirname(__file__), "src/polyoligo", "bin/win_x64"),
 }
 
-HOMOLOG_FLANKING_N = cli_kasp.HOMOLOG_FLANKING_N
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "src/polyoligo/data/PRIMER3_KASP.yaml")
 
 
-class Marker(_lib_markers.Marker):
+class Marker(lib_markers.Marker):
     def __init__(self, chrom, pos, ref_allele, alt_allele, name=None):
         super().__init__(chrom, pos, ref_allele, alt_allele, name)
         self.pp = None
@@ -69,7 +68,7 @@ class Marker(_lib_markers.Marker):
         return pcr
 
 
-class Markers(_lib_markers.Markers):
+class Markers(lib_markers.Marker):
     def __init__(self, blast_db, **kwargs):
         super().__init__(blast_db, **kwargs)
         self.markers = []
