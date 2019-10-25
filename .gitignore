@@ -22,3 +22,4 @@ webapp/setup/
 webapp/trash/
 webapp/log.txt
 footprinting/footprinting_data/
+scratch.py
