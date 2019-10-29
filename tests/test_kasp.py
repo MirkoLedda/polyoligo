@@ -23,8 +23,7 @@ cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
     KWARGS["marker"],
     KWARGS["out"],
-    "sample_data/blastdb.fa.gz",
-    "--report_alts",
+    KWARGS["ref_fasta_sample"],
 ]))
 
 cli_kasp.main(strcmd=" ".join([
@@ -60,5 +59,4 @@ cli_kasp.main(strcmd=" ".join([
     "--offtarget_max_size {}".format(KWARGS["offtarget_max_size"]),
     "--primer3 {}".format(KWARGS["primer3_kasp"]),
     "-nt {}".format(KWARGS["nt"]),
-    "--debug",
 ]))

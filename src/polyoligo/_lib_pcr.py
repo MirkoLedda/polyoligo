@@ -60,40 +60,6 @@ def write_final_reports(fp_base_out, rois):
                         f.write(line)
 
 
-def map_homologs(fp_aligned, target_name, target_len):
-    seqs = lib_blast.read_fasta(fp_aligned)
-    target_seq = seqs[target_name]
-    del seqs[target_name]
-
-    n_homeo = len(seqs)
-    match_arr = np.tile(np.nan, (target_len, n_homeo))
-
-    # Count mismatches
-    homeo_id = 0
-    for chrom, seq in seqs.items():
-        j = 0  # Index in the original sequence without gaps
-        for i, nuc in enumerate(target_seq):
-            if nuc == "-":
-                continue
-            elif nuc == "N":  # Ns are considered matches
-                match_arr[j, homeo_id] = 1
-                j += 1
-            elif nuc == seq[i]:
-                match_arr[j, homeo_id] = 1
-                j += 1
-            else:
-                match_arr[j, homeo_id] = 0
-                j += 1
-        homeo_id += 1
-
-    # Compile the mismatch counts into maps
-    match_cnts = np.sum(match_arr, axis=1)
-    partial_mismatch = match_cnts != n_homeo
-    full_mismatch = match_cnts == 0
-
-    return partial_mismatch, full_mismatch
-
-
 def print_report_header(fp):
     header = DELIMITER.join(HEADER)
 

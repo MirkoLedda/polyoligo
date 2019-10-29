@@ -20,6 +20,13 @@ cli_hrm.main(strcmd=" ".join([
 
 cli_hrm.main(strcmd=" ".join([
     "polyoligo-hrm",
+    KWARGS["marker"],
+    KWARGS["out"],
+    KWARGS["ref_fasta_sample"],
+]))
+
+cli_hrm.main(strcmd=" ".join([
+    "polyoligo-hrm",
     KWARGS["marker_indels"],
     KWARGS["out"],
     KWARGS["ref_sample"],
@@ -51,5 +58,4 @@ cli_hrm.main(strcmd=" ".join([
     "--offtarget_max_size {}".format(KWARGS["offtarget_max_size"]),
     "--primer3 {}".format(KWARGS["primer3_hrm"]),
     "-nt {}".format(KWARGS["nt"]),
-    "--debug",
 ]))
