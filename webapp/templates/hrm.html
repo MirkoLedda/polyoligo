@@ -2,7 +2,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    CAPS
+    HRM
 {% endblock %}
 
 {% block head %}
@@ -11,7 +11,7 @@
 
 {% block content %}
     <!-- KWARGS form -->
-    <form id="hrm" method="POST" action="{{ url_for('caps') }}" enctype="multipart/form-data">
+    <form id="hrm" method="POST" action="{{ url_for('hrm') }}" enctype="multipart/form-data">
         <div class="mandatory">
             <label>Input markers <i>(Limited to 100 max)</i></label> <i>- One marker per line with columns CHR POS NAME REF ALT.</i><br>
             <textarea type="textarea" name="markers" rows="10" width="100%" placeholder="CHR POS NAME[use . if NA] REF ALT"></textarea><br><br>
