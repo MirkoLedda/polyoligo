@@ -5,14 +5,11 @@ import sys
 import multiprocessing as mp
 import logging
 import pandas as pd
-from copy import deepcopy
-import tqdm
-import shutil
 import numpy as np
 import yaml
 
 # noinspection PyProtectedMember
-from src.polyoligo import cli_kasp, lib_blast, _lib_kasp, lib_markers, lib_utils, lib_vcf, _logger_config, lib_primer3
+from src.polyoligo import lib_blast, _lib_kasp, lib_markers, lib_utils, lib_vcf, _logger_config, lib_primer3
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -23,125 +20,106 @@ BINARIES = {
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "src/polyoligo/data/PRIMER3_KASP.yaml")
 
 
-class Marker(lib_markers.Marker):
-    def __init__(self, chrom, pos, ref_allele, alt_allele, name=None):
-        super().__init__(chrom, pos, ref_allele, alt_allele, name)
-        self.pp = None
+def process_markers(fp, blast_hook, vcf_hook, reporters, fp_out):
+    df = pd.read_csv(fp, delim_whitespace=True, header=None)
+    df.columns = ["name", "chr", "pos", "ref", "alt", "start", "stop", "dir", "type", "id", "seq"]
 
-    def add_primers(self, pp_dir, starts, stops, seqs):
-        if pp_dir == "F":
-            self.start = starts["REF"]
-            self.stop = stops["COM"]
-        else:
-            self.start = starts["COM"]
-            self.stop = stops["REF"]
+    assays = {}
+    pcrs = []
+    rois = []
 
-        self.pp = _lib_kasp.PrimerPair()
+    for _, row in df.iterrows():
 
-        for d in ["F", "R", "A"]:
-            if d == "A":
-                ptype = "ALT"
-            elif pp_dir == d:
-                ptype = "REF"
+        if pd.isna(row["type"]):
+            continue
+
+        n = "{}-{}".format(row["name"], int(row["id"]))
+
+        if n not in assays.keys():
+            assays[n] = {}
+
+        assays[n]["chr"] = row["chr"]
+        assays[n]["pos"] = row["pos"]
+        assays[n]["ref"] = row["ref"]
+        assays[n]["alt"] = row["alt"]
+
+        # Remove the current reporter dye
+        seq = np.array(list(row["seq"]))
+
+        seqp = []
+        for i, s in enumerate(seq):
+            if s.islower():
+                seqp = seq[i:]
+                break
+        seq = "".join(list(seqp))
+
+        assays[n][row["type"]] = {
+            "start": int(row["start"]),
+            "stop": int(row["stop"]),
+            "dir": row["dir"],
+            "seq": seq.upper(),
+        }
+
+    for n, assay in assays.items():
+        if ("REF" in assay.keys()) and ("ALT" in assay.keys()) and ("COM" in assay.keys()):
+
+            region = [
+                np.min([assay["REF"]["start"], assay["ALT"]["start"], assay["COM"]["start"]]),
+                np.max([assay["REF"]["stop"], assay["ALT"]["stop"], assay["COM"]["stop"]]),
+            ]
+
+            marker = lib_markers.Marker(
+                name=n,
+                chrom=assay["chr"],
+                pos=assay["pos"]-1,
+                ref_allele=assay["ref"],
+                alt_allele=assay["alt"],
+            )
+
+            roi = lib_markers.ROI(
+                name=n,
+                chrom=assay["chr"],
+                start=region[0],
+                stop=region[1],
+                marker=marker,
+                blast_hook=blast_hook,
+                vcf_hook=vcf_hook,
+            )
+
+            roi.upload_mutations()
+
+            pp = _lib_kasp.PrimerPair()
+            if assay["REF"]["dir"] == "F":
+                mapping = {"F": "REF", "R": "COM", "A": "ALT"}
             else:
-                ptype = "COM"
+                mapping = {"F": "COM", "R": "REF", "A": "ALT"}
 
-            self.pp.primers[d].start = starts[ptype]
-            self.pp.primers[d].stop = stops[ptype]
-            self.pp.primers[d].sequence = seqs[ptype]
+            for d in ["F", "R", "A"]:
+                pp.primers[d].start = assay[mapping[d]]["start"]
+                pp.primers[d].stop = assay[mapping[d]]["stop"]
+                pp.primers[d].sequence = assay[mapping[d]]["seq"]
+            pp.dir = assay["REF"]["dir"]
+            pp.chrom = roi.chrom
 
-        self.pp.chrom = self.chrom
-        self.pp.dir = pp_dir
-        self.pp.product_size = self.stop - self.start + 1
+            pcr = _lib_kasp.PCR(
+                snp_id=roi.marker.name,
+                chrom=roi.chrom,
+                pos=roi.marker.pos1,
+                ref=roi.marker.ref,
+                alt=roi.marker.alt,
+                primer_pairs=[pp],
+            )
 
-    def score_primers(self, fp_reporters, blast_db):
-        pcr = _lib_kasp.PCR(self.name, self.chrom, self.pos, self.ref, self.alt)
-        pcr.pps = [self.pp]
+            _, _ = pcr.check_offtargeting(blast_hook, debug=False)  # Check for off-targets
+            pcr.add_mutations(roi.mutations)
+            pcr.add_reporter_dyes(reporters)  # Add the reporter dye sequence to the primers
+            pcr.check_heterodimerization()  # Check for heterodimerization
+            pcr.classify(assay_name="KASP")  # Classify primers by scores using a heuristic "goodness" score
+            pcr.prune(np.inf)
+            pcrs.append(pcr)
+            rois.append(roi)
 
-        pcr.check_offtargeting(blast_db)
-        pcr.add_mutations(self.mutations)
-        pcr.add_reporter_dyes(fp_reporters)
-        pcr.check_heterodimerization()
-        pcr.classify()
-        pcr.prune(n=np.inf)
-
-        return pcr
-
-
-class Markers(lib_markers.Marker):
-    def __init__(self, blast_db, **kwargs):
-        super().__init__(blast_db, **kwargs)
-        self.markers = []
-
-    def read_markers(self, fp):
-        df = pd.read_csv(fp, delim_whitespace=True, header=None)
-        df.columns = ["name", "chr", "pos", "ref", "alt", "start", "stop", "dir", "type", "id", "seq"]
-
-        marker_names = []
-        starts = {}
-        stops = {}
-        seqs = {}
-        marker = None
-
-        # Each markers spans 3 rows for REF/ALT/COM primers
-        collected_primers = []
-        for i in range(len(df)):
-
-            if pd.isna(df["type"][i]):
-                continue
-
-            if df["type"][i] == "REF":
-                collected_primers.append("REF")
-                starts = {}
-                stops = {}
-                seqs = {}
-
-                marker = Marker(
-                    chrom=df["chr"][i],
-                    pos=df["pos"][i],
-                    ref_allele=df["ref"][i],
-                    alt_allele=df["alt"][i],
-                    name=df["name"][i],
-                )
-
-            if df["type"][i] == "ALT":
-                collected_primers.append("ALT")
-                pp_dir = df["dir"][i]
-
-            if df["type"][i] == "COM":
-                collected_primers.append("COM")
-
-            starts[df["type"][i]] = df["start"][i]
-            stops[df["type"][i]] = df["stop"][i]
-
-            seq = df["seq"][i]
-            seqp = ""
-            flag_get = False
-            for c in seq:
-                if c.islower():
-                    flag_get = True
-
-                if flag_get:
-                    seqp += c
-
-            seqs[df["type"][i]] = seqp.upper()
-
-            if len(collected_primers) == 3:
-                # Check for duplicate names in the markers
-                j = 0
-                n = marker.name
-                while True:
-                    if n in marker_names:
-                        n = marker.name + "_{:d}".format(j)
-                        j += 1
-                    else:
-                        marker.name = n
-                        marker_names.append(marker.name)
-                        break
-                marker.add_primers(pp_dir, starts, stops, seqs)
-                self.markers.append(deepcopy(marker))
-
-                collected_primers = []
+    return rois, pcrs
 
 
 def parse_args(inputargs):
@@ -315,26 +293,20 @@ def main():
         sys.exit()
     bin_path = BINARIES[curr_os]
 
-    # Init the BlastDB
-    blast_db = lib_blast.BlastDB(
+    # Initialize hooks
+    blast_hook = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
         job_id="main",
-        n_cpu=args.n_tasks,
+        n_cpu=1,
     )
 
-    # Build the BlastDB if a fasta was provided
-    if not blast_db.has_db:
-        logger.info("Converting the input reference genome to BlastDB ...")
-        blast_db.fasta2db()
-
-    # Make a FASTA reference genome if fast mode is activated
-    if not blast_db.has_fasta:
-        logger.info("Converting the input reference genome to FASTA ...")
-        blast_db.db2fasta()
-
-    blast_db.load_fasta()
+    if args.vcf == "":
+        vcf_hook = None
+    else:
+        logger.info("Loading VCF information ...")
+        vcf_hook = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
 
     # Read primer3 configs
     primer3_configs = {}
@@ -364,56 +336,19 @@ def main():
             logger.error("Reporter dyes DNA sequence incorrect: {}".format(reporter))
             sys.exit(1)
 
-    # Init Markers object
-    markers = Markers(
-        blast_db=blast_db
+    rois, pcrs = process_markers(
+        fp=args.markers,
+        blast_hook=blast_hook,
+        vcf_hook=vcf_hook,
+        reporters=reporters,
+        fp_out=join(out_path, args.output),
     )
 
-    # Read markers
-    markers.read_markers(args.markers)
-    logger.info("Number of target markers = {}".format(len(markers)))
+    for pcr in pcrs:
+        _lib_kasp.print_report(pcr, join(temp_path, pcr.snp_id))
+        break
 
-    # Init a VCF object if a file is provided
-    if args.vcf == "":
-        vcf_obj = None
-    else:
-        logger.info("Loading VCF information ...")
-        vcf_obj = lib_vcf.VCF(fp=args.vcf, fp_inc_samples=args.vcf_include, fp_exc_samples=args.vcf_exclude)
-
-    markers.upload_mutations(vcf_obj)  # Upload mutations for each markers from a VCF file (if provided)
-
-    # Purge sequences from BlastDB
-    blast_db.purge()
-
-    # Start the search for candidate KASP primers
-    logger.info("Scoring KASP candidates using {} parallel processes ...".format(args.n_tasks))
-
-    # Initialize a list of kwargs for the worker and a job queue
-    kwargs_worker = []
-
-    for marker in markers.markers:
-        blast_db.job_id = marker.name  # To make sure files are not overwritten during multiprocessing
-        blast_db.n_cpu = 1  # Blast should now only use 1 thread as we will be spawning jobs
-
-        kwarg_dict = {
-            "marker": marker,
-            "fp_out": join(temp_path, marker.name),
-            "fp_reporters": reporters,
-            "blast_db": blast_db,
-        }
-        kwargs_worker.append(deepcopy(kwarg_dict))
-
-    # Run the job queue
-    n_jobs = len(kwargs_worker)
-    with mp.Pool(processes=args.n_tasks, maxtasksperchild=1) as p:
-        _ = list(tqdm.tqdm(p.imap_unordered(score_marker, kwargs_worker), total=n_jobs, disable=args.silent))
-
-    # Concatenate all primers for all markers into a single report
-    logger.info("Preparing report ...")
-    markers.write_kasp_reports(join(out_path, args.output))
-
-    if not args.debug:
-        shutil.rmtree(temp_path)
+    _lib_kasp.write_final_reports(join(out_path, args.output), rois)
 
     logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
     logger.info("Report written to -> {} [{}, {}]".format(join(out_path, args.output) + ".txt", ".bed", ".log"))

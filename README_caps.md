@@ -26,7 +26,7 @@ polyoligo-caps sample_data/markers.txt out sample_data/blastdb --vcf sample_data
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: A text file containing the target markers for the CAPS assay as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
+**`<INPUT>`**: A text file containing target markers as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
 
 **`<OUTPUT>`**: The base name of the output files.
 
@@ -65,7 +65,7 @@ Two output files are produced:
 |`start`|Primer start position in the genome|
 |`end`|Primer end position in the genome|
 |`direction`|Direction of the primer as F/R for forward/reverse, respectively|
-|`assay_id`|ID of the CAPS assay|
+|`assay_id`|ID of the assay|
 |`seq5_3`|Sequence of the primer in a 5'-3' direction|
 |`seq_5_3_ambiguous`|Sequence of the primer in a 5'-3' direction with ambiguous nucleotides for mutations (no indels)|
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
@@ -82,6 +82,4 @@ Two output files are produced:
 |`indels`|Length of any indels located in the target PCR product|
 |`offtargets`|Comma-separated list of expected off-target PCR products. If larger than 5, then this list is not exhaustive|
 |`mutations`|Comma-separated list of mutations located in the primers and reported as [REF/ALT:AAF]|
-
-### Optional output files
-Optionally, a list of all subjects containing alternative alleles can be requested using the flag `--report_alts`, if a VCF file if provided. The list will be reported in `<OUTPUT>_altlist.txt`. Each mutation is listed in a pseudo-FASTA format as `>REFPOSALT`, similar to what is reported in the standard output but without allele frequencies. The first and second lines list all hets and homozygotes, respectively. This file can be used to investigate markers where no primers exempt of mutations exists.
+|`PCR_product`|Sequence of the entire PCR product with `x` masking the location of the REF allele|

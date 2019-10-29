@@ -24,7 +24,7 @@ tm_delta: 10
 n: 200
 depth: 1
 seed: 13
-offtarget_min_size: 100
+offtarget_min_size: 500
 offtarget_max_size: 1000
 primer3_pcr: "src/polyoligo/data/PRIMER3_PCR.yaml"
 primer3_caps: "src/polyoligo/data/PRIMER3_CAPS.yaml"

@@ -21,6 +21,14 @@ cli_kasp.main(strcmd=" ".join([
 
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
+    KWARGS["marker"],
+    KWARGS["out"],
+    "sample_data/blastdb.fa.gz",
+    "--report_alts",
+]))
+
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
     KWARGS["marker_tomato"],
     KWARGS["out"],
     KWARGS["ref_tomato"],

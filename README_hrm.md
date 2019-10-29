@@ -1,32 +1,32 @@
-# `polyoligo-pcr`
+# `polyoligo-hrm`
 
 ## Usage
 
 ### General usage and available options
 
 ```
-polyoligo-pcr <INPUT> <OUTPUT> <BLASTDB> <OPTIONS>
+polyoligo-hrm <INPUT> <OUTPUT> <BLASTDB> <OPTIONS>
 ```
 
 For a list of all available options and their descriptions, type:
 
 ```
-polyoligo-pcr -h
+polyoligo-hrm -h
 ```
 
 > Recommendations (when applicable) are given in the option caption. Note that switches, i.e. boolean options that do not need arguments, have defaults set to `False`.
 
 ### Example usage
-In the following example, primer pairs will be designed by considering both homologs and mutations within a selected subset population:
+In the following example, HRM primers will be designed by considering both homologs and mutations within a selected subset population:
 
 ```
-polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
+polyoligo-hrm sample_data/markers.txt out sample_data/blastdb --vcf sample_data/vcf.txt.gz --vcf_include sample_data/vcf_include.txt
 ```
 
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: Regions of interest declared as CHR:START-END NAME(optional).
+**`<INPUT>`**: A text file containing target markers as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
 
 **`<OUTPUT>`**: The base name of the output files.
 
@@ -42,28 +42,36 @@ Optional files include:
 
 **`--primer3`**: YAML configuration file for Primer3. All Primer3 arguments can be set here. See this [example file](sample_data/primer3_example.yaml).
 
+**`--enzymes`**: List of restriction enzymes to consider. Can be useful to restrict the search to in stock enzymes only. See this [example file](sample_data/enzymes.txt).
+
 ### Outputs
 Two output files are produced:
 
 **`<OUTPUT>.log`**: A log file which contain details on the number of valid primers found during each search and for each marker.
 
-**`<OUTPUT>.bed`** Primer pairs reported in BED format for use with genome browsers. Names are composites of `<primer_id>-<goodness>` (see below).
+**`<OUTPUT>.bed`** HRM primers reported in BED format for use with genome browsers. Names are composites of `<primer_id>-<goodness>` (see below).
 
-**`<OUTPUT>.txt`** Primer pairs reported as a space-separated list with the following columns:
+**`<OUTPUT>.txt`** HRM primers reported as a space-separated list with the following columns:
 
 |Column|Description|
 |---|---|
-|`name`|Target name|
+|`marker`|SNP ID/label|
 |`chr`|Chromosome|
+|`pos`|Position|
+|`ref`|Reference allele|
+|`alt`|Alternative allele|
+|`delta_Tm`|Approximate difference in melting temperature between the REF and ALT alleles.|
+|`ref_Tm`|Melting temperature of the REF allele PCR product. This is approximate as the temperature will drastically change based on PCR assay conditions|
+|`alt_Tm`|Melting temperature of the ALT allele PCR product. This is approximate as the temperature will drastically change based on PCR assay conditions|
 |`start`|Primer start position in the genome|
 |`end`|Primer end position in the genome|
 |`direction`|Direction of the primer as F/R for forward/reverse, respectively|
-|`assay_id`|ID of the primer pairs|
+|`assay_id`|ID of the assay|
 |`seq5_3`|Sequence of the primer in a 5'-3' direction|
 |`seq_5_3_ambiguous`|Sequence of the primer in a 5'-3' direction with ambiguous nucleotides for mutations (no indels)|
-|`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
+|`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time|
 |`goodness`|Heuristic goodness score based on multiple criteria. Maximum score is 10|
-|`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings <br>t = Bad TM<br>O = Off-targets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|
+|`qcode`|Quality code containing warnings about the assay. Characters mean the following:<br>. =  No warnings<br>h=Melting temp difference between 1°C and 0.5°C<br>H=Melting temp difference below 0.5°C<br>t = Bad TM<br>O = Off-targets<br>d = Heterodimerization<br>m/M = Mutations with allele frequencies >0/>0.1<br>i/I = Indels larger than 0/50 nucleotides|
 |`length`|Primer length|
 |`prod_size`|Expected PCR product size|
 |`tm`|Predicted primer melting temperature (based on a NN thermodynamic model with SantaLucia et al, 1998 parameters)|
@@ -73,3 +81,4 @@ Two output files are produced:
 |`indels`|Length of any indels located in the target PCR product|
 |`offtargets`|Comma-separated list of expected off-target PCR products. If larger than 5, then this list is not exhaustive|
 |`mutations`|Comma-separated list of mutations located in the primers and reported as [REF/ALT:AAF]|
+|`PCR_product`|Sequence of the entire PCR product with `x` masking the location of the REF allele|

@@ -11,8 +11,9 @@ A webapp version of this software is coming soon !
 ## Included binaries (click on the command for more information)
 
 * [**`polyoligo-pcr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_pcr.md): Standard PCR or Sanger sequencing primers.
-* [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_kasp.md): Genotyping by sequencing using the Kompetitive allele specific PCR (KASP) method.
-* [**`polyoligo-caps`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_caps.md): Genotyping by sequencing using the Cleaved Amplified Polymorphic Sequences (CAPS) method.
+* [**`polyoligo-kasp`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_kasp.md): Genotyping by Kompetitive allele specific PCR (KASP).
+* [**`polyoligo-caps`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_caps.md): Genotyping by Cleaved Amplified Polymorphic Sequences (CAPS).
+* [**`polyoligo-hrm`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_hrm.md): Genotyping by high-resolution melting (HRM) PCR.
 * [**`polyoligo-crispr`**](https://github.com/MirkoLedda/polyoligo/blob/master/README_crispr.md): Guide RNAs for CRISPR/Cas9 assays.
 
 ## Getting Started

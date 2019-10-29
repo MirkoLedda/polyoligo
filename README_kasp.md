@@ -26,7 +26,7 @@ polyoligo-kasp sample_data/markers.txt out sample_data/blastdb --vcf sample_data
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: A text file containing the target markers for the KASP assay as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
+**`<INPUT>`**: A text file containing target markers as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
 
 **`<OUTPUT>`**: The base name of the output files.
 
@@ -62,7 +62,7 @@ Two output files are produced:
 |`end`|Primer end position in the genome|
 |`direction`|Direction of the primer as F/R for forward/reverse, respectively|
 |`type`|Primer type as REF/ALT/COM for reference allele/alternative allele/common primer|
-|`assay_id`|ID of the KASP assay|
+|`assay_id`|ID of the assay|
 |`seq5_3`|Sequence of the primer in a 5'-3' direction with the reporters|
 |`seq_5_3_ambiguous`|Sequence of the primer in a 5'-3' direction with the reporters and ambiguous nucleotides for mutations (no indels)|
 |`primer_id`|Unique primer identification for each marker. Intended to ensure same primers are not purchased multiple time.|
