@@ -294,33 +294,44 @@ class PCR(lib_primer3.PCR):
 def get_marker_primers(hroi):
     mseq = deepcopy(hroi.seq)
     marker_pos = hroi.marker.pos1 - hroi.start
-    marker_pos_rc = hroi.stop - hroi.marker.pos1
+    marker_pos_rc = hroi.stop - hroi.marker.pos1 + 1
 
     seq = Seq(mseq)
     seq_rc = seq.reverse_complement()
     alt_a = Seq(hroi.marker.alt)
     alt_a_rc = alt_a.reverse_complement()
+    ref_len = len(hroi.marker.ref)
+    alt_len = len(hroi.marker.alt)
+    d = ref_len - alt_len
 
     pps = []
     for padding in range(lib_primer3.PRIMER3_GLOBALS["PRIMER_MIN_SIZE"],
                          lib_primer3.PRIMER3_GLOBALS["PRIMER_MAX_SIZE"] + 1):
-        x2 = marker_pos
-        x1 = x2 - padding
-        y1 = marker_pos_rc
-        y2 = y1 + padding
+        x2 = marker_pos + ref_len
+        x1 = x2 - padding - np.abs(d)
+        y2 = marker_pos_rc
+        y1 = y2 - padding - np.abs(d) - ref_len
 
         for direction in ["F", "R"]:
             if direction == "F":
-                pseq = str(seq[x1:(x2 + 1)])
-                pos_a = len(pseq) - 1  # Position of the allele in the primer
-                pseq_alt = list(pseq)
-                pseq_alt[pos_a] = alt_a[0]
+                cseq = list(str(seq[x1:x2]))
+                calt_a = alt_a
+            else:
+                cseq = list(str(seq_rc[y1:y2]))
+                calt_a = alt_a_rc
+
+            pseq = cseq
+            pos_a = len(pseq) - ref_len  # Position of the allele in the primer
+            pseq_alt = list(pseq)
+            pseq_alt[pos_a:] = calt_a
+
+            if d > 0:
+                pseq = pseq[d:]
+                pseq = "".join(pseq)
                 pseq_alt = "".join(pseq_alt)
             else:
-                pseq = str(seq_rc[y1:(y2 + 1)])
-                pos_a = len(pseq) - 1  # Position of the allele in the primer
-                pseq_alt = list(pseq)
-                pseq_alt[pos_a] = alt_a_rc[0]
+                pseq_alt = pseq_alt[-d:]
+                pseq = "".join(pseq)
                 pseq_alt = "".join(pseq_alt)
 
             ref_p = lib_primer3.Primer(sequence=pseq)
@@ -374,21 +385,33 @@ def print_report(pcr, fp):
                     dyes[d] = pp.primers[d].reporter
 
                 if pp.dir == "F":
-                    seqs["REF"] = pp.primers["F"].sequence[:-1].lower() + pp.primers["F"].sequence[-1]
-                    seqs_amb["REF"] = pp.primers["F"].sequence_ambiguous[:-1].lower() + \
-                                      pp.primers["F"].sequence_ambiguous[-1]
+                    if pcr.ref_n == 0:
+                        seqs["REF"] = pp.primers["F"].sequence.lower()
+                        seqs_amb["REF"] = pp.primers["F"].sequence_ambiguous.lower()
+                    else:
+                        seqs["REF"] = pp.primers["F"].sequence[:-pcr.ref_n].lower() + pp.primers["F"].sequence[-pcr.ref_n:]
+                        seqs_amb["REF"] = pp.primers["F"].sequence_ambiguous[:-pcr.ref_n].lower() + \
+                                          pp.primers["F"].sequence_ambiguous[-pcr.ref_n:]
                     seqs["COM"] = pp.primers["R"].sequence.lower()
                     seqs_amb["COM"] = pp.primers["R"].sequence_ambiguous.lower()
                 else:
                     seqs["COM"] = pp.primers["F"].sequence.lower()
                     seqs_amb["COM"] = pp.primers["F"].sequence_ambiguous.lower()
-                    seqs["REF"] = pp.primers["R"].sequence[:-1].lower() + pp.primers["R"].sequence[-1]
-                    seqs_amb["REF"] = pp.primers["R"].sequence_ambiguous[:-1].lower() + \
-                                      pp.primers["R"].sequence_ambiguous[-1]
+                    if pcr.ref_n == 0:
+                        seqs["REF"] = pp.primers["R"].sequence.lower()
+                        seqs_amb["REF"] = pp.primers["R"].sequence_ambiguous.lower()
+                    else:
+                        seqs["REF"] = pp.primers["R"].sequence[:-pcr.ref_n].lower() + pp.primers["R"].sequence[-pcr.ref_n:]
+                        seqs_amb["REF"] = pp.primers["R"].sequence_ambiguous[:-pcr.ref_n].lower() + \
+                                          pp.primers["R"].sequence_ambiguous[-pcr.ref_n:]
 
-                seqs["ALT"] = pp.primers["A"].sequence[:-1].lower() + pp.primers["A"].sequence[-1]
-                seqs_amb["ALT"] = pp.primers["A"].sequence_ambiguous[:-1].lower() + \
-                                  pp.primers["A"].sequence_ambiguous[-1]
+                if pcr.alt_n == 0:
+                    seqs["ALT"] = pp.primers["A"].sequence.lower()
+                    seqs_amb["ALT"] = pp.primers["A"].sequence_ambiguous.lower()
+                else:
+                    seqs["ALT"] = pp.primers["A"].sequence[:-pcr.alt_n].lower() + pp.primers["A"].sequence[-pcr.alt_n:]
+                    seqs_amb["ALT"] = pp.primers["A"].sequence_ambiguous[:-pcr.alt_n].lower() + \
+                                      pp.primers["A"].sequence_ambiguous[-pcr.alt_n:]
 
                 curr_seq_ids = {}
 

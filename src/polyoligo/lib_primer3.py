@@ -225,6 +225,8 @@ class PCR:
         self.ref = ref
         self.alt = alt
         self.pos = pos
+        self.ref_n = len(ref)
+        self.alt_n = len(alt)
 
         if self.pps is None:
             self.pps = []

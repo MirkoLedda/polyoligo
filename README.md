@@ -4,7 +4,7 @@ Design oligos for complex genomes.
 
 ## What Is It?
 
-A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Can use known **mutations** across populations to refine designs.
+A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Supports **indels** and can use known **mutations** across populations to refine designs.
 
 A webapp version of this software is coming soon !
 

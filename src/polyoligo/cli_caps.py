@@ -57,8 +57,7 @@ def parse_args(inputargs):
              "BOTH: Use the same basename with no extensions.\n"
              "FASTA: Both raw and GZIP compressed files are supported natively (see sample_data/blastdb.fa.gz).\n"
              "BLASTDB: Extensions (e.g. .nsq/.nin/...) are not required, just enter the basename of the "
-             "database (see sample_data/blastdb).\n"
-             "If either is provided, then a conversion will automatically be made to obtain both file types.",
+             "database (see sample_data/blastdb).",
     )
     parser.add_argument(
         "--silent",
