@@ -1,0 +1,7 @@
+This folder contains reference genomes and VCF files. Due to size limitations, those are not deposited in the Github repository.
+
+This should contain the following folders:
+- assemblies: Raw assemblies downloaded from public databases.
+- blastdb: Reference genome in both fasta and blastdb format.
+- VCF: Relevant VCF files.
+- VCF_subsets: List of individuals per Fragaria sub-populations.

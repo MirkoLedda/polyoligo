@@ -12,7 +12,10 @@ temporary/
 .coverage*
 out*
 profile*
-data/**
+data/assemblies/**
+data/blastdb/**
+data/VCF/**
+data/VCF_subsets/**
 test_data/**
 webapp/uploads/
 webapp/__pycache__/

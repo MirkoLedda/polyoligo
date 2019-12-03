@@ -1,0 +1,63 @@
+#name	species	division	taxonomy_id	assembly	assembly_accession	genebuild	variation	pan_compara	peptide_compara	genome_alignments	other_alignments	core_db	species_id
+Actinidia chinensis Red5	actinidia_chinensis	EnsemblPlants	1590841	Red5_PS1_1.69.0	GCA_003024255.1	2018-04ENA	N	N	Y	Y	N	actinidia_chinensis_core_44_97_1	1	
+Aegilops tauschii	aegilops_tauschii	EnsemblPlants	200361	Aet v4.0	GCA_002575655.1	2017-10-UCD	N	N	Y	Y	Y	aegilops_tauschii_core_44_97_3	1	
+Amborella trichopoda	amborella_trichopoda	EnsemblPlants	13333	AMTR1.0	GCA_000471905.1	2014-01-AGD	N	Y	Y	Y	Y	amborella_trichopoda_core_44_97_1	1	
+Arabidopsis halleri	arabidopsis_halleri	EnsemblPlants	63677	Ahal2.2	GCA_900078215.1	2016-09-UZH	N	N	Y	Y	Y	arabidopsis_halleri_core_44_97_1	1	
+Arabidopsis lyrata	arabidopsis_lyrata	EnsemblPlants	81972	v.1.0	GCA_000004255.1	2008-12-JGI	N	N	Y	Y	Y	arabidopsis_lyrata_core_44_97_10	1	
+Arabidopsis thaliana	arabidopsis_thaliana	EnsemblPlants	3702	TAIR10	GCA_000001735.1	2016-06-Araport11	Y	Y	Y	Y	Y	arabidopsis_thaliana_core_44_97_11	1	
+Beta vulgaris	beta_vulgaris	EnsemblPlants	3555	RefBeet-1.2.2	GCA_000511025.2	2015-07-BOKU	N	N	Y	Y	Y	beta_vulgaris_core_44_97_2	1	
+Brachypodium distachyon	brachypodium_distachyon	EnsemblPlants	15368	Brachypodium_distachyon_v3.0	GCA_000005505.4	2018-01-JGI	Y	Y	Y	Y	Y	brachypodium_distachyon_core_44_97_4	1	
+Brassica napus	brassica_napus	EnsemblPlants	3708	AST_PRJEB5043_v1	GCA_000751015.1	2015-09-GSC	N	N	Y	Y	Y	brassica_napus_core_44_97_1	1	
+Brassica oleracea	brassica_oleracea	EnsemblPlants	109376	BOL	GCA_000695525.1	2014-05-CanSeq	N	N	Y	Y	Y	brassica_oleracea_core_44_97_1	1	
+Brassica rapa	brassica_rapa	EnsemblPlants	3711	Brapa_1.0	GCA_000309985.1	2012-03-IVFCAAS	N	N	Y	Y	Y	brassica_rapa_core_44_97_1	1	
+Chlamydomonas reinhardtii	chlamydomonas_reinhardtii	EnsemblPlants	3055	Chlamydomonas_reinhardtii_v5.5	GCA_000002595.3	2018-01-JGI	N	Y	Y	Y	Y	chlamydomonas_reinhardtii_core_44_97_3	1	
+Chondrus crispus	chondrus_crispus	EnsemblPlants	2769	ASM35022v2	GCA_000350225.2	2015-09-Genoscope	N	N	Y	Y	N	chondrus_crispus_core_44_97_1	1	
+Corchorus capsularis	corchorus_capsularis	EnsemblPlants	210143	CCACVL1_1.0	GCA_001974805.1	2017-02-BJRI	N	N	Y	Y	Y	corchorus_capsularis_core_44_97_1	1	
+Cucumis sativus	cucumis_sativus	EnsemblPlants	3659	ASM407v2	GCA_000004075.2	2014-10-BGI	N	N	Y	Y	Y	cucumis_sativus_core_44_97_2	1	
+Cyanidioschyzon merolae	cyanidioschyzon_merolae	EnsemblPlants	280699	ASM9120v1	GCA_000091205.1	2008-11-NIG	N	Y	Y	Y	N	cyanidioschyzon_merolae_core_44_97_1	1	
+Daucus carota	daucus_carota	EnsemblPlants	79200	ASM162521v1	GCA_001625215.1	2016-06-USDA	N	N	Y	Y	Y	daucus_carota_core_44_97_1	1	
+Dioscorea rotundata	dioscorea_rotundata	EnsemblPlants	55577	TDr96_F1_Pseudo_Chromosome_v1.0	GCA_002240015.2	2017-08-IBRC	N	N	Y	Y	Y	dioscorea_rotundata_core_44_97_2	1	
+Galdieria sulphuraria	galdieria_sulphuraria	EnsemblPlants	130081	ASM34128v1	GCA_000341285.1	2013-02-GsGP	N	N	Y	Y	N	galdieria_sulphuraria_core_44_97_1	1	
+Glycine max	glycine_max	EnsemblPlants	3847	Glycine_max_v2.1	GCA_000004515.4	2018-08-JGI	N	N	Y	Y	Y	glycine_max_core_44_97_4	1	
+Gossypium raimondii	gossypium_raimondii	EnsemblPlants	29730	Graimondii2_0	GCA_000327365.1	2017-09-JGI	N	N	Y	Y	Y	gossypium_raimondii_core_44_97_1	1	
+Helianthus annuus	helianthus_annuus	EnsemblPlants	4232	HanXRQr1.0	GCA_002127325.1	2017-09-ICSG	N	N	Y	Y	Y	helianthus_annuus_core_44_97_1	1	
+Hordeum vulgare	hordeum_vulgare	EnsemblPlants	112509	IBSC v2	GCA_900075435.2	2016-05-IBSC	Y	N	Y	Y	Y	hordeum_vulgare_core_44_97_3	1	
+Leersia perrieri	leersia_perrieri	EnsemblPlants	77586	Lperr_V1.4	GCA_000325765.3	2013-09-OGE	N	N	Y	Y	Y	leersia_perrieri_core_44_97_14	1	
+Lupinus angustifolius	lupinus_angustifolius	EnsemblPlants	3871	LupAngTanjil_v1.0	GCA_001865875.1	2017-07-CSIRO	N	N	Y	Y	Y	lupinus_angustifolius_core_44_97_1	1	
+Manihot esculenta	manihot_esculenta	EnsemblPlants	3983	Manihot esculenta v6	GCA_001659605.1	2017-09-JGI	N	N	Y	Y	Y	manihot_esculenta_core_44_97_1	1	
+Marchantia polymorpha	marchantia_polymorpha	EnsemblPlants	3197	Marchanta_polymorpha_v1	GCA_003032435.1	2018-04-ENA	N	Y	Y	Y	N	marchantia_polymorpha_core_44_97_1	1	
+Medicago truncatula	medicago_truncatula	EnsemblPlants	3880	MedtrA17_4.0	GCA_000219495.2	2014-06-ENA	N	N	Y	Y	Y	medicago_truncatula_core_44_97_2	1	
+Musa acuminata	musa_acuminata	EnsemblPlants	214687	ASM31385v1	GCA_000313855.1	2012-08-Cirad	N	N	Y	Y	Y	musa_acuminata_core_44_97_1	1	
+Nicotiana attenuata	nicotiana_attenuata	EnsemblPlants	49451	NIATTr2	GCA_001879085.1	2017-09-MPI-CE	N	N	Y	Y	Y	nicotiana_attenuata_core_44_97_1	1	
+Oryza barthii	oryza_barthii	EnsemblPlants	65489	O.barthii_v1	GCA_000182155.2	2014-05-OGE	N	N	Y	Y	Y	oryza_barthii_core_44_97_3	1	
+Oryza brachyantha	oryza_brachyantha	EnsemblPlants	4533	Oryza_brachyantha.v1.4b	GCA_000231095.2	2011-05-OGE	N	N	Y	Y	Y	oryza_brachyantha_core_44_97_14	1	
+Oryza glaberrima	oryza_glaberrima	EnsemblPlants	4538	Oryza_glaberrima_V1	GCA_000147395.1	2011-05-OGE	Y	N	Y	Y	Y	oryza_glaberrima_core_44_97_2	1	
+Oryza glumipatula	oryza_glumipatula	EnsemblPlants	40148	Oryza_glumaepatula_v1.5	GCA_000576495.1	2013-09-OGE	Y	N	Y	Y	Y	oryza_glumipatula_core_44_97_15	1	
+Oryza sativa Indica Group	oryza_indica	EnsemblPlants	39946	ASM465v1	GCA_000004655.2	2010-07-BGI	Y	N	Y	Y	Y	oryza_indica_core_44_97_2	1	
+Oryza longistaminata	oryza_longistaminata	EnsemblPlants	4528	O_longistaminata_v1.0	GCA_000789195.1	2015-05-OGE	N	N	Y	Y	Y	oryza_longistaminata_core_44_97_2	1	
+Oryza meridionalis	oryza_meridionalis	EnsemblPlants	40149	Oryza_meridionalis_v1.3	GCA_000338895.2	2014-10-OGE	N	N	Y	Y	Y	oryza_meridionalis_core_44_97_13	1	
+Oryza nivara	oryza_nivara	EnsemblPlants	4536	Oryza_nivara_v1.0	GCA_000576065.1	2013-09-OGE	N	N	Y	Y	Y	oryza_nivara_core_44_97_10	1	
+Oryza punctata	oryza_punctata	EnsemblPlants	4537	Oryza_punctata_v1.2	GCA_000573905.1	2013-09-OGE	N	N	Y	Y	Y	oryza_punctata_core_44_97_12	1	
+Oryza rufipogon	oryza_rufipogon	EnsemblPlants	4529	OR_W1943	GCA_000817225.1	2013-09-OGE	N	N	Y	Y	Y	oryza_rufipogon_core_44_97_11	1	
+Oryza sativa Japonica Group	oryza_sativa	EnsemblPlants	39947	IRGSP-1.0	GCA_001433935.1	2018-11-RAPDB	Y	Y	Y	Y	Y	oryza_sativa_core_44_97_7	1	
+Ostreococcus lucimarinus	ostreococcus_lucimarinus	EnsemblPlants	436017	ASM9206v1	GCA_000092065.1	2011-01-JGI	N	N	Y	Y	Y	ostreococcus_lucimarinus_core_44_97_1	1	
+Panicum hallii FIL2	panicum_hallii_fil2	EnsemblPlants	206008	PHallii_v3.1	GCA_002211085.2	2018-05ENA	N	N	Y	Y	N	panicum_hallii_fil2_core_44_97_1	1	
+Panicum hallii HAL2	panicum_hallii_hal2	EnsemblPlants	1504633	PhalliiHAL_v2.1	GCA_003061485.1	2018-05ENA	N	N	Y	Y	N	panicum_hallii_hal2_core_44_97_1	1	
+Phaseolus vulgaris	phaseolus_vulgaris	EnsemblPlants	3885	PhaVulg1_0	GCA_000499845.1	2017-09-JGI	N	N	Y	Y	Y	phaseolus_vulgaris_core_44_97_1	1	
+Physcomitrella patens	physcomitrella_patens	EnsemblPlants	3218	Phypa V3	GCA_000002425.2	2018-04-JGI	N	Y	Y	Y	Y	physcomitrella_patens_core_44_97_2	1	
+Populus trichocarpa	populus_trichocarpa	EnsemblPlants	3694	Pop_tri_v3	GCA_000002775.3	2018-04-JGI	N	N	Y	Y	Y	populus_trichocarpa_core_44_97_3	1	
+Prunus persica	prunus_persica	EnsemblPlants	3760	Prunus_persica_NCBIv2	GCA_000346465.2	2017-09-JGI	N	N	Y	Y	Y	prunus_persica_core_44_97_2	1	
+Selaginella moellendorffii	selaginella_moellendorffii	EnsemblPlants	88036	v1.0	GCA_000143415.1	2011-05-JGI	N	Y	Y	Y	Y	selaginella_moellendorffii_core_44_97_1	1	
+Setaria italica	setaria_italica	EnsemblPlants	4555	Setaria_italica_v2.0	GCA_000263155.2	2015-11-JGI	N	N	Y	Y	Y	setaria_italica_core_44_97_2	1	
+Solanum lycopersicum	solanum_lycopersicum	EnsemblPlants	4081	SL3.0	GCA_000188115.3	2017-02-SOL	Y	Y	Y	Y	Y	solanum_lycopersicum_core_44_97_3	1	
+Solanum tuberosum	solanum_tuberosum	EnsemblPlants	4113	SolTub_3.0	GCA_000226075.1	2011-05-SolTub_3.0	N	N	Y	Y	Y	solanum_tuberosum_core_44_97_4	1	
+Sorghum bicolor	sorghum_bicolor	EnsemblPlants	4558	Sorghum_bicolor_NCBIv3	GCA_000003195.3	2017-06-JGI	Y	N	Y	Y	Y	sorghum_bicolor_core_44_97_30	1	
+Theobroma cacao	theobroma_cacao	EnsemblPlants	3641	Criollo_cocoa_genome_V2	GCA_000208745.2	2019-03-CGH	N	N	Y	Y	N	theobroma_cacao_core_44_97_2	1	
+Trifolium pratense	trifolium_pratense	EnsemblPlants	57577	Trpr	GCA_900079335.1	2016-04-TGAC	N	N	Y	Y	Y	trifolium_pratense_core_44_97_1	1	
+Triticum aestivum	triticum_aestivum	EnsemblPlants	4565	IWGSC	GCA_900519105.1	2018-04-IWGSC	Y	N	Y	Y	Y	triticum_aestivum_core_44_97_4	1	
+Triticum dicoccoides	triticum_dicoccoides	EnsemblPlants	85692	WEWSeq v.1.0	GCA_002162155.1	2017-05-WEWSeq	N	N	Y	Y	Y	triticum_dicoccoides_core_44_97_1	1	
+Triticum urartu	triticum_urartu	EnsemblPlants	4572	ASM34745v1	GCA_000347455.1	2013-04-BGI	N	N	Y	Y	Y	triticum_urartu_core_44_97_1	1	
+Vigna angularis	vigna_angularis	EnsemblPlants	3914	Vigan1.1	GCA_001190045.1	2015-08-BUA	N	N	Y	Y	Y	vigna_angularis_core_44_97_1	1	
+Vigna radiata	vigna_radiata	EnsemblPlants	3916	Vradiata_ver6	GCA_000741045.2	2015-10-SNU	N	N	Y	Y	Y	vigna_radiata_core_44_97_2	1	
+Vitis vinifera	vitis_vinifera	EnsemblPlants	29760	12X	GCA_000003745.2	2012-07-CRIBI	Y	Y	Y	Y	Y	vitis_vinifera_core_44_97_3	1	
+Zea mays	zea_mays	EnsemblPlants	4577	B73 RefGen_v4	GCA_000005005.6	2016-12-CSHL	Y	N	Y	Y	Y	zea_mays_core_44_97_7	1	
