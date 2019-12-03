@@ -10,6 +10,7 @@ import gzip
 from Bio.Seq import Seq
 from uuid import uuid4
 import os
+import sys
 
 FNULL = open(os.devnull, 'w')
 
@@ -40,6 +41,8 @@ class BlastDB:
         elif fasta_name is not None:
             self.fasta = fasta_name
             self.has_fasta = True
+        else:
+            sys.exit("ERROR - Reference genome not found. Attempted to access: {}".format(self.db))
 
         if self.has_fasta:
             if self.fasta.endswith(".gz"):
@@ -198,13 +201,17 @@ class BlastDB:
 
         seqs = read_fasta(fp_blast_out)
         pruned_seqs = {}
+
         for k, seq in seqs.items():
-            if len(k.split(":")) == 2:
-                pruned_seqs[k] = seq
-            else:  # Handle ranges that go beyond the selected chromosome
-                n = len(seq)
-                new_k = "{}:{}-{}".format(k, n, n)
-                pruned_seqs[new_k] = seq[-1]
+            if k is None:
+                sys.exit("ERROR - Chromosome/Contig '{}' not found in the reference genome.".format(queries[0]["chr"]))
+            else:
+                if len(k.split(":")) == 2:
+                    pruned_seqs[k] = seq
+                else:  # Handle ranges that go beyond the selected chromosome
+                    n = len(seq)
+                    new_k = "{}:{}-{}".format(k, n, n)
+                    pruned_seqs[new_k] = seq[-1]
 
         return pruned_seqs
 

@@ -249,7 +249,7 @@ def main(strcmd=None):
     try:
         markers = lib_markers.read_markers(args.markers)
     except:
-        logger.error("Failed to read input markers. Please double check the format is CHR POS NAME REF ALT")
+        logger.error("Failed to read input markers. Please check the input file path or format.")
         sys.exit(1)
 
     # Assert markers

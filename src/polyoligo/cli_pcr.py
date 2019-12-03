@@ -246,8 +246,12 @@ def main(strcmd=None):
 
     # Get target sequence
     logger.info("Retrieving target sequence ...")
-    regions = lib_markers.read_regions(args.roi)
-    iregions = []
+    try:
+        regions = lib_markers.read_regions(args.roi)
+        iregions = []
+    except:
+        logger.error("Failed to read input ROIs. Please check the input file path or format.")
+        sys.exit(1)
 
     for region in regions:
         iregion = lib_markers.Region(
