@@ -13,23 +13,25 @@ cli_caps.main(strcmd=" ".join([
     "polyoligo-caps",
     KWARGS["marker"],
     KWARGS["out"],
-    KWARGS["ref_sample"],
-    "--webapp",
-    "--debug",
+    KWARGS["ref_fasta_sample"],
 ]))
 
 cli_caps.main(strcmd=" ".join([
     "polyoligo-caps",
     KWARGS["marker"],
     KWARGS["out"],
-    KWARGS["ref_fasta_sample"],
+    KWARGS["reference"],
+    "--webapp",
+    "--debug",
 ]))
+
+
 
 cli_caps.main(strcmd=" ".join([
     "polyoligo-caps",
     KWARGS["marker_indels"],
     KWARGS["out"],
-    KWARGS["ref_sample"],
+    KWARGS["reference"],
     "--debug",
 ]))
 

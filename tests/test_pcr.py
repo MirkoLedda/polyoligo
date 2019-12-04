@@ -13,7 +13,7 @@ cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
     KWARGS["roi_pcr"],
     KWARGS["out"],
-    KWARGS["ref_sample"],
+    KWARGS["reference"],
     "--depth 100",
     "--seed 14",
     "--webapp",

@@ -11,21 +11,21 @@ with open("tests/KWARGS.yaml", "r") as f:
 
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
-    KWARGS["marker_indels"],
+    KWARGS["marker"],
     KWARGS["out"],
-    KWARGS["ref_sample"],
-    "-n 50",
-    "--depth 1",
+    KWARGS["reference"],
+    "--report_alts",
     "--webapp",
     "--debug",
 ]))
 
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
-    KWARGS["marker"],
+    KWARGS["marker_indels"],
     KWARGS["out"],
-    KWARGS["ref_sample"],
-    "--report_alts",
+    KWARGS["reference"],
+    "-n 50",
+    "--depth 1",
     "--webapp",
     "--debug",
 ]))

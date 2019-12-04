@@ -454,6 +454,11 @@ def get_primers(primer3_seq_args, target_start=1):
         if (k.startswith("SEQUENCE")) and (k not in primer3_seq_args.keys()):
             primer3_seq_args[k] = PRIMER3_GLOBALS[k]
 
+    # Ensure the interval lists are smaller than 200 elements as otherwise Primer3 returns an error
+    for k in ['SEQUENCE_EXCLUDED_REGION', 'SEQUENCE_INCLUDED_REGION']:
+        if k in primer3_seq_args.keys():
+            primer3_seq_args[k] = lib_utils.reduce_ivs(primer3_seq_args[k], n=200)
+
     p3_primers = primer3.bindings.designPrimers(primer3_seq_args)
 
     # Note that primers are returned ordered by "quality" (i.e. lower penalties first)

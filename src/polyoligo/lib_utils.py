@@ -228,3 +228,34 @@ def seqs2ambiguous_dna(seqs):
     seq_amb = "".join(seq_amb)
 
     return seq_amb
+
+
+def reduce_ivs(ivs, n):
+    """Take a list of intervals and merges them until n survive."""
+
+    if len(ivs) > 0:
+        ivs = list(ivs)  # Make a deep copy
+
+        # Compute spaces between intervals
+        past_iv = ivs[0]
+        spaces = []
+        for iv in ivs[1:]:
+            i = past_iv[0] + (past_iv[1] - 1)
+            j = iv[0]
+            spaces.append(j - i - 1)
+            past_iv = iv
+
+        while len(ivs) > n:
+            # Reduce the interval list by merging the two closest intervals
+            i = int(np.argmin(spaces))
+            _ = spaces.pop(i)
+
+            iv1 = ivs.pop(i)
+            iv2 = ivs.pop(i)
+
+            nstop = iv2[0] + (iv2[1] - 1)
+            niv = [iv1[0], nstop - iv1[0] + 1]
+
+            ivs.insert(i, niv)
+
+    return ivs
