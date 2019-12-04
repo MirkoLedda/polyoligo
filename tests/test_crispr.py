@@ -21,7 +21,7 @@ cli_crispr.main(strcmd=" ".join([
     "polyoligo-crispr",
     KWARGS["roi"],
     KWARGS["out"],
-    KWARGS["ref_fasta_sample"],
+    KWARGS["ref_fasta"],
 ]))
 
 

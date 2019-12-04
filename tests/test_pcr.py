@@ -24,7 +24,7 @@ cli_pcr.main(strcmd=" ".join([
     "polyoligo-pcr",
     KWARGS["roi_pcr"],
     KWARGS["out"],
-    KWARGS["ref_fasta_sample"],
+    KWARGS["ref_fasta"],
 ]))
 
 cli_pcr.main(strcmd=" ".join([

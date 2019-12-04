@@ -34,7 +34,7 @@ cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
     KWARGS["marker"],
     KWARGS["out"],
-    KWARGS["ref_fasta_sample"],
+    KWARGS["ref_fasta"],
 ]))
 
 cli_kasp.main(strcmd=" ".join([
