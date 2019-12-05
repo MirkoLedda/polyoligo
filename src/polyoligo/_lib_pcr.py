@@ -236,7 +236,7 @@ def main(kwarg_dict):
         lib_primer3.set_globals(**primer3_configs)
 
     lib_primer3.set_globals(
-        PRIMER_NUM_RETURN=int(np.ceil(n_primers * p3_search_depth)),
+        PRIMER_NUM_RETURN=p3_search_depth,
     )
     lib_primer3.set_tm_delta(tm_delta)
     lib_primer3.set_primer_seed(primer_seed)

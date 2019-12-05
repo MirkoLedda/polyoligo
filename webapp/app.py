@@ -18,9 +18,9 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 # GLOBALS ----------------------------------------------------------------------
-DEPTH_MAP = {"superficial": 2.5,
-             "standard": 10,
-             "deep": 25,
+DEPTH_MAP = {"superficial": 10,
+             "standard": 100,
+             "deep": 1000,
              }
 
 

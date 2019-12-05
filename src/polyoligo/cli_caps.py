@@ -109,12 +109,11 @@ def parse_args(inputargs):
     )
     parser.add_argument(
         "--depth",
-        metavar="<FLOAT>",
-        type=float,
-        default=10.0,
-        help="This parameter controls the exhaustiveness of the primer pair search, which is given by "
-             "'n' * 'depth'. By increasing this value, more primer pairs will be considered but the process will "
-             "be computationally heavier.",
+        metavar="<INT>",
+        type=int,
+        default=100,
+        help="Controls the number of primer pairs checked during the hierarchical search. At minimum, "
+             "this is going to be the number of requested primers '-n'.",
     )
     parser.add_argument(
         "--seed",
@@ -188,6 +187,9 @@ def main(strcmd=None):
         args = parse_args(testcmd.split()[1:])
     else:
         args = parse_args(sys.argv[1:])
+
+    # set the search depth
+    depth = max([args.n_primers, args.depth])
 
     # Set the number of CPUs
     if args.n_tasks < 1:
@@ -329,7 +331,7 @@ def main(strcmd=None):
             "included_enzymes": included_enzymes,
             "fragment_min_size": args.fragment_min_size,
             "n_primers": args.n_primers,
-            "p3_search_depth": args.depth,
+            "p3_search_depth": depth,
             "tm_delta": args.tm_delta,
             "offtarget_size": [args.offtarget_min_size, args.offtarget_max_size],
             "primer_seed": args.seed,

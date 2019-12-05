@@ -24,7 +24,7 @@ vcf_exclude: "/run/media/mirko/69D2-154B/polyoligo/data/VCF_subsets/F.xananassa_
 nt: 4
 tm_delta: 10
 n: 200
-depth: 1
+depth: 100
 seed: 13
 offtarget_min_size: 500
 offtarget_max_size: 1000
