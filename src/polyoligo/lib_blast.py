@@ -30,24 +30,16 @@ class BlastDB:
         if exists(self.db + ".nsq") or exists(self.db + ".00.nsq"):
             self.has_db = True
 
-        fasta_name = None
         for ext in [".fa", ".fasta", ".fa.gz", ".fasta.gz"]:
             if exists(self.db + ext):
-                fasta_name = self.db + ext
+                self.fasta = self.db + ext
+                self.has_fasta = True
 
-        if exists(self.db):
-            self.fasta = self.db
-            self.has_fasta = True
-        elif fasta_name is not None:
-            self.fasta = fasta_name
-            self.has_fasta = True
-        else:
-            sys.exit("ERROR - Reference genome not found. Attempted to access: {}".format(self.db))
-
-        if self.has_fasta:
-            if self.fasta.endswith(".gz"):
-                pass
-                # self.uncompress_fasta()
+        if not self.has_db:
+            if self.has_fasta:
+                self.fasta2db()
+            else:
+                sys.exit("ERROR - Reference genome not found. Attempted to access: {}".format(self.db))
 
     def locked_call(self, cmd):
         task_id = str(time.time()) + str(uuid4())
