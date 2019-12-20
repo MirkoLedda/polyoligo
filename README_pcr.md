@@ -43,7 +43,7 @@ Optional files include:
 **`--primer3`**: YAML configuration file for Primer3. All Primer3 arguments can be set here. See this [example file](sample_data/primer3_example.yaml).
 
 ### Outputs
-Two output files are produced:
+Three output files are produced:
 
 **`<OUTPUT>.log`**: A log file which contain details on the number of valid primers found during each search and for each marker.
 

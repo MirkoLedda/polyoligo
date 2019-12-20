@@ -45,7 +45,7 @@ Optional files include:
 **`--enzymes`**: List of restriction enzymes to consider. Can be useful to restrict the search to in stock enzymes only. See this [example file](sample_data/enzymes.txt).
 
 ### Outputs
-Two output files are produced:
+Three output files are produced:
 
 **`<OUTPUT>.log`**: A log file which contain details on the number of valid primers found during each search and for each marker.
 
