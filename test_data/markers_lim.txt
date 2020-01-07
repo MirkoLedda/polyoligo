@@ -1,0 +1,7 @@
+Fvb2-1 50 . A G
+Fvb2-1 60 . G A
+Fvb2-1 70 . G C
+Fvb2-1 80 . T G
+Fvb2-1 26582685 . C T
+Fvb2-1 26582675 . C T
+Fvb2-1 26582665 . T G

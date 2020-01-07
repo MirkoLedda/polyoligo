@@ -16,7 +16,6 @@ data/assemblies/**
 data/blastdb/**
 data/VCF/**
 data/VCF_subsets/**
-test_data/**
 webapp/uploads/
 webapp/__pycache__/
 webapp/redis-stable/

@@ -27,13 +27,14 @@ class BlastDB:
         self.n_cpu = n_cpu
         self.seqs = None
 
+        ext = os.path.splitext(self.db)[1]
+
         if exists(self.db + ".nsq") or exists(self.db + ".00.nsq"):
             self.has_db = True
 
-        for ext in [".fa", ".fasta", ".fa.gz", ".fasta.gz"]:
-            if exists(self.db + ext):
-                self.fasta = self.db + ext
-                self.has_fasta = True
+        if ext in [".fa", ".fasta", ".fa.gz", ".fasta.gz"]:
+            self.fasta = self.db
+            self.has_fasta = True
 
         if not self.has_db:
             if self.has_fasta:

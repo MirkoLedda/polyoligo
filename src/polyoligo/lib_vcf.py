@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import sys
 from copy import deepcopy
+import re
 
 
 class VCF:
@@ -128,7 +129,10 @@ class VCF:
                         g = -1
 
                     if (g == 1) or (g == 2):
-                        alts.append(sample.gt_bases.split("/")[1])  # Record the alternative allele sequence
+                        try:
+                            alts.append(re.split(r'[/|]', sample.gt_bases)[1])
+                        except IndexError:
+                            sys.exit("Error: Unsupported VCF format. Please contact the developer.")
 
                     G.append(g)
                     try:
@@ -194,12 +198,16 @@ class VCF:
                             g = -1
 
                         if (g == 1) or (g == 2):
-                            alts.append(sample.gt_bases.split("/")[1])  # Record the alternative allele sequence
+                            try:
+                                alts.append(re.split(r'[/|]', sample.gt_bases)[1])
 
-                            if g == 1:
-                                alt_snames["het"].append(sample.sample)
-                            else:
-                                alt_snames["hom"].append(sample.sample)
+                                if g == 1:
+                                    alt_snames["het"].append(sample.sample)
+                                else:
+                                    alt_snames["hom"].append(sample.sample)
+
+                            except IndexError:
+                                sys.exit("Error: Unsupported VCF format. Please contact the developer.")
 
                         try:
                             sid = next(sample_iter)
