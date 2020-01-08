@@ -8,6 +8,7 @@ marker_indels: "test_data/markers_with_indels.txt"
 marker_tomato: "test_data/markers_tomato.txt"
 marker_cotton: "test_data/markers_cotton.txt"
 marker_wheat: "test_data/markers_wheat.txt"
+marker_pistachio: "test_data/markers_pistachio.txt"
 marker_lim: "test_data/markers_lim.txt"
 marker_broken: "test_data/broken_markers.txt"
 out: "out"
@@ -18,9 +19,11 @@ reference: "/run/media/mirko/69D2-154B/polyoligo/data/blastdb/Fragaria_x_ananass
 ref_tomato: "/run/media/mirko/69D2-154B/polyoligo/data/blastdb/Solanum_lycopersicum.SL3.0"
 ref_cotton: "/run/media/mirko/69D2-154B/polyoligo/data/blastdb/Gossypium_raimondii.Graimondii2_0"
 ref_wheat: "/run/media/mirko/69D2-154B/polyoligo/data/blastdb/Triticum_aestivum.IWGSC"
+ref_pistachio: "/run/media/mirko/69D2-154B/polyoligo/data_for_test/blastdb/pistachio_atlantica.fa"
 vcf: "/run/media/mirko/69D2-154B/polyoligo/data/VCF/Fragaria_x_ananassa.KnappLab.gz"
 vcf_include: "/run/media/mirko/69D2-154B/polyoligo/data/VCF_subsets/F.xananassa_VCFinclude.txt"
 vcf_exclude: "/run/media/mirko/69D2-154B/polyoligo/data/VCF_subsets/F.xananassa_VCFinclude.txt"
+vcf_pistachio: "/run/media/mirko/69D2-154B/polyoligo/data_for_test/VCF/pistachio.vcf.gz"
 nt: 4
 tm_delta: 10
 n: 200

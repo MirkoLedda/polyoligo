@@ -10,7 +10,7 @@ import re
 class VCF:
     def __init__(self, fp, fp_inc_samples="", fp_exc_samples=""):
         self.reader_fp = fp
-        self.reader = vcf.Reader(filename=self.reader_fp)
+        self.reader = vcf.Reader(filename=self.reader_fp, strict_whitespace=True)
         self.samples, self.samples_ix = self._parse_sample_files(fp_inc_samples, fp_exc_samples)
 
     def start_reader(self):
@@ -114,15 +114,16 @@ class VCF:
         alleles = {}  # alleles
 
         for mutation in mutations:
-            G = []
+            G = np.repeat(-1, len(self.samples))
             alts = []  # List of possible alternative alleles
 
-            sample_iter = iter(self.samples_ix)  # Iterator for the samples to include
+            sample_iter = iter(self.samples)  # Iterator for the samples to include
             sid = next(sample_iter)
 
-            for i, sample in enumerate(mutation.samples):
+            for sample in mutation.samples:
 
-                if i == sid:
+                if sample.sample == sid:
+                    i = int(np.argwhere(self.samples == sample.sample)[0])
                     g = sample.gt_type
 
                     if g is None:
@@ -134,7 +135,7 @@ class VCF:
                         except IndexError:
                             sys.exit("Error: Unsupported VCF format. Please contact the developer.")
 
-                    G.append(g)
+                    G[i] = g
                     try:
                         sid = next(sample_iter)
                     except StopIteration:
@@ -142,7 +143,6 @@ class VCF:
 
             if len(alts) > 0:  # Skip this mutation if none of the samples have the ALT allele
                 genotypes[mutation.POS] = G
-                genotypes[mutation.POS] = np.array(genotypes[mutation.POS], dtype=int)
                 alleles[mutation.POS] = (mutation.REF, list(np.unique(alts)))
 
         genotypes = pd.DataFrame(genotypes, index=self.samples)
@@ -186,12 +186,12 @@ class VCF:
                 alt_snames = {"het": [],
                               "hom": []}
 
-                sample_iter = iter(self.samples_ix)  # Iterator for the samples to include
+                sample_iter = iter(self.samples)  # Iterator for the samples to include
                 sid = next(sample_iter)
 
-                for i, sample in enumerate(mutation.samples):
+                for sample in mutation.samples:
 
-                    if i == sid:
+                    if sample.sample == sid:
                         g = sample.gt_type
 
                         if g is None:

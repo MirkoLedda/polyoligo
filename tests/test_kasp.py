@@ -11,6 +11,16 @@ with open("tests/KWARGS.yaml", "r") as f:
 
 cli_kasp.main(strcmd=" ".join([
     "polyoligo-kasp",
+    KWARGS["marker_pistachio"],
+    KWARGS["out"],
+    KWARGS["ref_pistachio"],
+    "--vcf {}".format(KWARGS["vcf_pistachio"]),
+    "--report_alts",
+    "--debug",
+]))
+
+cli_kasp.main(strcmd=" ".join([
+    "polyoligo-kasp",
     KWARGS["marker"],
     KWARGS["out"],
     KWARGS["reference"],
