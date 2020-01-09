@@ -4,14 +4,12 @@ import argparse
 import logging
 import os
 from os.path import join, exists
-import multiprocessing as mp
-from copy import deepcopy
 # noinspection PyPackageRequirements
 from Bio.Seq import Seq
 import shutil
 import pandas as pd
 
-from src.polyoligo import lib_blast, _lib_markers, _logger_config, lib_utils
+from src.polyoligo import lib_blast, lib_markers, _logger_config, lib_utils
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -21,40 +19,81 @@ BINARIES = {
 NUC = ["A", "T", "G", "C"]
 
 
-class Markers(_lib_markers.Markers):
-    def __init__(self, blast_db=None, **kwargs):
-        super().__init__(blast_db, **kwargs)
+class Marker(lib_markers.Marker):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def read_markers(self, fp, logger):
-        """Reads a text file of input markers and returns a list of Marker objects.
+    def assert_marker(self, blast_hook):
+        if self.ref != "":
+            query = [{
+                "chr": self.chrom,
+                "start": int(self.pos1),
+                "stop": int(self.pos1 + self.n - 1),
+            }]
 
-        File should be tab delimited and no headers and contain the information columns:
-        CHR POS NAME REF ALT
+            seq = "N"
+            for _, seq in blast_hook.fetch(query).items():
+                seq = seq.upper()
+                break
 
-        """
+            if self.ref == seq:
+                pass
+            else:
+                # Nucleotides do not match so look for a solution
+                n1 = self.ref
+                n2 = self.alt
+                n1c = str(Seq(n1).complement())
+                n2c = str(Seq(n2).complement())
 
-        df = pd.read_csv(fp, delim_whitespace=True, header=None)
-        df.columns = ["chr", "pos", "name", "ref", "alt"]
+                if self.alt == seq:  # Check for an inversion
+                    self.ref = n2
+                    self.alt = n1
+                elif n1c == seq:  # Check for complementarity
+                    self.ref = n1c
+                    self.alt = n2c
+                elif n2c == seq:  # Check for reverse complementarity
+                    self.ref = n2c
+                    self.alt = n1c
+                else:
+                    print("Marker {}: {}/{} | The reference is {}".format(
+                        self.name,
+                        n1,
+                        n2,
+                        seq,
+                    ))
+                    return None
 
-        self.markers = []
-        for _, row in df.iterrows():
-
-            # Make sure the SNP is biallelic
-            if (row["ref"] not in NUC) or (row["alt"] not in NUC):
-                logger.warning("Marker {} is not a biallelic SNP [{}]/[{}]".format(
-                    row["name"],
-                    row["ref"],
-                    row["alt"],
+                print("Marker {}: {}/{} -> {}/{}".format(
+                    self.name,
+                    n1,
+                    n2,
+                    self.ref,
+                    self.alt,
                 ))
-                continue
 
-            self.markers.append(_lib_markers.Marker(
-                chrom=row["chr"],
-                pos=row["pos"] - 1,  # to 0-based indexing
-                ref_allele=row["ref"],
-                alt_allele=row["alt"],
-                name=row["name"],
-            ))
+
+def read_markers(fp):
+    """Reads a text file of input markers and returns a list of Marker objects.
+
+    File should be tab delimited and no headers and contain the information columns:
+    CHR POS NAME REF ALT
+
+    """
+
+    df = pd.read_csv(fp, delim_whitespace=True, header=None)
+    df.columns = ["chr", "pos", "name", "ref", "alt"]
+
+    markers = []
+    for _, row in df.iterrows():
+        markers.append(Marker(
+            chrom=row["chr"],
+            pos=row["pos"] - 1,  # to 0-based indexing
+            ref_allele=row["ref"],
+            alt_allele=row["alt"],
+            name=row["name"],
+        ))
+
+    return markers
 
 
 def parse_args(inputargs):
@@ -104,9 +143,6 @@ def main(strcmd=None):
     else:
         args = parse_args(sys.argv[1:])
 
-    # Set the number of CPUs
-    n_tasks = mp.cpu_count() - 1
-
     # Prepare directories
     out_path = os.path.dirname(os.path.abspath(args.output))
     if out_path == "":
@@ -121,101 +157,41 @@ def main(strcmd=None):
         os.makedirs(temp_path)
 
     # Init the logger
-    _logger_config.setup_console_logging(verbose=not args.silent)
+    _logger_config.setup_logging(log_fp=join(out_path, args.output + ".log"), verbose=not args.silent)
     logger = logging.getLogger(__name__)
 
     # Detect the os and point to respective binaries
     curr_os = lib_utils.get_os()
     if curr_os is None:
         logger.error("OS not supported or not detected properly.")
-        sys.exit()
+        sys.exit(1)
     bin_path = BINARIES[curr_os]
 
-    # Init BlastDB
-    blast_db = lib_blast.BlastDB(
+    # Initialize hooks
+    blast_hook = lib_blast.BlastDB(
         path_db=args.refgenome,
         path_temporary=temp_path,
         path_bin=bin_path,
-        job_id="check_markers",
-        n_cpu=n_tasks,
+        job_id="main",
+        n_cpu=1,
     )
 
     # Build the BlastDB if a fasta was provided
-    if not blast_db.has_db:
+    if not blast_hook.has_db:
         logger.info("Converting the input reference genome to BlastDB ...")
-        blast_db.fasta2db()
-
-    # Make a FASTA reference genome if fast mode is activated
-    if not blast_db.has_fasta:
-        logger.info("Converting the input reference genome to FASTA ...")
-        blast_db.db2fasta()
-
-    blast_db.load_fasta()
-
-    # Init Markers object
-    markers = Markers(
-        blast_db=blast_db,
-    )
+        blast_hook.fasta2db()
 
     # Read markers
-    markers.read_markers(args.markers, logger)
-    logger.info("Number of target markers = {}".format(len(markers)))
+    try:
+        markers = read_markers(args.markers)
+    except:
+        logger.error("Failed to read input markers. Please check the input file path or format.")
+        sys.exit(1)
 
-    # Build BLASTDBCMD queries
-    queries = []
-    for marker in markers.markers:
-        q = {"chr": marker.chrom,
-             "start": marker.pos1,
-             "stop": marker.pos1,
-             "strand": "plus",
-             }
-        queries.append(deepcopy(q))
-
-    # Retrieve the expected nucleotide locations of the markers in the BLASTDB
-    blast_nucs = blast_db.fetch(queries)
-
-    # Loop across markers and check if nucleotides match and do the necessary change if not
     fp_out = join(out_path, args.output)  # Write the cleaned markers to a new file
     with open(fp_out, "w") as f:
-        for marker in markers.markers:
-            q_key = "{}:{}-{}".format(marker.chrom, marker.pos1, marker.pos1)
-            bn = blast_nucs[q_key]
-
-            if marker.ref == bn:
-                pass
-            else:
-                # Nucleotides do not match so look for a solution
-                n1 = marker.ref
-                n2 = marker.alt
-                n1c = str(Seq(n1).complement())
-                n2c = str(Seq(n2).complement())
-
-                if marker.alt == bn:  # Check for an inversion
-                    marker.ref = n2
-                    marker.alt = n1
-                elif n1c == bn:  # Check for complementarity
-                    marker.ref = n1c
-                    marker.alt = n2c
-                elif n2c == bn:  # Check for reverse complementarity
-                    marker.ref = n2c
-                    marker.alt = n1c
-                else:
-                    logger.warning("Marker {}: {}/{} | The reference is {}".format(
-                        marker.name,
-                        n1,
-                        n2,
-                        bn,
-                    ))
-                    continue
-
-                logger.info("Marker {}: {}/{} -> {}/{}".format(
-                    marker.name,
-                    n1,
-                    n2,
-                    marker.ref,
-                    marker.alt,
-                ))
-
+        for marker in markers:
+            marker.assert_marker(blast_hook)
             f.write("{}\t{}\t{}\t{}\t{}\n".format(
                 marker.chrom,
                 marker.pos1,
@@ -223,8 +199,6 @@ def main(strcmd=None):
                 marker.ref,
                 marker.alt,
             ))
-
-    logger.info("Output written to -> {}".format(fp_out))
 
     shutil.rmtree(temp_path)
 
