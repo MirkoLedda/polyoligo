@@ -201,6 +201,7 @@ def main(strcmd=None):
             ))
 
     shutil.rmtree(temp_path)
+    os.remove(fp_out + ".log")  # Remove the log, this is redundant here
 
 
 if __name__ == "__main__":
