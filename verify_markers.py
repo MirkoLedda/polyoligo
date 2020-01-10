@@ -55,7 +55,7 @@ class Marker(lib_markers.Marker):
                     self.ref = n2c
                     self.alt = n1c
                 else:
-                    print("Marker {}: {}/{} | The reference is {}".format(
+                    print("{} {}/{} -> ERROR skipped as reference is {}".format(
                         self.name,
                         n1,
                         n2,
@@ -63,7 +63,7 @@ class Marker(lib_markers.Marker):
                     ))
                     return None
 
-                print("Marker {}: {}/{} -> {}/{}".format(
+                print("{} {}/{} -> {}/{}".format(
                     self.name,
                     n1,
                     n2,
