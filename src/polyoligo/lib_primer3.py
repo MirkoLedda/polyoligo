@@ -430,18 +430,35 @@ class PCR:
 
             self.pps_classified[pp.goodness].append(pp)
 
-    def prune(self, n):
+    def prune(self, n, assay_name="generic"):
         nprim = 0
         score_cats = np.sort(list(self.pps_classified.keys()))[::-1]
 
-        for score in score_cats:
-            self.pps_pruned[score] = []
-            for pp in self.pps_classified[score]:
-                if nprim < n:
-                    self.pps_pruned[score].append(pp)
-                    nprim += 1
-                else:
-                    break
+        if assay_name == "HRM":
+            for score in score_cats:
+                # Sort primers in that score category by TM delta
+                pp_deltas = []
+                for pp in self.pps_classified[score]:
+                    pp_deltas.append(pp.hrm["delta"])
+                pp_deltas = np.array(pp_deltas)
+                pp_ixs = np.argsort(-pp_deltas)  # Sort pp IDs by melting temps while keeping ties ordered
+
+                self.pps_pruned[score] = []
+                for i in pp_ixs:
+                    if nprim < n:
+                        self.pps_pruned[score].append(self.pps_classified[score][i])
+                        nprim += 1
+                    else:
+                        break
+        else:
+            for score in score_cats:
+                self.pps_pruned[score] = []
+                for pp in self.pps_classified[score]:
+                    if nprim < n:
+                        self.pps_pruned[score].append(pp)
+                        nprim += 1
+                    else:
+                        break
 
         return nprim
 

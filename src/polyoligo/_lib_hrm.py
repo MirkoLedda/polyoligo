@@ -328,7 +328,7 @@ def main(kwarg_dict):
 
     pcr.pps = pruned_pps
     pcr.classify(assay_name="HRM")  # Classify primers by scores using a heuristic "goodness" score
-    n = pcr.prune(n_primers)  # Retain only the top n primers
+    n = pcr.prune(n_primers, assay_name="HRM")  # Retain only the top n primers
 
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
