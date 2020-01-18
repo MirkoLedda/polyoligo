@@ -5,22 +5,20 @@
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
             <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
             <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
-            <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
             <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
             <title>PolyOligo - {% block title %}{% endblock %}</title>
         {% endblock %}
     </head>
 
     <body>
-
         <div id="page-container">
-            <div class="navbar">
-                <a href="{{ url_for('home') }}"><b>Home</b></a>
-                <a href="{{ url_for('pcr') }}">PCR</a>
-                <a href="{{ url_for('kasp') }}">KASP</a>
-                <a href="{{ url_for('caps') }}">CAPS</a>
-                <a href="{{ url_for('hrm') }}">HRM</a>
-                <a href="{{ url_for('crispr') }}">CRISPR/Cas9</a>
+            <div id="nav" class="navbar">
+                <li><a href="{{ url_for('home') }}"><b>Home</b></a></li>
+                <li><a href="{{ url_for('pcr') }}">PCR</a></li>
+                <li><a href="{{ url_for('kasp') }}">KASP</a></li>
+                <li><a href="{{ url_for('caps') }}">CAPS</a></li>
+                <li><a href="{{ url_for('hrm') }}">HRM</a></li>
+                <li><a href="{{ url_for('crispr') }}">CRISPR/Cas9</a></li>
             </div>
             <div id="content-wrap">
                 <!--<center><h4><font color="red"> !! This is a development version please do not use for research !!</font><h4></center>-->
@@ -41,4 +39,16 @@
             </div>
         </div>
     </body>
+
+    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script>
+        $(function(){
+            $('a').each(function(){
+                if ($(this).prop('href') == window.location.href) {
+                    $(this).addClass('active'); $(this).parents('li').addClass('active');
+                }
+            });
+        });
+    </script>
+
 </html>

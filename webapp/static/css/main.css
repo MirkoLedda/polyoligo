@@ -18,7 +18,12 @@ body {
     flex-shrink: 0
 }
 
-.navbar a {
+.navbar li {
+    list-style-type: none;
+}
+
+.navbar li a
+{
     float: left;
     display: block;
     color: white;
@@ -28,10 +33,15 @@ body {
     font-size: calc(22px + (28 - 22) * ((100vw - 300px) / (1600 - 300)));
 }
 
-.navbar a:hover {
-    background-color: grey;
+.navbar li a:hover:not(.active)
+{
+    background-color: #333333;
     color: white;
     text-decoration: none;
+}
+.navbar a.active
+{
+    background-color: #737373;
 }
 
 /* ----Main content---- */
