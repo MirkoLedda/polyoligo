@@ -2,17 +2,14 @@ import os
 from os.path import join, exists
 import argparse
 import sys
-import shutil
 import multiprocessing as mp
 import logging
 import pandas as pd
 import numpy as np
 import yaml
-from copy import deepcopy
-import tqdm
 
 # noinspection PyProtectedMember
-from src.polyoligo import lib_blast, lib_primer3, lib_markers, lib_vcf, lib_utils, _logger_config, _lib_pcr
+from src.polyoligo import lib_blast, _lib_kasp, lib_markers, lib_utils, lib_vcf, _logger_config, lib_primer3
 
 BINARIES = {
     "macosx": join(os.path.dirname(__file__), "src/polyoligo", "bin/macosx_x64"),
@@ -23,15 +20,17 @@ BINARIES = {
 PRIMER3_DEFAULTS = join(os.path.dirname(__file__), "src/polyoligo/data/PRIMER3_KASP.yaml")
 
 
-def read_assays(fp):
+def process_markers(fp, blast_hook, vcf_hook, reporters, fp_out):
     df = pd.read_csv(fp, delim_whitespace=True, header=None)
-    df.columns = ["name", "chr", "start", "end", "dir", "id", "seq"]
+    df.columns = ["name", "chr", "pos", "ref", "alt", "start", "stop", "dir", "type", "id", "seq"]
 
     assays = {}
+    pcrs = []
+    rois = []
 
     for _, row in df.iterrows():
 
-        if pd.isna(row["start"]):
+        if pd.isna(row["type"]):
             continue
 
         n = "{}-{}".format(row["name"], int(row["id"]))
@@ -39,80 +38,94 @@ def read_assays(fp):
         if n not in assays.keys():
             assays[n] = {}
 
-        assays[n]["chrom"] = row["chr"]
-        assays[n]["name"] = n
-        assays[n][row["dir"]] = {
+        assays[n]["chr"] = row["chr"]
+        assays[n]["pos"] = row["pos"]
+        assays[n]["ref"] = row["ref"]
+        assays[n]["alt"] = row["alt"]
+
+        # Remove the current reporter dye
+        seq = np.array(list(row["seq"]))
+
+        seqp = []
+        for i, s in enumerate(seq):
+            if s.islower():
+                seqp = seq[i:]
+                break
+        seq = "".join(list(seqp))
+
+        assays[n][row["type"]] = {
             "start": int(row["start"]),
-            "end": int(row["end"]),
+            "stop": int(row["stop"]),
             "dir": row["dir"],
-            "seq": row["seq"].upper(),
+            "seq": seq.upper(),
         }
 
-    # Make sure we have primer pairs
     for n, assay in assays.items():
-        if ("F" in assay.keys()) and ("R" in assay.keys()):
-            continue
-        else:
-            del assays[n]
+        if ("REF" in assay.keys()) and ("ALT" in assay.keys()) and ("COM" in assay.keys()):
 
-    return assays
+            region = [
+                np.min([assay["REF"]["start"], assay["ALT"]["start"], assay["COM"]["start"]]),
+                np.max([assay["REF"]["stop"], assay["ALT"]["stop"], assay["COM"]["stop"]]),
+            ]
 
+            marker = lib_markers.Marker(
+                name=n,
+                chrom=assay["chr"],
+                pos=assay["pos"]-1,
+                ref_allele=assay["ref"],
+                alt_allele=assay["alt"],
+            )
 
-def process_assay(kwargs):
-    assay = kwargs["assay"]
-    blast_hook = kwargs["blast_hook"]
-    vcf_hook = kwargs["vcf_hook"]
-    path_out = kwargs["path_out"]
+            roi = lib_markers.ROI(
+                name=n,
+                chrom=assay["chr"],
+                start=region[0],
+                stop=region[1],
+                marker=marker,
+                blast_hook=blast_hook,
+                vcf_hook=vcf_hook,
+            )
 
-    region = [
-        np.min([assay["F"]["start"], assay["R"]["start"], assay["F"]["end"], assay["R"]["end"]]),
-        np.max([assay["F"]["start"], assay["R"]["start"], assay["F"]["end"], assay["R"]["end"]]),
-    ]
+            roi.upload_mutations()
 
-    roi = lib_markers.ROI(
-        chrom=assay["chrom"],
-        start=region[0],
-        stop=region[1],
-        blast_hook=blast_hook,
-        vcf_hook=vcf_hook,
-        name=assay["name"],
-    )
+            pp = _lib_kasp.PrimerPair()
+            if assay["REF"]["dir"] == "F":
+                mapping = {"F": "REF", "R": "COM", "A": "ALT"}
+            else:
+                mapping = {"F": "COM", "R": "REF", "A": "ALT"}
 
-    roi.upload_mutations()
+            for d in ["F", "R", "A"]:
+                pp.primers[d].start = assay[mapping[d]]["start"]
+                pp.primers[d].stop = assay[mapping[d]]["stop"]
+                pp.primers[d].sequence = assay[mapping[d]]["seq"]
+            pp.dir = assay["REF"]["dir"]
+            pp.chrom = roi.chrom
 
-    # Build primer pairs
-    pp = lib_primer3.PrimerPair()
+            pcr = _lib_kasp.PCR(
+                snp_id=roi.marker.name,
+                chrom=roi.chrom,
+                pos=roi.marker.pos1,
+                ref=roi.marker.ref,
+                alt=roi.marker.alt,
+                primer_pairs=[pp],
+            )
 
-    for d in ["F", "R"]:
-        pp.primers[d].start = assay[d]["start"]
-        pp.primers[d].stop = assay[d]["end"]
-        pp.primers[d].sequence = assay[d]["seq"]
-    pp.chrom = roi.chrom
-    pp.product_size = region[1] - region[0] + 1
+            _, _ = pcr.check_offtargeting(blast_hook, debug=False)  # Check for off-targets
+            pcr.add_mutations(roi.mutations)
+            pcr.add_reporter_dyes(reporters)  # Add the reporter dye sequence to the primers
+            pcr.check_heterodimerization()  # Check for heterodimerization
+            pcr.classify(assay_name="KASP")  # Classify primers by scores using a heuristic "goodness" score
+            pcr.prune(np.inf)
+            pcrs.append(pcr)
+            rois.append(roi)
 
-    # Build PCR assay
-    pcr = lib_primer3.PCR(
-        name=assay["name"],
-        chrom=roi.chrom,
-        primer_pairs=[pp],
-        snp_id=assay["name"],
-    )
-
-    # Check attributes
-    _, _ = pcr.check_offtargeting(blast_hook, debug=False)  # Check for off-targets
-    pcr.add_mutations(roi.mutations)
-    pcr.check_heterodimerization()  # Check for heterodimerization
-    pcr.classify(assay_name="PCR")  # Classify primers by scores using a heuristic "goodness" score
-    pcr.prune(np.inf)
-
-    # Write sub-report
-    _lib_pcr.print_report(pcr, join(path_out, pcr.snp_id))
+    return rois, pcrs
 
 
 def parse_args(inputargs):
     # Define the args parser
-    parser = argparse.ArgumentParser(prog="polyoligo-reveng",
-                                     description="Reverse-engineer primers designed externally.",
+    parser = argparse.ArgumentParser(prog="polyoligo",
+                                     description="Design primers for Kompetitive allele specific PCR (KASP) assays",
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
@@ -125,13 +138,13 @@ def parse_args(inputargs):
         metavar="MARKERS",
         type=str,
         help="File containing a list of input primers in space-separated format and with no header as: "
-             "NAME CHR START END DIR ID SEQ",
+             "NAME CHR POS REF ALT START END DIR TYPE ID SEQ",
     )
     parser.add_argument(
         "output",
         metavar="OUTPUT",
         type=str,
-        help="Output filename.",
+        help="Output filename (no extension).",
     )
     parser.add_argument(
         "refgenome",
@@ -141,6 +154,20 @@ def parse_args(inputargs):
              "FASTA: Both raw and compressed files are supported natively (see sample_data/blastdb.fa.gz).\n"
              "BLASTDB: Extensions (e.g. .nsq/.nin/...) are not required, just enter the basename of the "
              "database (see sample_data/blastdb).",
+    )
+    parser.add_argument(
+        "--dye1",
+        metavar="<TXT>",
+        type=str,
+        default="GAAGGTCGGAGTCAACGGATT",
+        help="DNA sequence of the reporter dye for the reference allele in a 5'-3' orientation. Default: VIC",
+    )
+    parser.add_argument(
+        "--dye2",
+        metavar="<TXT>",
+        type=str,
+        default="GAAGGTGACCAAGTTCATGCT",
+        help="DNA sequence of the reporter dye for the alternative allele in a 5'-3' orientation. Default: FAM",
     )
     parser.add_argument(
         "--silent",
@@ -228,16 +255,7 @@ def parse_args(inputargs):
 def score_marker(kwargs_dict):
     marker = kwargs_dict["marker"]
     pcr = marker.score_primers(kwargs_dict["fp_reporters"], kwargs_dict["blast_db"])
-    _lib_pcr.print_report(pcr, kwargs_dict["fp_out"])
-
-
-def write_final_reports(fp_base_out, assays, blast_hook):
-    _lib_pcr.print_report_header(fp_base_out + ".txt")
-    with open(fp_base_out + ".txt", "a") as f:
-        for assay in assays.values():
-            with open(join(blast_hook.temporary, assay["name"] + ".txt"), "r") as f_marker:
-                for line in f_marker:
-                    f.write(line)
+    _lib_kasp.print_report(pcr, kwargs_dict["fp_out"])
 
 
 def main():
@@ -281,7 +299,7 @@ def main():
         path_temporary=temp_path,
         path_bin=bin_path,
         job_id="main",
-        n_cpu=args.n_tasks,
+        n_cpu=1,
     )
 
     if args.vcf == "":
@@ -310,46 +328,30 @@ def main():
     lib_primer3.set_globals(**primer3_configs)
     lib_primer3.set_offtarget_size(args.offtarget_min_size, args.offtarget_max_size)
 
-    assays = read_assays(args.markers)
+    # Read reporter dyes
+    reporters = [args.dye1, args.dye2]
 
-    # Parallelized loop
-    # Initialize a list of kwargs for the worker and a job queue
-    kwargs_worker = []
+    for reporter in reporters:
+        if not lib_utils.is_dna(reporter):
+            logger.error("Reporter dyes DNA sequence incorrect: {}".format(reporter))
+            sys.exit(1)
 
-    for assay in assays.values():
-        blast_hook.job_id = assay["name"]  # To make sure files are not overwritten during multiprocessing
+    rois, pcrs = process_markers(
+        fp=args.markers,
+        blast_hook=blast_hook,
+        vcf_hook=vcf_hook,
+        reporters=reporters,
+        fp_out=join(out_path, args.output),
+    )
 
-        kwarg_dict = {
-            "assay": assay,
-            "blast_hook": blast_hook,
-            "vcf_hook": vcf_hook,
-            "path_out": temp_path,
-        }
+    for pcr in pcrs:
+        _lib_kasp.print_report(pcr, join(temp_path, pcr.snp_id))
+        break
 
-        kwargs_worker.append(deepcopy(kwarg_dict))
-
-    # Run the job queue
-    n_jobs = len(kwargs_worker)
-    with mp.Pool(processes=args.n_tasks, maxtasksperchild=1) as p:
-        if args.debug:
-            _ = list(tqdm.tqdm(
-                p.imap_unordered(process_assay, kwargs_worker),
-                total=n_jobs,
-            ))
-        else:
-            _ = list(tqdm.tqdm(
-                p.imap_unordered(process_assay, kwargs_worker),
-                total=n_jobs,
-                disable=args.silent,
-            ))
-
-    write_final_reports(join(out_path, args.output), assays, blast_hook)
-
-    if not args.debug:
-        shutil.rmtree(temp_path)
+    _lib_kasp.write_final_reports(join(out_path, args.output), rois)
 
     logger.info("Total time elapsed: {}".format(lib_utils.timer_stop(main_time)))
-    logger.info("Report written to -> {}".format(join(out_path, args.output) + ".txt"))
+    logger.info("Report written to -> {} [{}, {}]".format(join(out_path, args.output) + ".txt", ".bed", ".log"))
 
 
 if __name__ == "__main__":
