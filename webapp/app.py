@@ -188,16 +188,16 @@ def run_task(strcmd, log_dest):
     else:
         log.update_status("COMPLETED")
 
-        # Compress result files for download
-        strcmd = [
-            "cd {};".format(log_dest),
-            "ls;",
-            "tar -cvf 'output.tar' output.*;",
-            "gzip output.tar;",
-            "cd ..;",
-        ]
-        strcmd = " ".join(strcmd)
-        subprocess.Popen(strcmd, shell=True)
+        # # Compress result files for download
+        # strcmd = [
+        #     "cd {};".format(log_dest),
+        #     "ls;",
+        #     "tar -cvf 'output.tar' output.*;",
+        #     "gzip output.tar;",
+        #     "cd ..;",
+        # ]
+        # strcmd = " ".join(strcmd)
+        # subprocess.Popen(strcmd, shell=True)
 
     return None
 
@@ -573,15 +573,18 @@ def get_status(task_id):
 
 @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
 def download(task_id):
-    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
-    return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
-
-
-# @app.route('/downloads/<task_id>/output.txt', methods=['GET', 'POST'])
+    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.txt")
+    return send_file(filename, as_attachment=True, attachment_filename="output.txt")
 # def download(task_id):
-#     with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
-#         content = f.read()
-#     return render_template("results.html", content=content)
+#     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
+#     return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
+
+
+@app.route('/tasks/<task_id>/output.txt', methods=['GET', 'POST'])
+def see_file(task_id):
+    with open(join(app.config['UPLOAD_FOLDER'], task_id, "output.txt"), "r") as f:
+        content = f.read()
+    return render_template("results.html", content=content)
 
 
 # OTHER ROUTES ------------------------------------------------------------
