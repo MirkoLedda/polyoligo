@@ -33,7 +33,7 @@ HEADER = [
     "n_offtargets",
     "max_aaf",
     "indels",
-    "offtargets",
+    "offtarget_products",
     "mutations",
 ]
 
