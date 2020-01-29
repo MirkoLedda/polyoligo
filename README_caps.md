@@ -26,7 +26,7 @@ polyoligo-caps sample_data/markers.txt out sample_data/blastdb --vcf sample_data
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: A text file containing target markers as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt).
+**`<INPUT>`**: A text file containing target markers as a list of [CHR POS NAME REF ALT]. See this [example file](sample_data/markers.txt). Deletions are denoted by `*` and `.` indicates no name . For example `Fvb1-1 10000 . G *` is a valid entry.
 
 **`<OUTPUT>`**: The base name of the output files.
 

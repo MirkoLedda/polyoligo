@@ -1,12 +1,12 @@
 # `PolyOligo`
 
-Design oligos for complex genomes.
+Design oligos for complex genomes. (alpha version)
 
 ## What Is It?
 
-A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Supports **indels** and can use known **mutations** across populations to refine designs.
+A Python-based **multicore enabled** set of tools to **design oligonucleotides**. Supports **SNPs** and **indels** and can use known **mutations** across populations to refine designs.
 
-A webapp version of this software is coming soon !
+A webapp version of this software is available [HERE](http://ec2-52-52-41-39.us-west-1.compute.amazonaws.com/) !
 
 ## Included binaries (click on the command for more information)
 

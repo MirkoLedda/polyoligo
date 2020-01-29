@@ -13,8 +13,8 @@
     <!-- KWARGS form -->
     <form id="caps" method="POST" action="{{ url_for('caps') }}" enctype="multipart/form-data">
         <div class="mandatory">
-            <label>Input markers <i>(Limited to 100 max)</i></label> <i>- One marker per line with columns CHR POS NAME REF ALT.</i><br>
-            <textarea type="textarea" name="markers" rows="10" width="100%" placeholder="CHR POS NAME[use . if NA] REF ALT"></textarea><br><br>
+            <label>Input markers <i>(Limited to 100 max)</i></label> <i>- One marker per line as CHR POS NAME REF ALT (e.g. Fvb1-1 10000 . G T)</i><br>
+            <textarea type="textarea" name="markers" rows="10" width="100%" placeholder="CHR POS NAME[if NA use .] REF[if a deletion use *] ALT[if a deletion use *]"></textarea><br><br>
             <label>Reference genome</label><br>
             <select name="reference">
                 {% for blastdb_option in blastdb_options %}
