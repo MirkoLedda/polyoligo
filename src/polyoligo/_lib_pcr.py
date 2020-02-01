@@ -316,7 +316,8 @@ def main(kwarg_dict):
     else:
         search_types = ["mism", "partial_mism", "all"]
 
-    lib_primer3.set_globals(PRIMER_PRODUCT_SIZE_RANGE=[[region.p3_sequence_target[0][1], region.n]])
+    if "PRIMER_PRODUCT_SIZE_RANGE" not in lib_primer3.PRIMER3_GLOBALS.keys():
+        lib_primer3.set_globals(PRIMER_PRODUCT_SIZE_RANGE=[[region.p3_sequence_target[0][1], region.n]])
 
     for search_type in search_types:
         if len(pcr.pps) < lib_primer3.PRIMER3_GLOBALS['PRIMER_NUM_RETURN']:
