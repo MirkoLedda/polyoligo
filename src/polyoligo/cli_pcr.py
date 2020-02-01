@@ -40,7 +40,7 @@ def parse_args(inputargs):
         metavar="ROI",
         type=str,
         help="File containing target regions around which to design primers with no header and two columns: "
-             "CHR:START-END NAME(optional).",
+             "CHR:START-END NAME",
     )
     parser.add_argument(
         "output",
