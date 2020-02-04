@@ -518,19 +518,23 @@ def read_regions(fp):
     df.columns = ["region", "name"]
 
     regions = []
+    failed_regions = []
     for _, row in df.iterrows():
-        chrom = row["region"].strip().split(":")[0]
-        start = row["region"].strip().split(":")[1].split("-")[0]
-        stop = row["region"].strip().split(":")[1].split("-")[1]
+        try:
+            chrom = row["region"].strip().split(":")[0]
+            start = row["region"].strip().split(":")[1].split("-")[0]
+            stop = row["region"].strip().split(":")[1].split("-")[1]
 
-        regions.append(Region(
-            name=row["name"],
-            chrom=chrom,
-            start=start,
-            stop=stop,
-        ))
+            regions.append(Region(
+                name=row["name"],
+                chrom=chrom,
+                start=start,
+                stop=stop,
+            ))
+        except:
+            failed_regions.append(row["region"])
 
-    return regions
+    return regions, failed_regions
 
 
 def get_tm(seq, **kwargs):

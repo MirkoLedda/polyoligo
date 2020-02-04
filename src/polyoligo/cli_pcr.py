@@ -249,8 +249,14 @@ def main(strcmd=None):
     # Get target sequence
     logger.info("Retrieving target sequence ...")
     try:
-        regions = lib_markers.read_regions(args.roi)
+        regions, failed_regions = lib_markers.read_regions(args.roi)
         iregions = []
+
+        if len(failed_regions) > 0:
+            warn_msg = "Skipping the following ROIs because ill-formatted/problematic:"
+            for failed_region in failed_regions:
+                warn_msg += "\n    {}".format(failed_region)
+            logger.warning(warn_msg)
     except:
         logger.error("Failed to read input ROIs. Please check the input file path or format.")
         sys.exit(1)
