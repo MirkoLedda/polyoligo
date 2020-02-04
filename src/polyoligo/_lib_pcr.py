@@ -174,7 +174,10 @@ def design_primers(pps_repo, roi, sequence_target=None,
     if sequence_excluded_region is not None:
         primer3_seq_args['SEQUENCE_EXCLUDED_REGION'] = sequence_excluded_region
 
-    p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.left_roi.start)
+    try:
+        p3_repo = lib_primer3.get_primers(primer3_seq_args, target_start=roi.left_roi.start)
+    except:
+        p3_repo = []
 
     # # List primer sequences that we already have in the repo to make sure we have some diversity
     p_counts = {}
