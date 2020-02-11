@@ -10,7 +10,7 @@ from . import lib_blast, lib_utils, lib_primer3, lib_markers
 
 # GLOBALS
 INNER_LEN = 100  # Length of the region used to find homologs
-OUTER_LEN = 250  # Length of the region were homologs will be mapped
+# OUTER_LEN = 250  # Length of the region were homologs will be mapped
 MIN_ALIGN_ID = 88  # Minimum alignment identity to declare homologs
 MIN_ALIGN_LEN = 50  # Minimum alignment to declare homologs
 DELIMITER = "\t"  # Delimiter for output files
@@ -230,6 +230,7 @@ def main(kwarg_dict):
     primer3_configs = kwarg_dict["primer3_configs"]
     debug = kwarg_dict["debug"]
     fp_base_out = kwarg_dict["fp_base_out"]
+    outer_len = kwarg_dict["flank_size"]  # todo make sure this is correct, could be 2x here
 
     if region.vcf_hook:
         region.vcf_hook.start_reader()
@@ -279,13 +280,13 @@ def main(kwarg_dict):
     # Find homologs
     region.left_roi = region.left_roi.map_homologs(
         inner_len=INNER_LEN,
-        outer_len=OUTER_LEN,
+        outer_len=outer_len,
         min_align_id=MIN_ALIGN_ID,
         min_align_len=MIN_ALIGN_LEN,
     )
     region.right_roi = region.right_roi.map_homologs(
         inner_len=INNER_LEN,
-        outer_len=OUTER_LEN,
+        outer_len=outer_len,
         min_align_id=MIN_ALIGN_ID,
         min_align_len=MIN_ALIGN_LEN,
     )

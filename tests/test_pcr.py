@@ -16,6 +16,7 @@ cli_pcr.main(strcmd=" ".join([
     KWARGS["reference"],
     "--depth 100",
     "--seed 14",
+    "--flank_size 2000",
     "--webapp",
     "--debug",
 ]))
@@ -51,5 +52,6 @@ cli_pcr.main(strcmd=" ".join([
     "--offtarget_max_size {}".format(KWARGS["offtarget_max_size"]),
     "--primer3 {}".format(KWARGS["primer3_pcr"]),
     "-nt {}".format(KWARGS["nt"]),
+    "--flank_size 1000",
     "--debug",
 ]))

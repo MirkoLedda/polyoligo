@@ -157,6 +157,15 @@ def parse_args(inputargs):
         # help="Webapp mode. FOR DEVS ONLY.",
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--flank_size",
+        metavar="<INT>",
+        type=int,
+        default=250,
+        help="Length of the region flanking the ROI where the primers search will be conducted. "
+             "Very large values will increase runtime substantially and sub-genome specificity may be negatively "
+             "impacted.",
+    )
 
     args = parser.parse_args(inputargs)  # Parse input args
 
@@ -302,6 +311,7 @@ def main(strcmd=None):
             "primer_seed": args.seed,
             "primer3_configs": primer3_configs,
             "debug": args.debug,
+            "flank_size": args.flank_size,
         }
 
         kwargs_worker.append(deepcopy(kwarg_dict))

@@ -52,14 +52,14 @@ setup(
 
     # Dependencies
     install_requires=[
-        "biopython",
-        "numpy",
-        "pandas",
-        "pysam",
-        "PyVCF",
-        "PyYAML",
-        "tqdm",
-        "primer3-py",
+        "biopython==1.76",
+        "numpy==1.18.1",
+        "pandas==1.0.1",
+        "pysam==0.15.4",
+        "PyVCF==0.6.8",
+        "PyYAML==5.3",
+        "tqdm==4.42.1",
+        "primer3-py==0.6.0",
     ],
 
     # Create the executable
