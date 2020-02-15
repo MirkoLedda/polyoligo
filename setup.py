@@ -52,7 +52,6 @@ setup(
 
     # Dependencies
     install_requires=[
-        "cython",
         "biopython==1.76",
         "numpy==1.18.1",
         "pandas==1.0.1",
@@ -76,7 +75,7 @@ setup(
     },
 
     # Requirements for tests and coverage analysis
-    setup_requires=["pytest-runner"],
+    setup_requires=["pytest-runner", "cython"],
     tests_require=[
         "pytest",
         "coverage",
