@@ -60,6 +60,7 @@ setup(
         "PyYAML==5.3",
         "tqdm==4.42.1",
         "primer3-py==0.6.0",
+        "cython",
     ],
 
     # Create the executable
