@@ -52,6 +52,7 @@ setup(
 
     # Dependencies
     install_requires=[
+        "cython",
         "biopython==1.76",
         "numpy==1.18.1",
         "pandas==1.0.1",
@@ -60,7 +61,6 @@ setup(
         "PyYAML==5.3",
         "tqdm==4.42.1",
         "primer3-py==0.6.0",
-        "cython",
     ],
 
     # Create the executable
