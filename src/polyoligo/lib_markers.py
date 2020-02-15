@@ -12,7 +12,7 @@ from . import lib_utils, lib_blast
 
 class ROI:
     def __init__(self, chrom=None, start=None, stop=None, blast_hook=None, malign_hook=None, vcf_hook=None, name=None,
-                 marker=None, do_print_alt_subjects=False):
+                 marker=None, do_print_alt_subjects=False, is_indel=None):
         self.name = None  # ROI name
         self.chrom = None  # Chromosome
         self.start = None  # Region start (1-based)
@@ -32,6 +32,7 @@ class ROI:
         self.p3_sequence_included_maps = None  # For PRIMER3 design
         self.p3_sequence_excluded_regions = None  # For PRIMER3 design
         self.do_print_alt_subjects = do_print_alt_subjects  # Print alternative subjects?
+        self.is_indel = None  # Denotes indels - options are: None, "ins", "del"
 
         # Initialize attributes
         self.chrom = chrom
@@ -41,6 +42,7 @@ class ROI:
         self.malign_hook = malign_hook
         self.vcf_hook = vcf_hook
         self.marker = marker
+        self.is_indel = is_indel
 
         if name is not None:
             self.name = name
@@ -305,6 +307,7 @@ class Marker:
         self.alt = None  # Alternative allele
         self.variant = None  # Variant notation
         self.n = None  # Maximum length of the mutation
+        self.is_indel = None  # Denotes indels - options are: None, "ins", "del"
 
         # Initialize attributes
         self.name = name
@@ -327,6 +330,43 @@ class Marker:
         if (name is None) or (name == "."):
             self.name = "{}:{}-{}".format(self.chrom, self.pos1, self.pos1)
         self.name = self.name.replace("_", "-")  # Underscores in the marker name will mess with the algorithm
+
+    def parse_indels(self, blast_hook):
+        # Handle insertions
+        if self.ref == "":
+            self.n = len(self.alt)
+            query = [{
+                "chr": self.chrom,
+                "start": int(self.pos1),
+                "stop": int(self.pos1 + self.n - 1),
+            }]
+
+            seq = "N"
+            for _, seq in blast_hook.fetch(query).items():
+                seq = seq.upper()
+                break
+
+            self.ref = seq
+            self.variant = "[{}/{}]".format(self.ref, self.alt)
+            self.is_indel = "ins"
+
+        # Handle deletions
+        if self.alt == "":
+            self.n = len(self.ref)
+            query = [{
+                "chr": self.chrom,
+                "start": int(self.pos1 + self.n),
+                "stop": int(self.pos1 + 2*self.n - 1),
+            }]
+
+            seq = "N"
+            for _, seq in blast_hook.fetch(query).items():
+                seq = seq.upper()
+                break
+
+            self.alt = seq
+            self.variant = "[{}/{}]".format(self.ref, self.alt)
+            self.is_indel = "del"
 
     def assert_marker(self, blast_hook):
         if self.ref != "":

@@ -29,12 +29,12 @@ class BlastDB:
 
         ext = os.path.splitext(self.db)[1]
 
-        if exists(self.db + ".nsq") or exists(self.db + ".00.nsq"):
-            self.has_db = True
-
         if ext in [".fa", ".fasta", ".fa.gz", ".fasta.gz"]:
             self.fasta = self.db
             self.has_fasta = True
+        else:
+            if exists(self.db + ".nsq") or exists(self.db + ".00.nsq"):
+                self.has_db = True
 
         if not self.has_db:
             if self.has_fasta:
@@ -104,7 +104,11 @@ class BlastDB:
         cmd = " ".join(cmd)
 
         self.locked_call(cmd)
-        self.has_db = True
+
+        if exists(self.db + ".nsq") or exists(self.db + ".00.nsq"):
+            self.has_db = True
+        else:
+            sys.exit("ERROR - Oups, the makeblastdb command failed. Please contact the developer.")
 
     # noinspection PyListCreation
     def db2fasta(self):

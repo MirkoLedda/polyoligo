@@ -275,13 +275,14 @@ def main(strcmd=None):
 
     # Read markers
     try:
-        markers = lib_markers.read_markers(args.markers)
+        markers = lib_markers.read_markers(fp=args.markers)
     except:
         logger.error("Failed to read input markers. Please check the input file path or format.")
         sys.exit(1)
 
-    # Assert markers
+    # Assert markers and handle full indels (i.e. denoted with the character *)
     for marker in markers:
+        marker.parse_indels(blast_hook)
         err_msg = marker.assert_marker(blast_hook)
         if err_msg is not None:
             logger.error(err_msg)
@@ -311,6 +312,7 @@ def main(strcmd=None):
             name=marker.name,
             marker=marker,
             do_print_alt_subjects=args.report_alts,
+            is_indel=marker.is_indel,
         )
         rois.append(roi)
 

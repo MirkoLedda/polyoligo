@@ -123,6 +123,7 @@ class PCR(lib_primer3.PCR):
         super().__init__(**kwargs)
         self.pps_classified = {}
         self.pps_pruned = {}
+        self.is_indel = None
 
     def get_unique_seed_sequences(self):
         self.get_seeds()
@@ -456,12 +457,22 @@ def print_report(pcr, fp):
                     if pp.qcode == "":
                         pp.qcode = "."
 
+                    if pcr.is_indel is None:
+                        ref = pcr.ref
+                        alt = pcr.alt
+                    elif pcr.is_indel == "ins":
+                        ref = "*"
+                        alt = pcr.alt
+                    elif pcr.is_indel == "del":
+                        ref = pcr.ref
+                        alt = "*"
+
                     fields = [
                         pcr.snp_id,
                         pcr.chrom,
                         int(pcr.pos),
-                        pcr.ref,
-                        pcr.alt,
+                        ref,
+                        alt,
                         int(pp.primers[d].start),
                         int(pp.primers[d].stop),
                         direction,
@@ -730,6 +741,9 @@ def main(kwarg_dict):
     pcr.add_mutations(hroi.mutations)  # List mutations in primers
     pcr.classify(assay_name="KASP")  # Classify primers by scores using a heuristic "goodness" score
     n = pcr.prune(n_primers)  # Retain only the top n primers
+
+    # Add indel information prior to printing the report
+    pcr.is_indel = roi.is_indel
 
     # Print to logger
     logger_msg += "Returned top {:d} primer pairs\n".format(n)
