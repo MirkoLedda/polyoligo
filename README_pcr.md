@@ -26,7 +26,7 @@ polyoligo-pcr sample_data/pcr_targets.txt out sample_data/blastdb --vcf sample_d
 ### Inputs
 The software requires three mandatory inputs:
 
-**`<INPUT>`**: Regions of interest declared as CHR:START-END NAME[optional].
+**`<INPUT>`**: Regions of interest declared as CHR:START-END NAME(optional).
 
 **`<OUTPUT>`**: The base name of the output files.
 
