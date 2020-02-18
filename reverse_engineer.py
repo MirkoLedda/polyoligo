@@ -118,7 +118,7 @@ def parse_args(inputargs):
     parser.add_argument(
         "-v", "--version",
         action="version",
-        version="%(prog)s 0.0",
+        version="%(prog)s {}".format("0.1"),
     )
     parser.add_argument(
         "markers",

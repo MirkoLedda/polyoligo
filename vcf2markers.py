@@ -7,7 +7,7 @@ from os.path import join, exists
 import pandas as pd
 
 # noinspection PyProtectedMember
-from src.polyoligo import _logger_config, lib_utils, lib_vcf
+from src.polyoligo import _logger_config, lib_utils, lib_vcf, lib_markers
 
 
 def parse_args(inputargs):
@@ -16,6 +16,11 @@ def parse_args(inputargs):
                                      description="",
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "-v", "--version",
+        action="version",
+        version="%(prog)s {}".format("0.1"),
+    )
     parser.add_argument(
         "vcf",
         metavar="VCF",
@@ -73,16 +78,18 @@ def main(strcmd=None):
     vcf_obj = lib_vcf.VCF(fp=args.vcf)
 
     # Read ROIs
-    rois = read_roi(args.roi)
+    regions, failed_regions = lib_markers.read_regions(args.roi)
+    if len(failed_regions) > 0:
+        warn_msg = "Skipping the following ROIs because ill-formatted/problematic:"
+        for failed_region in failed_regions:
+            warn_msg += "\n    {}".format(failed_region)
+        logger.warning(warn_msg)
 
-    # Loop across ROIs
-    for _, roi in rois.iterrows():
-        if len(roi) == 1:
-            # fetch VCF based on chromosomes only and write to file
-            vcf_obj.fetch_kasp_markers(fp=args.output, chrom=roi[0])
-        else:
-            # fetch VCF and write to file
-            vcf_obj.fetch_kasp_markers(fp=args.output, chrom=roi[0], start=roi[1], stop=roi[2])
+    for region in regions:
+        vcf_obj.fetch_kasp_markers(fp=args.output,
+                                   chrom=region.chrom,
+                                   start=region.start,
+                                   stop=region.stop)
 
     logger.info("Output written to -> {}".format(args.output))
 

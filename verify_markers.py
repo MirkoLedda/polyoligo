@@ -103,6 +103,11 @@ def parse_args(inputargs):
                                      epilog="",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
+        "-v", "--version",
+        action="version",
+        version="%(prog)s {}".format("0.1"),
+    )
+    parser.add_argument(
         "markers",
         metavar="MARKERS",
         type=str,
