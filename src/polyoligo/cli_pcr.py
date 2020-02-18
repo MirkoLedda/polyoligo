@@ -39,8 +39,8 @@ def parse_args(inputargs):
         "roi",
         metavar="ROI",
         type=str,
-        help="File containing target regions around which to design primers with no header and two columns: "
-             "CHR:START-END NAME",
+        help="File containing target regions around which to design primers with no header and with one or "
+             "two columns as CHR:START-END NAME[optional]",
     )
     parser.add_argument(
         "output",

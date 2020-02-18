@@ -555,6 +555,9 @@ def read_markers(fp):
 
 def read_regions(fp):
     df = pd.read_csv(fp, delim_whitespace=True, header=None)
+
+    if df.shape[1] == 1:  # No name field so add a temporary one
+        df["name"] = "."
     df.columns = ["region", "name"]
 
     regions = []
@@ -564,6 +567,9 @@ def read_regions(fp):
             chrom = row["region"].strip().split(":")[0]
             start = row["region"].strip().split(":")[1].split("-")[0]
             stop = row["region"].strip().split(":")[1].split("-")[1]
+
+            if (row["name"] == ".") or (row["name"] == ""):  # Handle no names
+                row["name"] = "{}@{}-{}".format(chrom, start, stop)
 
             regions.append(Region(
                 name=row["name"],
