@@ -13,7 +13,7 @@
     <!-- KWARGS form -->
     <form id="crispr" method="POST" action="{{ url_for('crispr') }}" enctype="multipart/form-data">
         <div class="mandatory">
-            <label>Target region</label> <i>- CHR:START-END </i> <br>
+            <label>Target region</label> <i>- CHR:START-END (e.g. Fvb1-1:100000-101000)</i> <br>
             <input class="boxmedium" name="roi" type="string" placeholder="CHR:START-END" value=""><br><br>
             <label>Reference genome</label><br>
             <select name="reference">
