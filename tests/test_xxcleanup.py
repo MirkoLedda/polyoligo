@@ -18,7 +18,7 @@ try:
 except FileNotFoundError:
     pass
 try:
-    os.remove("ut_altlist.txt")
+    os.remove("out_altlist.txt")
 except FileNotFoundError:
     pass
 
