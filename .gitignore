@@ -8,7 +8,7 @@
 build/
 dist/
 htmlcov/
-temporary/
+temporary*/
 .coverage*
 out*
 profile*

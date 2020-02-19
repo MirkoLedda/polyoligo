@@ -209,6 +209,11 @@ def main(strcmd=None):
     args.output = os.path.basename(args.output)
     temp_path = join(out_path, "temporary")
 
+    temp_id = 0
+    while exists(temp_path):  # Make sure we use a unique temporary folder
+        temp_path = join(out_path, "temporary{}".format(temp_id))
+        temp_id += 1
+
     if not exists(out_path):
         os.makedirs(out_path)
 
