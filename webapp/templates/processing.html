@@ -100,7 +100,7 @@
                 $('#header').html("<h2>Job processed</h2>")
                 $('#progress').html('<div id="download"></div><br>');
                 // $('#download').html('<a href="{{ url_for('download', task_id=task_id) }}" download><button><i class="fa fa-download"></i> Download</button></a>');
-                $('#download').html('<a href="{{ url_for('see_file', task_id=task_id) }}"><button><i class="fa"></i> View results </button></a><a href="{{ url_for('download', task_id=task_id) }}"><button><i class="fa fa-download"></i> Download</button></a>');
+                $('#download').html('<a href="{{ url_for('see_file', task_id=task_id) }}"><button><i class="fa"></i> View results </button></a><a href="{{ url_for('download', task_id=task_id) }}"><button><i class="fa fa-download"></i> Download</button></a><a href="{{ url_for('download_bed', task_id=task_id) }}"><button><i class="fa fa-download"></i> Download .BED</button></a>');
             }
 
             if (log.status == "FAILED") {

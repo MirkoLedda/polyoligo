@@ -575,6 +575,12 @@ def get_status(task_id):
 def download(task_id):
     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.txt")
     return send_file(filename, as_attachment=True, attachment_filename="output.txt")
+
+@app.route('/downloads/<task_id>/output.bed', methods=['GET', 'POST'])
+def download_bed(task_id):
+    filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.bed")
+    return send_file(filename, as_attachment=True, attachment_filename="output.bed")
+
 # def download(task_id):
 #     filename = join(app.config['UPLOAD_FOLDER'], task_id, "output.tar.gz")
 #     return send_file(filename, as_attachment=True, attachment_filename="output.tar.gz")
