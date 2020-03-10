@@ -64,6 +64,9 @@ def process_assay(kwargs):
     vcf_hook = kwargs["vcf_hook"]
     path_out = kwargs["path_out"]
 
+    if vcf_hook:
+        vcf_hook.start_reader()
+
     region = [
         np.min([assay["F"]["start"], assay["R"]["start"], assay["F"]["end"], assay["R"]["end"]]),
         np.max([assay["F"]["start"], assay["R"]["start"], assay["F"]["end"], assay["R"]["end"]]),
