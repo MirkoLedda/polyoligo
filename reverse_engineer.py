@@ -312,6 +312,10 @@ def main():
 
     assays = read_assays(args.markers)
 
+    # Stop VCF hook reader for serialization
+    if vcf_hook:
+        vcf_hook.stop_reader()
+
     # Parallelized loop
     # Initialize a list of kwargs for the worker and a job queue
     kwargs_worker = []
