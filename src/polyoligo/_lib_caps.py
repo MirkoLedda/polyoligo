@@ -186,7 +186,7 @@ def print_report(pcr, fp):
                 pcr.alt,
             ]
             fields = [str(x) for x in fields]
-            f.write(DELIMITER.join(fields + 22 * ["NA"]) + "\n")
+            f.write(DELIMITER.join(fields + 24 * ["NA"]) + "\n")
             f.write("\n")
 
         f.write("\n")
