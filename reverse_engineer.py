@@ -34,7 +34,7 @@ def read_assays(fp):
         if pd.isna(row["start"]):
             continue
 
-        n = "{}--{}".format(row["name"], row["id"])
+        n = "{}-{}".format(row["name"], int(row["id"]))
 
         if n not in assays.keys():
             assays[n] = {}
