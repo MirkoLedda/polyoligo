@@ -55,7 +55,7 @@ setup(
         "biopython==1.76",
         "numpy==1.18.1",
         "pandas==1.0.1",
-        "pysam==0.15.4",
+        "pysam==0.16.0.1",
         "PyVCF==0.6.8",
         "PyYAML==5.3",
         "tqdm==4.42.1",
