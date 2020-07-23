@@ -41,20 +41,22 @@ class VCF:
 
         # Order the sample list and get sample indexes in the VCF file
         samples_ix = []
+        samples_pruned = []
 
         for s in samples:
             if s in self.reader._sample_indexes:
+                samples_pruned.append(s)
                 samples_ix.append(self.reader._sample_indexes[s])
             else:
                 pass  # Skip sample if not in present in the VCF
 
         # Check we have at least 1 sample left
-        if len(samples) < 1:
+        if len(samples_pruned) < 1:
             raise NameError(
                 "No samples selected in the VCF file. Please adjust --vcf_include and --vcf_exclude files.")
 
         six = np.argsort(samples_ix)
-        samples = np.array(samples)[six]
+        samples = np.array(samples_pruned)[six]
         samples_ix = np.array(samples_ix)[six]
 
         return samples, samples_ix
@@ -264,7 +266,7 @@ def compute_aaf(G):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             af = (a2 * 2 + a1) / (at * 2)
-            af[np.isinf(af)] = 1  # In case no geno available for the SNP then we can consider it as not a variant
+            af[np.isinf(af)] = 0  # In case no geno available for the SNP then we can consider it as not a variant
 
     return af
 
