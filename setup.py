@@ -53,7 +53,7 @@ setup(
     # Dependencies
     install_requires=[
         "biopython==1.76",
-        "numpy==1.18.1",
+        "numpy==1.22.0",
         "pandas==1.0.1",
         "pysam==0.16.0.1",
         "PyVCF==0.6.8",
