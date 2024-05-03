@@ -58,7 +58,7 @@ setup(
         "pysam==0.16.0.1",
         "PyVCF==0.6.8",
         "PyYAML>=5.4",
-        "tqdm==4.42.1",
+        "tqdm==4.66.3",
         "primer3-py==0.6.0",
     ],
 
